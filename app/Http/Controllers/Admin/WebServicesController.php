@@ -12,10 +12,15 @@ use Inertia\Response;
 
 class WebServicesController extends Controller
 {
-    public function index(): Response
+    public function index(Request $request): Response
     {
         return Inertia::render('admin/web-services/index', [
-            'webServices' => WebService::query()->latest()->paginate(10),
+            'filters' => ['q' => $request->query('q')],
+            'webServices' => WebService::query()
+                ->when($request->query('q'), fn ($query, $q) => $query->where('name', 'like', "%{$q}%"))
+                ->latest()
+                ->paginate(10)
+                ->withQueryString(),
         ]);
     }
 

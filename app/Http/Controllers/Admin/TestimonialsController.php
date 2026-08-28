@@ -6,15 +6,21 @@ use App\Http\Controllers\Controller;
 use App\Models\Testimonial;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
 use Inertia\Inertia;
 use Inertia\Response;
 
 class TestimonialsController extends Controller
 {
-    public function index(): Response
+    public function index(Request $request): Response
     {
         return Inertia::render('admin/testimonials/index', [
-            'testimonials' => Testimonial::query()->latest()->paginate(10),
+            'filters' => ['q' => $request->query('q')],
+            'testimonials' => Testimonial::query()
+                ->when($request->query('q'), fn ($query, $q) => $query->where('client_name', 'like', "%{$q}%"))
+                ->latest()
+                ->paginate(10)
+                ->withQueryString(),
         ]);
     }
 
@@ -37,13 +43,20 @@ class TestimonialsController extends Controller
 
     public function update(Request $request, Testimonial $testimonial): RedirectResponse
     {
+        $oldPhoto = $testimonial->client_photo;
         $testimonial->update($this->validated($request));
+        if ($oldPhoto && $oldPhoto !== $testimonial->client_photo) {
+            Storage::disk('public')->delete($oldPhoto);
+        }
 
         return to_route('admin.testimonials.index');
     }
 
     public function destroy(Testimonial $testimonial): RedirectResponse
     {
+        if ($testimonial->client_photo) {
+            Storage::disk('public')->delete($testimonial->client_photo);
+        }
         $testimonial->delete();
 
         return back();

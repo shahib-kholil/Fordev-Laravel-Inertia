@@ -19,8 +19,9 @@ class DatabaseSeeder extends Seeder
     public function run(): void
     {
         User::factory()->create([
-            'name' => 'Admin',
-            'email' => 'admin@fordev.test',
+            'name' => 'Super Admin',
+            'email' => 'superadmin@fordev.test',
+            'role' => 'super_admin',
         ]);
 
         Setting::query()->upsert([

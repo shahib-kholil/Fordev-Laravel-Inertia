@@ -22,6 +22,10 @@ class CreateNewUser implements CreatesNewUsers
      */
     public function create(array $input): User
     {
+        throw ValidationException::withMessages([
+            'email' => __('Registrasi ditutup. Hubungi super admin.'),
+        ]);
+
         Validator::make($input, [
             'name' => ['required', 'string', 'max:255'],
             'email' => [

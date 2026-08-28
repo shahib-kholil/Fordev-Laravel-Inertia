@@ -13,14 +13,16 @@ use Illuminate\Support\Facades\Route;
 
 Route::get('/', [PublicPageController::class, 'home'])->name('home');
 Route::get('jasa-web', [PublicPageController::class, 'webServices'])->name('public.web-services');
+Route::get('jasa-web/{webService:slug}', [PublicPageController::class, 'webService'])->name('public.web-services.show');
 Route::get('domain', [PublicPageController::class, 'domains'])->name('public.domains');
 Route::get('portofolio', [PublicPageController::class, 'portfolios'])->name('public.portfolios');
+Route::get('portofolio/{portfolio:slug}', [PublicPageController::class, 'portfolio'])->name('public.portfolios.show');
 Route::get('order', [OrderController::class, 'create'])->name('orders.create')->middleware('throttle:20,1');
 Route::post('order', [OrderController::class, 'store'])->name('orders.store')->middleware('throttle:5,1');
 Route::get('cek-status-pesanan', [OrderController::class, 'status'])->name('orders.status');
 Route::post('cek-status-pesanan', [OrderController::class, 'lookup'])->name('orders.lookup')->middleware('throttle:10,1');
 
-Route::middleware(['auth', 'verified'])->group(function () {
+Route::middleware(['auth', 'verified', 'admin'])->group(function () {
     Route::get('dashboard', DashboardController::class)->name('dashboard');
     Route::get('admin/dashboard', DashboardController::class)->name('admin.dashboard');
     Route::resource('admin/web-services', WebServicesController::class)->names('admin.web-services')->except('show');

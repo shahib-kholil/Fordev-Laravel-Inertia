@@ -50,7 +50,7 @@ class FordevFlowTest extends TestCase
 
     public function test_admin_pages_are_reachable(): void
     {
-        $this->actingAs(User::factory()->create());
+        $this->actingAs(User::factory()->create(['role' => 'super_admin']));
 
         $this->get('/admin/dashboard')->assertOk();
         $this->get('/admin/web-services')->assertOk();
@@ -59,5 +59,17 @@ class FordevFlowTest extends TestCase
         $this->get('/admin/testimonials')->assertOk();
         $this->get('/admin/settings')->assertOk();
         $this->get('/admin/orders')->assertOk();
+    }
+
+    public function test_regular_user_cannot_open_admin_pages(): void
+    {
+        $this->actingAs(User::factory()->create(['role' => 'user']));
+
+        $this->get('/admin/dashboard')->assertForbidden();
+    }
+
+    public function test_registration_route_is_disabled(): void
+    {
+        $this->get('/register')->assertNotFound();
     }
 }

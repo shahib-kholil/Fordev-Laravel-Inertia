@@ -11,10 +11,15 @@ use Inertia\Response;
 
 class DomainsController extends Controller
 {
-    public function index(): Response
+    public function index(Request $request): Response
     {
         return Inertia::render('admin/domains/index', [
-            'domains' => Domain::query()->latest()->paginate(10),
+            'filters' => ['q' => $request->query('q')],
+            'domains' => Domain::query()
+                ->when($request->query('q'), fn ($query, $q) => $query->where('extension', 'like', "%{$q}%"))
+                ->latest()
+                ->paginate(10)
+                ->withQueryString(),
         ]);
     }
 

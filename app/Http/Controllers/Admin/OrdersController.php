@@ -15,9 +15,12 @@ class OrdersController extends Controller
     public function index(Request $request): Response
     {
         return Inertia::render('admin/orders/index', [
-            'filters' => ['status' => $request->query('status')],
+            'filters' => ['q' => $request->query('q'), 'status' => $request->query('status')],
             'orders' => Order::query()
                 ->with(['webService:id,name', 'domain:id,extension'])
+                ->when($request->query('q'), fn ($query, $q) => $query->where(fn ($query) => $query
+                    ->where('order_number', 'like', "%{$q}%")
+                    ->orWhere('client_email', 'like', "%{$q}%")))
                 ->when($request->query('status'), fn ($query, $status) => $query->where('status', $status))
                 ->latest()
                 ->paginate(10)

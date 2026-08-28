@@ -6,16 +6,22 @@ use App\Http\Controllers\Controller;
 use App\Models\Portfolio;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Inertia\Inertia;
 use Inertia\Response;
 
 class PortfoliosController extends Controller
 {
-    public function index(): Response
+    public function index(Request $request): Response
     {
         return Inertia::render('admin/portfolios/index', [
-            'portfolios' => Portfolio::query()->latest()->paginate(10),
+            'filters' => ['q' => $request->query('q')],
+            'portfolios' => Portfolio::query()
+                ->when($request->query('q'), fn ($query, $q) => $query->where('title', 'like', "%{$q}%"))
+                ->latest()
+                ->paginate(10)
+                ->withQueryString(),
         ]);
     }
 
@@ -38,13 +44,20 @@ class PortfoliosController extends Controller
 
     public function update(Request $request, Portfolio $portfolio): RedirectResponse
     {
+        $oldImage = $portfolio->image;
         $portfolio->update($this->validated($request, $portfolio));
+        if ($oldImage && $oldImage !== $portfolio->image) {
+            Storage::disk('public')->delete($oldImage);
+        }
 
         return to_route('admin.portfolios.index');
     }
 
     public function destroy(Portfolio $portfolio): RedirectResponse
     {
+        if ($portfolio->image) {
+            Storage::disk('public')->delete($portfolio->image);
+        }
         $portfolio->delete();
 
         return back();

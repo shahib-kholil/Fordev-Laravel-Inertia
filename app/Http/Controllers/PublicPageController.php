@@ -27,6 +27,13 @@ class PublicPageController extends Controller
         ]);
     }
 
+    public function webService(WebService $webService): Response
+    {
+        abort_unless($webService->is_active, 404);
+
+        return Inertia::render('public/web-service-detail', ['webService' => $webService]);
+    }
+
     public function domains(): Response
     {
         return Inertia::render('public/domains', [
@@ -39,5 +46,10 @@ class PublicPageController extends Controller
         return Inertia::render('public/portfolios', [
             'portfolios' => Portfolio::query()->orderBy('order_position')->paginate(12),
         ]);
+    }
+
+    public function portfolio(Portfolio $portfolio): Response
+    {
+        return Inertia::render('public/portfolio-detail', ['portfolio' => $portfolio]);
     }
 }
