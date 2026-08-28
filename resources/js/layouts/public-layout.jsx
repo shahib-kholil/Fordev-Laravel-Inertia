@@ -1,0 +1,6 @@
+import { Head, Link, usePage } from '@inertiajs/react';
+
+export default function PublicLayout({ title, description, children }) {
+    const { publicSettings = {} } = usePage().props;
+    return <><Head title={title}><meta name="description" content={description ?? 'ForDev jasa pembuatan website dan domain.'} /></Head><div className="min-h-screen bg-background text-foreground"><header className="border-b"><nav className="mx-auto flex max-w-6xl items-center justify-between p-4"><Link href="/" className="text-lg font-semibold">ForDev</Link><div className="flex gap-4 text-sm"><Link href="/jasa-web">Jasa Web</Link><Link href="/domain">Domain</Link><Link href="/portofolio">Portofolio</Link><Link href="/cek-status-pesanan">Cek Status</Link><Link href="/order" className="font-medium">Order</Link></div></nav></header><main>{children}</main><footer className="border-t"><div className="mx-auto grid max-w-6xl gap-2 p-6 text-sm text-muted-foreground md:grid-cols-3"><div><b className="text-foreground">ForDev</b><p>Website cepat, rapi, siap jualan.</p></div><p>{publicSettings.contact_email}</p><p>{publicSettings.contact_whatsapp}<br />{publicSettings.contact_address}</p></div></footer></div></>;
+}
