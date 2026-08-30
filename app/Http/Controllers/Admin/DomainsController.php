@@ -17,7 +17,8 @@ class DomainsController extends Controller
             'filters' => ['q' => $request->query('q')],
             'domains' => Domain::query()
                 ->when($request->query('q'), fn ($query, $q) => $query->where('extension', 'like', "%{$q}%"))
-                ->latest()
+                ->orderBy('order_position')
+                ->orderBy('id')
                 ->paginate(10)
                 ->withQueryString(),
         ]);
@@ -56,11 +57,30 @@ class DomainsController extends Controller
         return back();
     }
 
+    public function reorder(Request $request): RedirectResponse
+    {
+        $data = $request->validate([
+            'ids' => ['required', 'array'],
+            'ids.*' => ['integer', 'exists:domains,id'],
+        ]);
+
+        foreach ($data['ids'] as $index => $id) {
+            Domain::query()->whereKey($id)->update(['order_position' => $index + 1]);
+        }
+
+        return back();
+    }
+
     private function validated(Request $request, ?Domain $domain = null): array
     {
         $data = $request->validate([
             'extension' => ['required', 'string', 'max:20', 'unique:domains,extension,'.($domain?->id ?? 'NULL')],
             'price' => ['required', 'integer', 'min:0'],
+            'promo_price' => ['nullable', 'integer', 'min:0'],
+            'renewal_price' => ['nullable', 'integer', 'min:0'],
+            'transfer_price' => ['nullable', 'integer', 'min:0'],
+            'category' => ['required', 'string', 'max:50'],
+            'badge' => ['nullable', 'string', 'max:50'],
             'is_available' => ['nullable', 'boolean'],
         ]);
 

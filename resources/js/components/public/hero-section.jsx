@@ -3,7 +3,8 @@ import { ArrowRight, Mail } from 'lucide-react';
 import { IconCloud } from '@/components/public/icon-cloud';
 import { Button } from '@/components/ui/button';
 import { siteConfig } from '@/config/public-site';
-import GradientWaves from '@/components/public/bg-hero';
+import LightRays from '@/components/public/bg-hero';
+import ShinyText from '@/components/public/Font-Hero';
 
 const techIcons = [
     'https://cdn.jsdelivr.net/gh/devicons/devicon/icons/react/react-original.svg',
@@ -22,57 +23,73 @@ const techIcons = [
 
 export default function HeroSection() {
     return (
-        <section className="relative isolate mx-auto px-6 md:px-12 pb-14 pt-28 md:pt-0">
-            <div className="pointer-events-none absolute inset-x-0 top-0 z-0 h-[100vh] min-h-[32rem] w-full overflow-hidden bg-[radial-gradient(circle_at_top,_rgba(95,127,255,0.38),_rgba(149,181,255,0.18)_38%,_rgba(255,255,255,0)_70%)]">
-                <div className="h-full w-full" style={{ filter: 'drop-shadow(0 0 28px rgba(95, 127, 255, 0.2))' }}>
-                    <GradientWaves
-                        horizonColor="#5F7FFF"
-                        waveColor="#E6F0FF"
-                        crestColor="#FFFFFF"
-                        speed={0.38}
-                        amplitude={2.2}
-                        waveScale={0.58}
-                        waveRatio={0.9}
-                        swell={30}
-                        turbulence={18}
-                        tilt={1.08}
-                        zoom={1.05}
-                        height={5.4}
-                        fogDepth={15}
-                        detail="medium"
-                        brightness={0.98}
-                        opacity={0.96}
-                        mouseInteraction
-                        parallaxStrength={0.45}
-                        grain
-                        grainIntensity={0.04}
+        <section className="relative isolate mx-auto overflow-hidden bg-white px-6 pt-28 pb-14 md:px-12 md:pt-0 dark:bg-background">
+            <div className="pointer-events-none absolute inset-x-0 top-0 z-0 h-[100vh] min-h-[32rem] opacity-45 dark:opacity-100">
+                <div className="z-0 h-full w-full">
+                    <LightRays
+                        raysOrigin="top-center"
+                        raysColor="#7ca7ff"
+                        raysSpeed={1}
+                        lightSpread={0.5}
+                        rayLength={3}
+                        followMouse={true}
+                        mouseInfluence={0.1}
+                        noiseAmount={0}
+                        distortion={0}
+                        className="custom-rays"
+                        pulsating={false}
+                        fadeDistance={1}
+                        saturation={1}
                     />
                 </div>
             </div>
 
-            <div className="relative z-10 min-h-[calc(100vh-5rem)] md:min-h-[42rem] md:grid md:grid-cols-[minmax(0,1fr)_auto] md:items-center md:gap-6">
+            <div className="relative z-10 min-h-[calc(100vh-5rem)] md:grid md:min-h-[42rem] md:grid-cols-[minmax(0,1fr)_auto] md:items-center md:gap-6">
                 <div className="relative z-10 flex flex-col gap-6 md:max-w-[40rem]">
                     <div className="flex flex-col gap-4">
-                        <h1 className="max-w-[10ch] text-balance font-heading text-5xl font-semibold tracking-tight sm:text-6xl lg:text-7xl">
-                            {siteConfig.hero.title}
-                        </h1>
+                        <ShinyText
+                            text={siteConfig.hero.title}
+                            speed={2}
+                            delay={0}
+                            lightColor="#1a49d5"
+                            darkColor="#e2e8f0"
+                            lightShineColor="#dfe7ff"
+                            darkShineColor="#3a79ee"
+                            spread={120}
+                            direction="left"
+                            yoyo={false}
+                            pauseOnHover={true}
+                            disabled={false}
+                            className="block max-w-[10ch] font-heading text-5xl font-semibold tracking-tight sm:text-6xl lg:text-7xl"
+                        />
                         <p className="max-w-xl text-base leading-7 text-muted-foreground sm:text-lg">
                             {siteConfig.hero.description}
                         </p>
                     </div>
                     <div className="flex flex-col gap-3 sm:flex-row">
                         <Button size="lg" asChild>
-                            <Link href="/order" className=""><Mail data-icon="inline-start" />Contact</Link>
+                            <Link href="/order" className="">
+                                <Mail data-icon="inline-start" />
+                                Contact
+                            </Link>
                         </Button>
                         <Button size="lg" variant="outline" asChild>
-                            <Link href="/portofolio">View My Work <ArrowRight data-icon="inline-end" /></Link>
+                            <Link href="/portofolio">
+                                View My Work{' '}
+                                <ArrowRight data-icon="inline-end" />
+                            </Link>
                         </Button>
                     </div>
                 </div>
 
-                <div className="pointer-events-none absolute right-0 top-24 z-20 w-[8rem] sm:w-[10rem] md:pointer-events-auto md:static md:w-[14rem] lg:w-[18rem]">
+                <div className="pointer-events-none absolute top-24 right-0 z-30 w-[8rem] sm:w-[10rem] md:pointer-events-auto md:static md:w-[18rem] lg:w-[22rem] xl:w-[26rem]">
                     <div className="relative -mr-2 md:mr-0 md:translate-x-0 lg:-translate-x-2">
-                        <IconCloud images={techIcons} showControl={false} />
+                        <IconCloud
+                            images={techIcons}
+                            showControl={false}
+                            className="w-full"
+                            canvasClassName="max-h-[22rem] md:max-h-[28rem] lg:max-h-[30rem]"
+                        />
                     </div>
                 </div>
             </div>

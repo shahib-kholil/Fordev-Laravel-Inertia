@@ -1,4 +1,44 @@
 import { Link } from '@inertiajs/react';
 import PublicLayout from '@/layouts/public-layout';
 import Pagination from '@/components/pagination';
-export default function Portfolios({ portfolios }) { return <PublicLayout title="Galeri Portofolio"><div className="mx-auto max-w-6xl px-4 py-12"><h1 className="mb-6 text-3xl font-semibold">Galeri Portofolio</h1><div className="grid gap-4 md:grid-cols-3">{portfolios.data.map((item) => <article key={item.id} className="rounded-xl border p-5"><h2 className="font-semibold"><Link href={`/portofolio/${item.slug}`}>{item.title}</Link></h2><p className="text-sm text-muted-foreground">{item.category}</p><p className="mt-3 text-sm">{item.description}</p>{item.project_url && <a href={item.project_url} className="mt-3 inline-block text-sm underline">Lihat proyek</a>}</article>)}</div><div className="mt-6"><Pagination links={portfolios.links} /></div></div></PublicLayout>; }
+
+export default function Portfolios({ portfolios }) {
+    return (
+        <PublicLayout title="Galeri Portofolio">
+            <div className="mx-auto max-w-6xl px-4 py-12">
+                <h1 className="mb-6 text-3xl font-semibold">
+                    Galeri Portofolio
+                </h1>
+                <div className="grid gap-4 md:grid-cols-3">
+                    {portfolios.data.map((item) => (
+                        <article
+                            key={item.id}
+                            className="rounded-xl border p-5"
+                        >
+                            <h2 className="font-semibold">
+                                <Link href={`/portofolio/${item.slug}`}>
+                                    {item.title}
+                                </Link>
+                            </h2>
+                            <p className="text-sm text-muted-foreground">
+                                {item.category}
+                            </p>
+                            <p className="mt-3 text-sm">{item.description}</p>
+                            {item.project_url && (
+                                <a
+                                    href={item.project_url}
+                                    className="mt-3 inline-block text-sm underline"
+                                >
+                                    Lihat proyek
+                                </a>
+                            )}
+                        </article>
+                    ))}
+                </div>
+                <div className="mt-6">
+                    <Pagination links={portfolios.links} />
+                </div>
+            </div>
+        </PublicLayout>
+    );
+}

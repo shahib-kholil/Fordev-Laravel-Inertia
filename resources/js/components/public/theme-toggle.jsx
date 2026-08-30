@@ -27,7 +27,12 @@ export default function ThemeToggle() {
     }
 
     return (
-        <Button variant="outline" size="icon" onClick={toggle} aria-label="Ganti tema">
+        <Button
+            variant="outline"
+            size="icon"
+            onClick={toggle}
+            aria-label="Ganti tema"
+        >
             {dark ? <Sun /> : <Moon />}
         </Button>
     );

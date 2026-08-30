@@ -6,7 +6,12 @@ function easeOutCubic(t) {
     return 1 - Math.pow(1 - t, 3);
 }
 
-export function IconCloud({ images = [], showControl = true }) {
+export function IconCloud({
+    images = [],
+    showControl = true,
+    className = '',
+    canvasClassName = '',
+}) {
     const canvasRef = useRef(null);
     const [iconPositions, setIconPositions] = useState([]);
     const [isDragging, setIsDragging] = useState(false);
@@ -20,7 +25,9 @@ export function IconCloud({ images = [], showControl = true }) {
     const imagesLoadedRef = useRef([]);
 
     useEffect(() => {
-        const mediaQuery = window.matchMedia('(prefers-reduced-motion: reduce)');
+        const mediaQuery = window.matchMedia(
+            '(prefers-reduced-motion: reduce)',
+        );
         setIsPaused(mediaQuery.matches);
         const handleChange = (event) => setIsPaused(event.matches);
         mediaQuery.addEventListener('change', handleChange);
@@ -56,12 +63,19 @@ export function IconCloud({ images = [], showControl = true }) {
         const numIcons = images.length || 20;
         const offset = 2 / numIcons;
         const increment = Math.PI * (3 - Math.sqrt(5));
-        setIconPositions(Array.from({ length: numIcons }, (_, i) => {
-            const y = i * offset - 1 + offset / 2;
-            const r = Math.sqrt(1 - y * y);
-            const phi = i * increment;
-            return { x: Math.cos(phi) * r * 100, y: y * 100, z: Math.sin(phi) * r * 100, id: i };
-        }));
+        setIconPositions(
+            Array.from({ length: numIcons }, (_, i) => {
+                const y = i * offset - 1 + offset / 2;
+                const r = Math.sqrt(1 - y * y);
+                const phi = i * increment;
+                return {
+                    x: Math.cos(phi) * r * 100,
+                    y: y * 100,
+                    z: Math.sin(phi) * r * 100,
+                    id: i,
+                };
+            }),
+        );
     }, [images.length]);
 
     function handleMouseDown(event) {
@@ -83,12 +97,24 @@ export function IconCloud({ images = [], showControl = true }) {
             const radius = 20 * ((rotatedZ + 200) / 300);
 
             if ((x - screenX) ** 2 + (y - screenY) ** 2 < radius ** 2) {
-                const targetX = -Math.atan2(icon.y, Math.sqrt(icon.x * icon.x + icon.z * icon.z));
+                const targetX = -Math.atan2(
+                    icon.y,
+                    Math.sqrt(icon.x * icon.x + icon.z * icon.z),
+                );
                 const targetY = Math.atan2(icon.x, icon.z);
                 const currentX = rotationRef.current.x;
                 const currentY = rotationRef.current.y;
-                const distance = Math.sqrt((targetX - currentX) ** 2 + (targetY - currentY) ** 2);
-                setTargetRotation({ x: targetX, y: targetY, startX: currentX, startY: currentY, startTime: performance.now(), duration: Math.min(2000, Math.max(800, distance * 1000)) });
+                const distance = Math.sqrt(
+                    (targetX - currentX) ** 2 + (targetY - currentY) ** 2,
+                );
+                setTargetRotation({
+                    x: targetX,
+                    y: targetY,
+                    startX: currentX,
+                    startY: currentY,
+                    startTime: performance.now(),
+                    duration: Math.min(2000, Math.max(800, distance * 1000)),
+                });
             }
         });
 
@@ -98,7 +124,11 @@ export function IconCloud({ images = [], showControl = true }) {
 
     function handleMouseMove(event) {
         const rect = canvasRef.current?.getBoundingClientRect();
-        if (rect) setMousePos({ x: event.clientX - rect.left, y: event.clientY - rect.top });
+        if (rect)
+            setMousePos({
+                x: event.clientX - rect.left,
+                y: event.clientY - rect.top,
+            });
         if (!isDragging) return;
 
         rotationRef.current = {
@@ -117,17 +147,28 @@ export function IconCloud({ images = [], showControl = true }) {
             ctx.clearRect(0, 0, canvas.width, canvas.height);
             const centerX = canvas.width / 2;
             const centerY = canvas.height / 2;
-            const maxDistance = Math.sqrt(centerX * centerX + centerY * centerY);
+            const maxDistance = Math.sqrt(
+                centerX * centerX + centerY * centerY,
+            );
             const dx = mousePos.x - centerX;
             const dy = mousePos.y - centerY;
-            const speed = 0.003 + (Math.sqrt(dx * dx + dy * dy) / maxDistance) * 0.01;
+            const speed =
+                0.003 + (Math.sqrt(dx * dx + dy * dy) / maxDistance) * 0.01;
 
             if (targetRotation) {
-                const progress = Math.min(1, (performance.now() - targetRotation.startTime) / targetRotation.duration);
+                const progress = Math.min(
+                    1,
+                    (performance.now() - targetRotation.startTime) /
+                        targetRotation.duration,
+                );
                 const eased = easeOutCubic(progress);
                 rotationRef.current = {
-                    x: targetRotation.startX + (targetRotation.x - targetRotation.startX) * eased,
-                    y: targetRotation.startY + (targetRotation.y - targetRotation.startY) * eased,
+                    x:
+                        targetRotation.startX +
+                        (targetRotation.x - targetRotation.startX) * eased,
+                    y:
+                        targetRotation.startY +
+                        (targetRotation.y - targetRotation.startY) * eased,
                 };
                 if (progress >= 1) setTargetRotation(null);
             } else if (!isDragging && !isPaused) {
@@ -146,19 +187,35 @@ export function IconCloud({ images = [], showControl = true }) {
                 const rotatedZ = icon.x * sinY + icon.z * cosY;
                 const rotatedY = icon.y * cosX + rotatedZ * sinX;
                 const scale = (rotatedZ + 200) / 300;
-                const opacity = Math.max(0.2, Math.min(1, (rotatedZ + 150) / 200));
+                const opacity = Math.max(
+                    0.2,
+                    Math.min(1, (rotatedZ + 150) / 200),
+                );
 
                 ctx.save();
-                ctx.translate(canvas.width / 2 + rotatedX, canvas.height / 2 + rotatedY);
+                ctx.translate(
+                    canvas.width / 2 + rotatedX,
+                    canvas.height / 2 + rotatedY,
+                );
                 ctx.scale(scale, scale);
                 ctx.globalAlpha = opacity;
-                if (iconCanvasesRef.current[index] && imagesLoadedRef.current[index]) {
-                    ctx.drawImage(iconCanvasesRef.current[index], -20, -20, 40, 40);
+                if (
+                    iconCanvasesRef.current[index] &&
+                    imagesLoadedRef.current[index]
+                ) {
+                    ctx.drawImage(
+                        iconCanvasesRef.current[index],
+                        -20,
+                        -20,
+                        40,
+                        40,
+                    );
                 }
                 ctx.restore();
             });
 
-            const hasPendingAssets = images.length > 0 && !imagesLoadedRef.current.every(Boolean);
+            const hasPendingAssets =
+                images.length > 0 && !imagesLoadedRef.current.every(Boolean);
             if (!isPaused || isDragging || targetRotation || hasPendingAssets) {
                 animationFrameRef.current = requestAnimationFrame(animate);
             }
@@ -166,10 +223,17 @@ export function IconCloud({ images = [], showControl = true }) {
 
         animate();
         return () => cancelAnimationFrame(animationFrameRef.current);
-    }, [images.length, iconPositions, isDragging, isPaused, mousePos, targetRotation]);
+    }, [
+        images.length,
+        iconPositions,
+        isDragging,
+        isPaused,
+        mousePos,
+        targetRotation,
+    ]);
 
     return (
-        <div className="relative inline-block">
+        <div className={`relative inline-block ${className}`.trim()}>
             <canvas
                 ref={canvasRef}
                 width={400}
@@ -178,12 +242,23 @@ export function IconCloud({ images = [], showControl = true }) {
                 onMouseMove={handleMouseMove}
                 onMouseUp={() => setIsDragging(false)}
                 onMouseLeave={() => setIsDragging(false)}
-                className="size-full max-h-[22rem] max-w-[22rem] rounded-3xl"
+                className={`w-full rounded-3xl ${canvasClassName}`.trim()}
+                style={{
+                    aspectRatio: '1 / 1',
+                    maxHeight: '100%',
+                    maxWidth: '100%',
+                }}
                 aria-label="Interactive 3D Icon Cloud"
                 role="img"
             />
             {showControl && (
-                <Button variant="outline" size="icon" onClick={() => setIsPaused(!isPaused)} aria-label={isPaused ? 'Play Animation' : 'Pause Animation'} className="absolute right-2 top-2">
+                <Button
+                    variant="outline"
+                    size="icon"
+                    onClick={() => setIsPaused(!isPaused)}
+                    aria-label={isPaused ? 'Play Animation' : 'Pause Animation'}
+                    className="absolute top-2 right-2"
+                >
                     {isPaused ? <Play /> : <Pause />}
                 </Button>
             )}

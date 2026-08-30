@@ -20,7 +20,7 @@ return new class extends Migration
             $table->foreignId('domain_id')->nullable()->constrained()->nullOnDelete();
             $table->string('domain_name')->nullable();
             $table->unsignedInteger('domain_price_snapshot')->nullable();
-            $table->enum('status', ['pending', 'processing', 'completed', 'cancelled'])->default('pending')->index();
+            $table->string('status')->default('pending_confirmation')->index();
             $table->text('notes')->nullable();
             $table->text('admin_notes')->nullable();
             $table->timestamps();

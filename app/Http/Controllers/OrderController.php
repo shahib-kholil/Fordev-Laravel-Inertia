@@ -7,6 +7,7 @@ use App\Models\Order;
 use App\Models\Setting;
 use App\Models\WebService;
 use App\Notifications\NewOrderNotification;
+use App\Services\LiquidDomainClient;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Notification;
@@ -22,10 +23,15 @@ class OrderController extends Controller
         return Inertia::render('public/order-form', [
             'webServices' => WebService::query()->where('is_active', true)->get(),
             'domains' => Domain::query()->where('is_available', true)->get(),
+            'defaults' => [
+                'order_type' => request('type', 'website'),
+                'domain_id' => request('domain_id', ''),
+                'domain_name' => request('domain_name', ''),
+            ],
         ]);
     }
 
-    public function store(Request $request): RedirectResponse
+    public function store(Request $request, LiquidDomainClient $liquid): RedirectResponse
     {
         abort_if($request->filled('website_url'), 422);
 
@@ -43,11 +49,20 @@ class OrderController extends Controller
         $webService = isset($data['web_service_id']) ? WebService::find($data['web_service_id']) : null;
         $domain = isset($data['domain_id']) ? Domain::find($data['domain_id']) : null;
 
+        if ($domain && in_array($data['order_type'], ['domain', 'both'], true)) {
+            $available = $liquid->available($data['domain_name'], $domain->extension);
+
+            if ($available === false) {
+                return back()->withErrors(['domain_name' => 'Domain ini tidak tersedia di Liqu.id.'])->withInput();
+            }
+        }
+
         $order = Order::query()->create([
             ...$data,
             'order_number' => 'FRD-'.now()->format('Ymd').'-'.Str::upper(Str::random(4)),
             'web_service_price_snapshot' => $webService?->price,
             'domain_price_snapshot' => $domain?->price,
+            'status' => 'pending_confirmation',
         ]);
 
         $email = Setting::query()->where('key', 'contact_email')->value('value');

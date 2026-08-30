@@ -11,10 +11,23 @@ use Inertia\Response;
 
 class SettingsController extends Controller
 {
+    public static function defaultPackageCards(): array
+    {
+        return [
+            ['label' => 'Penawaran spesial', 'title' => 'Promo', 'description' => 'Lihat promo terbaru untuk mulai online dengan biaya lebih hemat.', 'href' => '/jasa-web'],
+            ['label' => 'Siap dikembangkan', 'title' => 'Jasa Website', 'description' => 'Website profesional yang cepat, responsif, dan mudah dikelola.', 'href' => '/jasa-web'],
+            ['label' => 'Nama untuk bisnismu', 'title' => 'Domain', 'description' => 'Cari domain yang ringkas dan tepat untuk brand atau bisnismu.', 'href' => '/domain'],
+            ['label' => 'Paket lengkap', 'title' => 'Website + Gratis Domain', 'description' => 'Mulai website sekaligus dapatkan domain gratis dalam satu paket.', 'href' => '/jasa-web'],
+        ];
+    }
+
     public function edit(): Response
     {
+        $settings = Setting::query()->pluck('value', 'key');
+
         return Inertia::render('admin/settings/edit', [
-            'settings' => Setting::query()->pluck('value', 'key'),
+            'settings' => $settings,
+            'packageCards' => json_decode($settings['home_package_cards'] ?? '[]', true) ?: self::defaultPackageCards(),
         ]);
     }
 
@@ -25,7 +38,15 @@ class SettingsController extends Controller
             'contact_whatsapp' => ['nullable', 'string', 'max:30'],
             'contact_address' => ['nullable', 'string', 'max:500'],
             'social_instagram' => ['nullable', 'url', 'max:255'],
+            'package_cards' => ['required', 'array', 'size:4'],
+            'package_cards.*.label' => ['required', 'string', 'max:60'],
+            'package_cards.*.title' => ['required', 'string', 'max:80'],
+            'package_cards.*.description' => ['required', 'string', 'max:240'],
+            'package_cards.*.href' => ['required', 'string', 'max:255', 'starts_with:/'],
         ]);
+
+        $data['home_package_cards'] = json_encode($data['package_cards']);
+        unset($data['package_cards']);
 
         foreach ($data as $key => $value) {
             Setting::query()->updateOrCreate(['key' => $key], ['value' => $value]);

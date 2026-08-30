@@ -27,7 +27,7 @@ class OrderFactory extends Factory
             'domain_id' => $domain?->id,
             'domain_name' => fake()->domainWord(),
             'domain_price_snapshot' => $domain?->price,
-            'status' => fake()->randomElement(['pending', 'processing', 'completed', 'cancelled']),
+            'status' => fake()->randomElement(['pending_confirmation', 'pending_payment', 'paid', 'active', 'cancelled']),
             'notes' => fake()->sentence(),
             'admin_notes' => null,
         ];

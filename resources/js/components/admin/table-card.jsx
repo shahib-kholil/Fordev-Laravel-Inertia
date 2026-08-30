@@ -7,7 +7,9 @@ export function AdminTableCard({ toolbar, children, pagination }) {
             <CardContent className="overflow-x-auto px-0">
                 {children}
             </CardContent>
-            {pagination && <div className="border-t px-4 py-3">{pagination}</div>}
+            {pagination && (
+                <div className="border-t px-4 py-3">{pagination}</div>
+            )}
         </Card>
     );
 }

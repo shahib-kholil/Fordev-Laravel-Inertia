@@ -6,7 +6,11 @@ use App\Models\Domain;
 use App\Models\Order;
 use App\Models\User;
 use App\Models\WebService;
+use App\Notifications\OrderActiveNotification;
+use App\Notifications\OrderPendingPaymentNotification;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Notification;
 use Tests\TestCase;
 
@@ -26,6 +30,7 @@ class FordevFlowTest extends TestCase
 
     public function test_order_submission_creates_price_snapshots(): void
     {
+        Http::fake(['*' => Http::response([])]);
         Notification::fake();
 
         $webService = WebService::factory()->create(['price' => 2500000]);
@@ -45,7 +50,174 @@ class FordevFlowTest extends TestCase
             'client_email' => 'budi@example.com',
             'web_service_price_snapshot' => 2500000,
             'domain_price_snapshot' => 185000,
+            'status' => 'pending_confirmation',
         ]);
+    }
+
+    public function test_domain_order_rejects_unavailable_liquid_domain(): void
+    {
+        config([
+            'services.liquid.reseller_id' => 'demo',
+            'services.liquid.api_key' => 'secret',
+        ]);
+
+        Http::fake([
+            'api.liqu.id/v1/domains*' => Http::response([['domain_name' => 'tokoku.com']]),
+        ]);
+
+        $domain = Domain::factory()->create(['extension' => '.com']);
+
+        $this->from('/order')->post('/order', [
+            'client_name' => 'Budi',
+            'client_email' => 'budi@example.com',
+            'client_phone' => '08123456789',
+            'order_type' => 'domain',
+            'domain_id' => $domain->id,
+            'domain_name' => 'tokoku',
+        ])->assertRedirect('/order')->assertSessionHasErrors('domain_name');
+
+        $this->assertDatabaseMissing(Order::class, ['client_email' => 'budi@example.com']);
+    }
+
+    public function test_domain_order_continues_when_liquid_domain_is_available(): void
+    {
+        config([
+            'services.liquid.reseller_id' => 'demo',
+            'services.liquid.api_key' => 'secret',
+        ]);
+
+        Http::fake([
+            'api.liqu.id/v1/domains*' => Http::response([]),
+        ]);
+        Notification::fake();
+
+        $domain = Domain::factory()->create(['extension' => '.id', 'price' => 250000]);
+
+        $this->post('/order', [
+            'client_name' => 'Siti',
+            'client_email' => 'siti@example.com',
+            'client_phone' => '08123456789',
+            'order_type' => 'domain',
+            'domain_id' => $domain->id,
+            'domain_name' => 'tokoku',
+        ])->assertRedirect('/cek-status-pesanan');
+
+        $this->assertDatabaseHas(Order::class, [
+            'client_email' => 'siti@example.com',
+            'domain_name' => 'tokoku',
+            'domain_price_snapshot' => 250000,
+        ]);
+    }
+
+    public function test_public_domain_check_shows_available_result(): void
+    {
+        Cache::put('domain-check:tokoku.com', [
+            'domain' => 'tokoku.com',
+            'available' => true,
+            'status' => 'available',
+        ]);
+        Domain::factory()->create(['extension' => '.com']);
+
+        $this->get('/domain?name=tokoku&extension=.com')
+            ->assertOk()
+            ->assertInertia(fn ($page) => $page
+                ->where('check.domain', 'tokoku.com')
+                ->where('check.status', 'available'));
+    }
+
+    public function test_admin_can_approve_and_register_paid_domain_order(): void
+    {
+        config([
+            'services.liquid.reseller_id' => 'demo',
+            'services.liquid.api_key' => 'secret',
+        ]);
+        Http::fakeSequence()->push([])->push(['customer_id' => 'CUST-1'])->push(['domain_id' => 'DOM-1']);
+
+        $this->actingAs(User::factory()->create(['role' => 'super_admin']));
+        $domain = Domain::factory()->create(['extension' => '.com']);
+        $order = Order::factory()->create(['order_type' => 'domain', 'domain_id' => $domain->id, 'domain_name' => 'tokoku', 'status' => 'paid']);
+
+        $this->put("/admin/orders/{$order->id}", ['status' => 'paid', 'admin_notes' => null, 'action' => 'approve_register'])->assertRedirect();
+
+        $this->assertDatabaseHas(Order::class, ['id' => $order->id, 'status' => 'active', 'liquid_customer_id' => 'CUST-1', 'liquid_domain_id' => 'DOM-1']);
+    }
+
+    public function test_admin_register_reuses_user_liquid_customer_id(): void
+    {
+        config([
+            'services.liquid.reseller_id' => 'demo',
+            'services.liquid.api_key' => 'secret',
+        ]);
+        Http::fakeSequence()->push([])->push(['domain_id' => 'DOM-2']);
+        Notification::fake();
+
+        $user = User::factory()->create(['role' => 'super_admin', 'email' => 'siti@example.com', 'liquid_customer_id' => 'CUST-OLD']);
+        $this->actingAs($user);
+        $domain = Domain::factory()->create(['extension' => '.com']);
+        $order = Order::factory()->create(['client_email' => 'siti@example.com', 'order_type' => 'domain', 'domain_id' => $domain->id, 'domain_name' => 'tokoku', 'status' => 'paid']);
+
+        $this->put("/admin/orders/{$order->id}", ['status' => 'paid', 'admin_notes' => null, 'action' => 'approve_register'])->assertRedirect();
+
+        $this->assertDatabaseHas(Order::class, ['id' => $order->id, 'status' => 'active', 'liquid_customer_id' => 'CUST-OLD']);
+        Notification::assertSentOnDemand(OrderActiveNotification::class);
+    }
+
+    public function test_pending_payment_status_queues_customer_notification(): void
+    {
+        Notification::fake();
+
+        $this->actingAs(User::factory()->create(['role' => 'super_admin']));
+        $order = Order::factory()->create(['status' => 'pending_confirmation']);
+
+        $this->put("/admin/orders/{$order->id}", ['status' => 'pending_payment', 'admin_notes' => null])->assertRedirect();
+
+        Notification::assertSentOnDemand(OrderPendingPaymentNotification::class);
+    }
+
+    public function test_admin_can_reorder_domains(): void
+    {
+        $this->actingAs(User::factory()->create(['role' => 'super_admin']));
+        $first = Domain::factory()->create(['order_position' => 1]);
+        $second = Domain::factory()->create(['order_position' => 2]);
+
+        $this->put('/admin/domains/reorder', ['ids' => [$second->id, $first->id]])->assertRedirect();
+
+        $this->assertDatabaseHas(Domain::class, ['id' => $second->id, 'order_position' => 1]);
+        $this->assertDatabaseHas(Domain::class, ['id' => $first->id, 'order_position' => 2]);
+    }
+
+    public function test_admin_approve_marks_refund_needed_when_domain_is_taken(): void
+    {
+        config([
+            'services.liquid.reseller_id' => 'demo',
+            'services.liquid.api_key' => 'secret',
+        ]);
+        Http::fake(['api.liqu.id/v1/domains*' => Http::response([['domain_name' => 'tokoku.com']])]);
+
+        $this->actingAs(User::factory()->create(['role' => 'super_admin']));
+        $domain = Domain::factory()->create(['extension' => '.com']);
+        $order = Order::factory()->create(['order_type' => 'domain', 'domain_id' => $domain->id, 'domain_name' => 'tokoku', 'status' => 'paid']);
+
+        $this->put("/admin/orders/{$order->id}", ['status' => 'paid', 'admin_notes' => null, 'action' => 'approve_register'])->assertRedirect();
+
+        $this->assertDatabaseHas(Order::class, ['id' => $order->id, 'status' => 'refund_needed']);
+    }
+
+    public function test_admin_approve_marks_api_error_when_liquid_fails(): void
+    {
+        config([
+            'services.liquid.reseller_id' => 'demo',
+            'services.liquid.api_key' => 'secret',
+        ]);
+        Http::fakeSequence()->push([])->push(['message' => 'saldo kurang'], 402);
+
+        $this->actingAs(User::factory()->create(['role' => 'super_admin']));
+        $domain = Domain::factory()->create(['extension' => '.com']);
+        $order = Order::factory()->create(['order_type' => 'domain', 'domain_id' => $domain->id, 'domain_name' => 'tokoku', 'status' => 'paid']);
+
+        $this->put("/admin/orders/{$order->id}", ['status' => 'paid', 'admin_notes' => null, 'action' => 'approve_register'])->assertRedirect();
+
+        $this->assertDatabaseHas(Order::class, ['id' => $order->id, 'status' => 'api_error']);
     }
 
     public function test_admin_pages_are_reachable(): void

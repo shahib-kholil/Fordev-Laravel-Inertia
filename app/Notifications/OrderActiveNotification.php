@@ -8,7 +8,7 @@ use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notification;
 
-class NewOrderNotification extends Notification implements ShouldQueue
+class OrderActiveNotification extends Notification implements ShouldQueue
 {
     use Queueable;
 
@@ -22,10 +22,9 @@ class NewOrderNotification extends Notification implements ShouldQueue
     public function toMail(object $notifiable): MailMessage
     {
         return (new MailMessage)
-            ->subject('Order baru '.$this->order->order_number)
-            ->line('Ada permintaan penawaran baru dari '.$this->order->client_name.'.')
-            ->line('Email: '.$this->order->client_email)
-            ->line('Tipe: '.$this->order->order_type)
-            ->action('Lihat Order', url('/admin/orders/'.$this->order->id));
+            ->subject('Domain aktif '.$this->order->order_number)
+            ->line('Pesanan domain Anda sudah aktif.')
+            ->line('Domain: '.$this->order->domain_name.($this->order->domain?->extension ?? ''))
+            ->action('Cek Status Pesanan', url('/cek-status-pesanan'));
     }
 }

@@ -53,11 +53,15 @@ class DatabaseSeeder extends Seeder
         ], ['slug'], ['name', 'description', 'price', 'features', 'image', 'is_active']);
 
         Domain::query()->upsert([
-            ['extension' => '.com', 'price' => 185000, 'is_available' => true],
-            ['extension' => '.id', 'price' => 250000, 'is_available' => true],
-            ['extension' => '.co.id', 'price' => 300000, 'is_available' => true],
-            ['extension' => '.web.id', 'price' => 75000, 'is_available' => true],
-        ], ['extension'], ['price', 'is_available']);
+            ['extension' => '.com', 'price' => 209900, 'promo_price' => 109900, 'renewal_price' => 209900, 'transfer_price' => 189900, 'category' => 'Populer', 'badge' => null, 'is_available' => true],
+            ['extension' => '.id', 'price' => 252900, 'promo_price' => 210900, 'renewal_price' => 252900, 'transfer_price' => 252900, 'category' => 'Populer', 'badge' => null, 'is_available' => true],
+            ['extension' => '.co.id', 'price' => 300000, 'promo_price' => null, 'renewal_price' => 300000, 'transfer_price' => 300000, 'category' => 'Bisnis', 'badge' => null, 'is_available' => true],
+            ['extension' => '.web.id', 'price' => 75000, 'promo_price' => null, 'renewal_price' => 75000, 'transfer_price' => 75000, 'category' => 'Pendidikan', 'badge' => null, 'is_available' => true],
+            ['extension' => '.online', 'price' => 626900, 'promo_price' => 17900, 'renewal_price' => 626900, 'transfer_price' => 626900, 'category' => 'Populer', 'badge' => 'Promo terbatas', 'is_available' => true],
+            ['extension' => '.tech', 'price' => 1113900, 'promo_price' => 121900, 'renewal_price' => 1113900, 'transfer_price' => 1113900, 'category' => 'Teknologi', 'badge' => 'Promo terbatas', 'is_available' => true],
+            ['extension' => '.org', 'price' => 312900, 'promo_price' => 156900, 'renewal_price' => 312900, 'transfer_price' => 312900, 'category' => 'Sosial', 'badge' => null, 'is_available' => true],
+            ['extension' => '.net', 'price' => 312900, 'promo_price' => 188900, 'renewal_price' => 312900, 'transfer_price' => 312900, 'category' => 'Internasional', 'badge' => null, 'is_available' => true],
+        ], ['extension'], ['price', 'promo_price', 'renewal_price', 'transfer_price', 'category', 'badge', 'is_available']);
 
         Portfolio::factory()->count(4)->create();
         Testimonial::factory()->count(4)->create();

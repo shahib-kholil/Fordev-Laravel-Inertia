@@ -35,4 +35,10 @@ return [
         ],
     ],
 
+    'liquid' => [
+        'base_url' => env('LIQUID_API_BASE_URL', 'https://api.liqu.id/v1'),
+        'reseller_id' => env('LIQUID_RESELLER_ID'),
+        'api_key' => env('LIQUID_API_KEY'),
+    ],
+
 ];
