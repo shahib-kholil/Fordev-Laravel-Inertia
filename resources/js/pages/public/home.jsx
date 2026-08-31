@@ -30,6 +30,16 @@ const techLogos = [
         href: 'https://react.dev',
     },
     {
+        src: 'https://cdn.jsdelivr.net/gh/devicons/devicon/icons/python/python-original.svg',
+        alt: 'Python',
+        href: 'https://www.python.org',
+    },
+    {
+        src: 'https://cdn.jsdelivr.net/gh/devicons/devicon/icons/django/django-plain.svg',
+        alt: 'Django',
+        href: 'https://www.djangoproject.com',
+    },
+    {
         src: 'https://cdn.jsdelivr.net/gh/devicons/devicon/icons/tailwindcss/tailwindcss-original.svg',
         alt: 'Tailwind CSS',
         href: 'https://tailwindcss.com',
