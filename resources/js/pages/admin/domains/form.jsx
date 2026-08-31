@@ -12,7 +12,7 @@ export default function DomainForm({ domain }) {
         promo_price: domain?.promo_price ?? '',
         renewal_price: domain?.renewal_price ?? '',
         transfer_price: domain?.transfer_price ?? '',
-        category: domain?.category ?? 'Populer',
+
         badge: domain?.badge ?? '',
         is_available: domain?.is_available ?? true,
     });
@@ -77,14 +77,7 @@ export default function DomainForm({ domain }) {
                         placeholder="Kosongkan jika tidak tersedia"
                     />
                 </Field>
-                <Field label="Kategori" error={errors.category}>
-                    <Input
-                        value={data.category}
-                        onChange={(e) => setData('category', e.target.value)}
-                        placeholder="Populer"
-                        required
-                    />
-                </Field>
+
                 <Field label="Badge" error={errors.badge}>
                     <Input
                         value={data.badge}

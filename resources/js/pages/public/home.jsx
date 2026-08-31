@@ -240,7 +240,7 @@ function TestimonialsSection({ testimonials }) {
     return (
         <Section title="Testimoni">
             <div className="overflow-hidden rounded-3xl border bg-muted/30 p-4 sm:p-6">
-                <blockquote className="text-xm mx-auto mb-8 flex min-h-28 max-w-3xl items-center justify-center text-center font-light tracking-tight sm:min-h-36 sm:text-3xl">
+                <blockquote className="text-xm mx-auto mb-8 flex min-h-28 max-w-3xl items-center justify-center text-center font-light tracking-tight sm:min-h-36 sm:text-xl">
                     “{testimonials[activeIndex]?.content}”
                 </blockquote>
                 <div className="mb-4 flex items-center justify-between sm:hidden">

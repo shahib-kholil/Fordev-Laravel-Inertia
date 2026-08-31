@@ -6,17 +6,6 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import PublicLayout from '@/layouts/public-layout';
 
-const categories = [
-    'Populer',
-    'Bisnis',
-    'Pendidikan',
-    'Internasional',
-    'Teknologi',
-    'Sosial',
-    'Profesional',
-    'Hiburan',
-    'Semua',
-];
 const cardClass = 'rounded-2xl border bg-card p-5 shadow-sm';
 
 export default function Domains({ domains, filters = {}, check }) {
@@ -35,9 +24,6 @@ export default function Domains({ domains, filters = {}, check }) {
         <PublicLayout title="Cek Domain">
             <div className="mx-auto max-w-6xl px-4 py-12">
                 <section className="rounded-3xl border bg-card p-5 shadow-sm sm:p-8">
-                    <p className="text-sm font-medium text-primary">
-                        Domain by Liqu.id
-                    </p>
                     <h1 className="mt-2 text-3xl font-semibold sm:text-4xl">
                         Cari nama domain impianmu
                     </h1>
@@ -66,7 +52,7 @@ export default function Domains({ domains, filters = {}, check }) {
                         />
                         <select
                             aria-label="Ekstensi domain"
-                            className="h-9 rounded-lg border bg-background px-2 text-sm"
+                            className="h-9 w-full rounded-lg border bg-background px-2 text-sm"
                             value={data.extension}
                             onChange={(e) =>
                                 setData('extension', e.target.value)
@@ -148,19 +134,6 @@ function DomainResults({ check, extensions }) {
                 <h3 className="text-xl font-semibold">
                     Pilihan domain lainnya
                 </h3>
-                <div className="mt-4 flex gap-2 overflow-x-auto pb-2">
-                    {categories.map((item) => (
-                        <Badge
-                            key={item}
-                            variant={
-                                item === 'Populer' ? 'default' : 'secondary'
-                            }
-                            className="shrink-0"
-                        >
-                            {item}
-                        </Badge>
-                    ))}
-                </div>
                 <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
                     {alternatives.map((option) => (
                         <AlternativeCard key={option.domain} option={option} />
@@ -172,25 +145,19 @@ function DomainResults({ check, extensions }) {
 }
 
 function ExtensionCatalog({ extensions }) {
-    const [category, setCategory] = useState('Semua');
     const [sort, setSort] = useState('admin');
     const rows = useMemo(
         () =>
-            extensions
-                .filter(
-                    (item) =>
-                        category === 'Semua' || item.category === category,
-                )
-                .sort((a, b) =>
-                    sort === 'cheapest'
-                        ? salePrice(a) - salePrice(b)
-                        : sort === 'highest'
-                          ? salePrice(b) - salePrice(a)
-                          : sort === 'az'
-                            ? a.extension.localeCompare(b.extension)
-                            : 0,
-                ),
-        [category, extensions, sort],
+            extensions.sort((a, b) =>
+                sort === 'cheapest'
+                    ? salePrice(a) - salePrice(b)
+                    : sort === 'highest'
+                      ? salePrice(b) - salePrice(a)
+                      : sort === 'az'
+                        ? a.extension.localeCompare(b.extension)
+                        : 0,
+            ),
+        [extensions, sort],
     );
 
     if (!extensions.length) return <EmptyExtensions />;
@@ -207,18 +174,6 @@ function ExtensionCatalog({ extensions }) {
                     </p>
                 </div>
                 <div className="flex gap-2">
-                    <select
-                        aria-label="Filter kategori"
-                        className="h-9 rounded-lg border bg-background px-2 text-sm"
-                        value={category}
-                        onChange={(e) => setCategory(e.target.value)}
-                    >
-                        {categories.map((item) => (
-                            <option key={item} value={item}>
-                                {item}
-                            </option>
-                        ))}
-                    </select>
                     <select
                         aria-label="Urutkan ekstensi"
                         className="h-9 rounded-lg border bg-background px-2 text-sm"
