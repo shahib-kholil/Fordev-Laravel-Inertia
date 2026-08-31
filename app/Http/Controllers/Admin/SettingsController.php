@@ -14,10 +14,10 @@ class SettingsController extends Controller
     public static function defaultPackageCards(): array
     {
         return [
-            ['label' => 'Penawaran spesial', 'title' => 'Promo', 'description' => 'Lihat promo terbaru untuk mulai online dengan biaya lebih hemat.', 'href' => '/jasa-web'],
-            ['label' => 'Siap dikembangkan', 'title' => 'Jasa Website', 'description' => 'Website profesional yang cepat, responsif, dan mudah dikelola.', 'href' => '/jasa-web'],
-            ['label' => 'Nama untuk bisnismu', 'title' => 'Domain', 'description' => 'Cari domain yang ringkas dan tepat untuk brand atau bisnismu.', 'href' => '/domain'],
-            ['label' => 'Paket lengkap', 'title' => 'Website + Gratis Domain', 'description' => 'Mulai website sekaligus dapatkan domain gratis dalam satu paket.', 'href' => '/jasa-web'],
+            ['label' => 'Penawaran spesial', 'title' => 'Promo', 'description' => 'Lihat promo terbaru.', 'details' => 'Dapatkan penawaran terbaik untuk mulai online dengan biaya lebih hemat.', 'href' => '/jasa-web'],
+            ['label' => 'Siap dikembangkan', 'title' => 'Jasa Website', 'description' => 'Website profesional.', 'details' => 'Website cepat, responsif, mudah dikelola, dan siap dikembangkan sesuai kebutuhan.', 'href' => '/jasa-web'],
+            ['label' => 'Nama untuk bisnismu', 'title' => 'Domain', 'description' => 'Cari domain untuk brand.', 'details' => 'Pilih ekstensi seperti .com, .id, .co.id, dan lainnya untuk brand atau bisnismu.', 'href' => '/domain'],
+            ['label' => 'Paket lengkap', 'title' => 'Website + Gratis Domain', 'description' => 'Website sekaligus domain.', 'details' => 'Gratis domain .com, .id, atau ekstensi pilihan lainnya dalam satu paket website.', 'href' => '/jasa-web'],
         ];
     }
 
@@ -42,6 +42,7 @@ class SettingsController extends Controller
             'package_cards.*.label' => ['required', 'string', 'max:60'],
             'package_cards.*.title' => ['required', 'string', 'max:80'],
             'package_cards.*.description' => ['required', 'string', 'max:240'],
+            'package_cards.*.details' => ['nullable', 'string', 'max:500'],
             'package_cards.*.href' => ['required', 'string', 'max:255', 'starts_with:/'],
         ]);
 

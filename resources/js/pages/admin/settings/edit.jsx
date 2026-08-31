@@ -91,6 +91,11 @@ export default function SettingsEdit({ settings, packageCards }) {
                                 >
                                     <Input
                                         value={card[field]}
+                                        maxLength={
+                                            { title: 80, label: 60, href: 255 }[
+                                                field
+                                            ]
+                                        }
                                         onChange={(e) =>
                                             setData(
                                                 'package_cards',
@@ -118,6 +123,7 @@ export default function SettingsEdit({ settings, packageCards }) {
                             >
                                 <textarea
                                     className="min-h-20 w-full rounded-lg border bg-transparent p-2 text-sm"
+                                    maxLength={240}
                                     value={card.description}
                                     onChange={(e) =>
                                         setData(
@@ -128,6 +134,33 @@ export default function SettingsEdit({ settings, packageCards }) {
                                                         ? {
                                                               ...item,
                                                               description:
+                                                                  e.target
+                                                                      .value,
+                                                          }
+                                                        : item,
+                                            ),
+                                        )
+                                    }
+                                />
+                            </Field>
+                            <Field
+                                label="Keterangan saat diperbesar"
+                                error={errors[`package_cards.${index}.details`]}
+                            >
+                                <textarea
+                                    className="min-h-24 w-full rounded-lg border bg-transparent p-2 text-sm"
+                                    placeholder="Contoh: Gratis domain .com, .id, atau ekstensi lainnya."
+                                    maxLength={500}
+                                    value={card.details ?? ''}
+                                    onChange={(e) =>
+                                        setData(
+                                            'package_cards',
+                                            data.package_cards.map(
+                                                (item, itemIndex) =>
+                                                    itemIndex === index
+                                                        ? {
+                                                              ...item,
+                                                              details:
                                                                   e.target
                                                                       .value,
                                                           }

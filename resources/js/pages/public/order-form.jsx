@@ -47,7 +47,9 @@ export default function OrderForm({ webServices, domains, defaults = {} }) {
                         type="email"
                         placeholder="nama@email.com"
                         value={data.client_email}
-                        onChange={(e) => setData('client_email', e.target.value)}
+                        onChange={(e) =>
+                            setData('client_email', e.target.value)
+                        }
                         required
                     />
                 </Field>
@@ -55,7 +57,9 @@ export default function OrderForm({ webServices, domains, defaults = {} }) {
                     <Input
                         placeholder="08123456789"
                         value={data.client_phone}
-                        onChange={(e) => setData('client_phone', e.target.value)}
+                        onChange={(e) =>
+                            setData('client_phone', e.target.value)
+                        }
                         required
                     />
                 </Field>
@@ -91,7 +95,10 @@ export default function OrderForm({ webServices, domains, defaults = {} }) {
                 {needsDomain && (
                     <div className="grid gap-4">
                         <div className="grid gap-4 sm:grid-cols-[1fr_11rem]">
-                            <Field label="Nama domain" error={errors.domain_name}>
+                            <Field
+                                label="Nama domain"
+                                error={errors.domain_name}
+                            >
                                 <Input
                                     placeholder="tokoku"
                                     value={data.domain_name}

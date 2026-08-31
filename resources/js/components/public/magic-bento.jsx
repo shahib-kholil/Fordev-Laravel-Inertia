@@ -1,4 +1,3 @@
-import { ArrowUpRight } from 'lucide-react';
 import { useState } from 'react';
 
 export default function MagicBento({ cards }) {
@@ -16,25 +15,23 @@ export default function MagicBento({ cards }) {
                         key={card.title}
                         onMouseEnter={() => setActiveIndex(index)}
                         onFocus={() => setActiveIndex(index)}
-                        onClick={() => setActiveIndex(index)}
+                        onClick={() => setActiveIndex(active ? null : index)}
+                        onKeyDown={(event) => {
+                            if (event.key === 'Enter' || event.key === ' ') {
+                                event.preventDefault();
+                                setActiveIndex(active ? null : index);
+                            }
+                        }}
+                        role="button"
+                        tabIndex={0}
                         className={`group relative flex min-h-36 cursor-pointer flex-col overflow-hidden rounded-3xl border p-5 transition-[flex,background-color,color,transform,box-shadow] duration-500 ease-out active:scale-[0.99] lg:min-w-0 lg:p-6 ${active ? 'bg-primary text-primary-foreground shadow-lg lg:flex-[2.2]' : 'bg-card text-card-foreground hover:bg-accent lg:flex-1'}`}
                     >
-                        <a
-                            href={card.href}
-                            className="absolute inset-0 z-20 rounded-3xl focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
-                            aria-label={`Buka ${card.title}`}
-                            onClick={(event) => {
-                                if (!active) event.preventDefault();
-                            }}
-                        />
-
                         <div className="relative z-10 flex items-start justify-between gap-3">
                             <span
                                 className={`max-w-full truncate rounded-full border px-2.5 py-1 text-xs font-medium transition-colors duration-300 ${active ? 'border-primary-foreground/30 bg-primary-foreground/10' : 'bg-muted text-muted-foreground'}`}
                             >
                                 {card.label}
                             </span>
-                            <ArrowUpRight className="size-5 shrink-0 transition-transform duration-300 group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
                         </div>
 
                         <div className="relative z-10 mt-auto pt-8">
@@ -44,7 +41,9 @@ export default function MagicBento({ cards }) {
                             <p
                                 className={`mt-2 max-w-xl text-sm leading-6 transition-[opacity,max-height] duration-500 ${active ? 'max-h-24 opacity-80' : 'max-h-0 overflow-hidden opacity-0 lg:max-h-24 lg:opacity-70'}`}
                             >
-                                {card.description}
+                                {active
+                                    ? card.details || card.description
+                                    : card.description}
                             </p>
                         </div>
 

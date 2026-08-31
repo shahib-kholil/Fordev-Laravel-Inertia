@@ -1,5 +1,6 @@
 import { Link } from '@inertiajs/react';
-import { ArrowUpRight } from 'lucide-react';
+import { ArrowLeft, ArrowRight, ArrowUpRight } from 'lucide-react';
+import { useState } from 'react';
 import HeroSection from '@/components/public/hero-section';
 import LogoLoop from '@/components/public/Logo-Loop';
 import { Badge } from '@/components/ui/badge';
@@ -80,9 +81,9 @@ export default function Home({
             <HeroSection />
             <PackagesSection packageCards={packageCards} />
             <ProjectsSection portfolios={portfolios} />
-            <SkillsSection />
-            <ServicesSection webServices={webServices} />
             <TestimonialsSection testimonials={testimonials} />
+            <ServicesSection webServices={webServices} />
+            <SkillsSection />
         </PublicLayout>
     );
 }
@@ -91,9 +92,6 @@ function PackagesSection({ packageCards }) {
     return (
         <section className="mx-auto w-full max-w-6xl px-4 py-8 sm:py-12">
             <div className="mx-auto mb-6 max-w-2xl text-center sm:mb-8">
-                <Badge variant="outline" className="mb-3">
-                    Solusi ForDev
-                </Badge>
                 <h2 className="font-heading text-3xl font-semibold tracking-tight sm:text-4xl">
                     Pilih yang kamu butuhkan
                 </h2>
@@ -125,7 +123,7 @@ function Section({ title, description, children }) {
 function ProjectsSection({ portfolios }) {
     return (
         <Section
-            title="Project yang sudah dikirim"
+            title="Portofolio Project"
             description="Dari website profil sampai landing page campaign, semuanya dibuat rapi dan mudah dikelola."
         >
             <div className="grid auto-rows-[16rem] gap-3 sm:grid-cols-2 lg:auto-rows-[19rem] lg:grid-cols-12">
@@ -233,22 +231,73 @@ function ServicesSection({ webServices }) {
 }
 
 function TestimonialsSection({ testimonials }) {
+    const [activeIndex, setActiveIndex] = useState(0);
+    const changeTestimonial = (offset) =>
+        setActiveIndex(
+            (activeIndex + offset + testimonials.length) % testimonials.length,
+        );
+
     return (
-        <Section title="Yang klien rasakan">
-            <div className="grid gap-4 md:grid-cols-3">
-                {testimonials.map((item) => (
-                    <Card key={item.id}>
-                        <CardHeader>
-                            <CardTitle>{item.client_name}</CardTitle>
-                            <CardDescription>
-                                {item.client_role}
-                            </CardDescription>
-                        </CardHeader>
-                        <CardContent className="text-sm text-muted-foreground">
-                            “{item.content}”
-                        </CardContent>
-                    </Card>
-                ))}
+        <Section title="Testimoni">
+            <div className="overflow-hidden rounded-3xl border bg-muted/30 p-4 sm:p-6">
+                <blockquote className="text-xm mx-auto mb-8 flex min-h-28 max-w-3xl items-center justify-center text-center font-light tracking-tight sm:min-h-36 sm:text-3xl">
+                    “{testimonials[activeIndex]?.content}”
+                </blockquote>
+                <div className="mb-4 flex items-center justify-between sm:hidden">
+                    <button
+                        type="button"
+                        onClick={() => changeTestimonial(-1)}
+                        className="grid size-10 place-items-center rounded-full border bg-card"
+                        aria-label="Testimoni sebelumnya"
+                    >
+                        <ArrowLeft className="size-4" />
+                    </button>
+                    <span className="text-xs text-muted-foreground">
+                        {activeIndex + 1} / {testimonials.length}
+                    </span>
+                    <button
+                        type="button"
+                        onClick={() => changeTestimonial(1)}
+                        className="grid size-10 place-items-center rounded-full border bg-card"
+                        aria-label="Testimoni berikutnya"
+                    >
+                        <ArrowRight className="size-4" />
+                    </button>
+                </div>
+                <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+                    {testimonials.map((item, index) => (
+                        <button
+                            key={item.id}
+                            type="button"
+                            onClick={() => setActiveIndex(index)}
+                            className={`group rounded-2xl border p-3 text-left transition-all ${activeIndex === index ? 'border-primary shadow-md' : 'hidden bg-card hover:border-primary/50 sm:block'}`}
+                        >
+                            <div className="aspect-[4/3] overflow-hidden rounded-xl bg-muted">
+                                {item.client_photo ? (
+                                    <img
+                                        src={`/storage/${item.client_photo}`}
+                                        alt={item.client_name}
+                                        className="size-full object-cover grayscale transition duration-500 group-hover:grayscale-0"
+                                    />
+                                ) : (
+                                    <div className="grid size-full place-items-center">
+                                        <span className="text-4xl text-muted-foreground">
+                                            “
+                                        </span>
+                                    </div>
+                                )}
+                            </div>
+                            <div className="mt-3 border-t pt-3">
+                                <p className="font-semibold">
+                                    {item.client_name}
+                                </p>
+                                <p className="text-sm text-muted-foreground">
+                                    {item.client_role}
+                                </p>
+                            </div>
+                        </button>
+                    ))}
+                </div>
             </div>
         </Section>
     );
