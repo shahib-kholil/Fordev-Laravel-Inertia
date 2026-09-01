@@ -38,9 +38,7 @@ export default function MagicBento({ cards }) {
                             <h3 className="text-xl font-semibold sm:text-2xl">
                                 {card.title}
                             </h3>
-                            <p
-                                className={`mt-2 max-w-xl text-sm leading-6 transition-[opacity,max-height] duration-500 ${active ? 'max-h-24 opacity-80' : 'max-h-0 overflow-hidden opacity-0 lg:max-h-24 lg:opacity-70'}`}
-                            >
+                            <p className="mt-2 max-h-24 max-w-xl text-sm leading-6 opacity-70 transition-[opacity,max-height] duration-500">
                                 {active
                                     ? card.details || card.description
                                     : card.description}

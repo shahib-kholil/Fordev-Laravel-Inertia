@@ -79,7 +79,6 @@ class DomainsController extends Controller
             'promo_price' => ['nullable', 'integer', 'min:0'],
             'renewal_price' => ['nullable', 'integer', 'min:0'],
             'transfer_price' => ['nullable', 'integer', 'min:0'],
-            'category' => ['required', 'string', 'max:50'],
             'badge' => ['nullable', 'string', 'max:50'],
             'is_available' => ['nullable', 'boolean'],
         ]);

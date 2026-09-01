@@ -7,7 +7,7 @@ use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
-#[Fillable(['extension', 'order_position', 'price', 'promo_price', 'renewal_price', 'transfer_price', 'category', 'badge', 'is_available'])]
+#[Fillable(['extension', 'order_position', 'price', 'promo_price', 'renewal_price', 'transfer_price', 'badge', 'is_available'])]
 class Domain extends Model
 {
     /** @use HasFactory<DomainFactory> */

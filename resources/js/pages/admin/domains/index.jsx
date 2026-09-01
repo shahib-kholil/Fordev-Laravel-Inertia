@@ -59,7 +59,6 @@ export default function DomainsIndex({ domains, filters }) {
                                 <th className="p-3">Daftar</th>
                                 <th className="p-3">Perpanjang</th>
                                 <th className="p-3">Transfer</th>
-                                <th className="p-3">Kategori</th>
                                 <th className="p-3">Status</th>
                                 <th className="p-3 text-right">Aksi</th>
                             </tr>
@@ -106,7 +105,6 @@ export default function DomainsIndex({ domains, filters }) {
                                             ? `Rp ${Number(domain.transfer_price).toLocaleString('id-ID')}`
                                             : '-'}
                                     </td>
-                                    <td className="p-3">{domain.category}</td>
                                     <td className="p-3">
                                         {domain.is_available
                                             ? 'Tersedia'

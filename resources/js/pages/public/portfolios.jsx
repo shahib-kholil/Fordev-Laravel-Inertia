@@ -38,13 +38,22 @@ export default function Portfolios({ portfolios }) {
                                     <h2 className="truncate text-xl font-semibold text-foreground sm:text-2xl">
                                         {item.title}
                                     </h2>
-                                    <p className="mt-1 line-clamp-2 max-w-xl text-sm leading-5 text-muted-foreground">
-                                        {item.description}
-                                    </p>
                                 </div>
-                                <span className="grid size-10 shrink-0 place-items-center rounded-full border bg-background text-foreground transition-transform duration-300 group-hover:translate-x-1 group-hover:-translate-y-1">
-                                    <ArrowUpRight className="size-5" />
-                                </span>
+                                {item.project_url ? (
+                                    <a
+                                        href={item.project_url}
+                                        target="_blank"
+                                        rel="noreferrer"
+                                        className="relative z-30 grid size-10 shrink-0 place-items-center rounded-full border bg-background text-foreground transition-transform duration-300 hover:translate-x-1 hover:-translate-y-1"
+                                        aria-label={`Buka website ${item.title}`}
+                                    >
+                                        <ArrowUpRight className="size-5" />
+                                    </a>
+                                ) : (
+                                    <span className="grid size-10 shrink-0 place-items-center rounded-full border bg-background text-foreground">
+                                        <ArrowUpRight className="size-5" />
+                                    </span>
+                                )}
                             </div>
                         </article>
                     ))}
