@@ -15,7 +15,7 @@ export default function PortfolioDetail({ portfolio }) {
                     <img
                         src={`/storage/${portfolio.image}`}
                         alt={portfolio.title}
-                        className="mt-5 max-h-96 w-full rounded-2xl border object-cover"
+                        className="mt-5 h-auto max-h-none w-full rounded-2xl border object-contain"
                     />
                 )}
                 <h1 className="mt-6 text-4xl font-semibold">

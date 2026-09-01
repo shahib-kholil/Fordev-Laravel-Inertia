@@ -188,7 +188,7 @@ function SkillsSection() {
             title="Tech stack yang dipakai"
             description="Teknologi yang kami gunakan untuk membangun website cepat, stabil, dan mudah dikembangkan."
         >
-            <div className="relative h-24 overflow-hidden sm:h-28">
+            <div className="relative h-20 overflow-hidden sm:h-28">
                 <LogoLoop
                     logos={techLogos}
                     speed={70}
