@@ -18,7 +18,7 @@ import {
     TableHead,
     TableHeader,
     TableRow,
-} from "@/components/ui/table"
+} from '@/components/ui/table';
 import PublicLayout from '@/layouts/public-layout';
 
 const cardClass = 'rounded-2xl border bg-card p-5 shadow-sm';
@@ -69,14 +69,26 @@ export default function Domains({ domains, filters = {}, check }) {
                         {/* Select Ekstensi Domain */}
                         <Select
                             value={data.extension}
-                            onValueChange={(value) => setData('extension', value)}
+                            onValueChange={(value) =>
+                                setData('extension', value)
+                            }
                         >
-                            <SelectTrigger aria-label="Ekstensi domain" className="h-9 w-full">
+                            <SelectTrigger
+                                aria-label="Ekstensi domain"
+                                className="h-9 w-full"
+                            >
                                 <SelectValue placeholder="Ekstensi" />
                             </SelectTrigger>
-                            <SelectContent position="popper" sideOffset={4} className="p-1 bg-background border border-input text-popover-foreground shadow-xl">
+                            <SelectContent
+                                position="popper"
+                                sideOffset={4}
+                                className="border border-input bg-background p-1 text-popover-foreground shadow-xl"
+                            >
                                 {extensions.map((item) => (
-                                    <SelectItem key={item.id} value={item.extension}>
+                                    <SelectItem
+                                        key={item.id}
+                                        value={item.extension}
+                                    >
                                         {item.extension}
                                     </SelectItem>
                                 ))}
@@ -114,7 +126,7 @@ function DomainResults({ check, extensions }) {
     const requested = domainOption(
         name,
         extensions.find((item) => item.extension === requestedExtension) ??
-        extensions[0],
+            extensions[0],
         check.available !== false,
     );
     const alternatives = extensions
@@ -173,10 +185,10 @@ function ExtensionCatalog({ extensions }) {
                 sort === 'cheapest'
                     ? salePrice(a) - salePrice(b)
                     : sort === 'highest'
-                        ? salePrice(b) - salePrice(a)
-                        : sort === 'az'
-                            ? a.extension.localeCompare(b.extension)
-                            : 0,
+                      ? salePrice(b) - salePrice(a)
+                      : sort === 'az'
+                        ? a.extension.localeCompare(b.extension)
+                        : 0,
             ),
         [extensions, sort],
     );
@@ -196,7 +208,10 @@ function ExtensionCatalog({ extensions }) {
                 </div>
                 <div className="flex gap-2">
                     <Select value={sort} onValueChange={setSort}>
-                        <SelectTrigger aria-label="Urutkan ekstensi" className="h-9 w-[150px]">
+                        <SelectTrigger
+                            aria-label="Urutkan ekstensi"
+                            className="h-9 w-[150px]"
+                        >
                             <SelectValue placeholder="Urutkan" />
                         </SelectTrigger>
                         <SelectContent position="popper" sideOffset={4}>
@@ -213,29 +228,51 @@ function ExtensionCatalog({ extensions }) {
                 <Table className="min-w-[560px]">
                     <TableHeader>
                         <TableRow>
-                            <TableHead className="font-semibold">Ekstensi</TableHead>
-                            <TableHead className="font-semibold">Tahun Pertama</TableHead>
-                            <TableHead className="font-semibold">Perpanjang</TableHead>
-                            <TableHead className="font-semibold">Transfer</TableHead>
+                            <TableHead className="font-semibold">
+                                Ekstensi
+                            </TableHead>
+                            <TableHead className="font-semibold">
+                                Tahun Pertama
+                            </TableHead>
+                            <TableHead className="font-semibold">
+                                Perpanjang
+                            </TableHead>
+                            <TableHead className="font-semibold">
+                                Transfer
+                            </TableHead>
                         </TableRow>
                     </TableHeader>
                     <TableBody>
                         {rows.map((item, index) => (
                             <TableRow
                                 key={item.id}
-                                className={index % 2 === 0 ? "bg-muted/60" : "bg-background"}
+                                className={
+                                    index % 2 === 0
+                                        ? 'bg-muted/60'
+                                        : 'bg-background'
+                                }
                             >
                                 <TableCell className="font-semibold text-primary">
                                     {item.extension}
                                 </TableCell>
                                 <TableCell className="">
-                                    <Price option={domainOption('domain', item, true)} />
+                                    <Price
+                                        option={domainOption(
+                                            'domain',
+                                            item,
+                                            true,
+                                        )}
+                                    />
                                 </TableCell>
                                 <TableCell className="">
-                                    {formatRupiah(item.renewal_price || item.price)}
+                                    {formatRupiah(
+                                        item.renewal_price || item.price,
+                                    )}
                                 </TableCell>
                                 <TableCell className="">
-                                    {item.transfer_price ? formatRupiah(item.transfer_price) : '-'}
+                                    {item.transfer_price
+                                        ? formatRupiah(item.transfer_price)
+                                        : '-'}
                                 </TableCell>
                             </TableRow>
                         ))}

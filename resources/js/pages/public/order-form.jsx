@@ -2,14 +2,14 @@ import { useForm } from '@inertiajs/react';
 import InputError from '@/components/input-error';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Textarea } from "@/components/ui/textarea"
+import { Textarea } from '@/components/ui/textarea';
 import {
     Select,
     SelectContent,
     SelectItem,
     SelectTrigger,
     SelectValue,
-} from "@/components/ui/select"
+} from '@/components/ui/select';
 import PublicLayout from '@/layouts/public-layout';
 
 export default function OrderForm({ webServices, domains, defaults = {} }) {
@@ -79,10 +79,16 @@ export default function OrderForm({ webServices, domains, defaults = {} }) {
                         <SelectTrigger className="h-9 w-full">
                             <SelectValue placeholder="Pilih jenis pesanan" />
                         </SelectTrigger>
-                        <SelectContent position="popper" sideOffset={4} className="p-2 bg-background border border-input text-popover-foreground shadow-xl">
+                        <SelectContent
+                            position="popper"
+                            sideOffset={4}
+                            className="border border-input bg-background p-2 text-popover-foreground shadow-xl"
+                        >
                             <SelectItem value="website">Website</SelectItem>
                             <SelectItem value="domain">Domain</SelectItem>
-                            <SelectItem value="both">Website + Domain</SelectItem>
+                            <SelectItem value="both">
+                                Website + Domain
+                            </SelectItem>
                         </SelectContent>
                     </Select>
                 </Field>
@@ -90,14 +96,23 @@ export default function OrderForm({ webServices, domains, defaults = {} }) {
                     <Field label="Paket website" error={errors.web_service_id}>
                         <Select
                             value={data.web_service_id}
-                            onValueChange={(value) => setData('web_service_id', value)}
+                            onValueChange={(value) =>
+                                setData('web_service_id', value)
+                            }
                         >
                             <SelectTrigger className="h-9 w-full">
                                 <SelectValue placeholder="Pilih paket" />
                             </SelectTrigger>
-                            <SelectContent position="popper" sideOffset={4} className="p-2 bg-background border border-input text-popover-foreground shadow-xl">
+                            <SelectContent
+                                position="popper"
+                                sideOffset={4}
+                                className="border border-input bg-background p-2 text-popover-foreground shadow-xl"
+                            >
                                 {webServices.map((item) => (
-                                    <SelectItem key={item.id} value={String(item.id)}>
+                                    <SelectItem
+                                        key={item.id}
+                                        value={String(item.id)}
+                                    >
                                         {item.name}
                                     </SelectItem>
                                 ))}
@@ -130,16 +145,26 @@ export default function OrderForm({ webServices, domains, defaults = {} }) {
                             <Field label="Ekstensi" error={errors.domain_id}>
                                 <Select
                                     value={data.domain_id}
-                                    onValueChange={(value) => setData('domain_id', value)}
+                                    onValueChange={(value) =>
+                                        setData('domain_id', value)
+                                    }
                                 >
                                     <SelectTrigger className="h-9 w-full">
                                         <SelectValue placeholder="Pilih ekstensi" />
                                     </SelectTrigger>
-                                    <SelectContent position="popper" sideOffset={4}>
+                                    <SelectContent
+                                        position="popper"
+                                        sideOffset={4}
+                                    >
                                         {domains.map((item) => (
-                                            <SelectItem key={item.id} value={String(item.id)}>
+                                            <SelectItem
+                                                key={item.id}
+                                                value={String(item.id)}
+                                            >
                                                 {item.extension} - Rp{' '}
-                                                {Number(item.price).toLocaleString('id-ID')}
+                                                {Number(
+                                                    item.price,
+                                                ).toLocaleString('id-ID')}
                                             </SelectItem>
                                         ))}
                                     </SelectContent>

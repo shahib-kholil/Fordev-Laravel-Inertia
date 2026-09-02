@@ -4,13 +4,8 @@ import { useState } from 'react';
 import HeroSection from '@/components/public/hero-section';
 import LogoLoop from '@/components/public/Logo-Loop';
 import { Badge } from '@/components/ui/badge';
-import {
-    Card,
-    CardContent,
-    CardDescription,
-    CardHeader,
-    CardTitle,
-} from '@/components/ui/card';
+import { WebServiceCard } from '@/components/public/web-service-card';
+
 import PublicLayout from '@/layouts/public-layout';
 import MagicBento from '@/components/public/magic-bento';
 
@@ -220,19 +215,13 @@ function ServicesSection({ webServices }) {
             title="Paket jasa web"
             description="Pilih paket dasar, lalu detail kebutuhan bisa dibahas lewat form penawaran."
         >
-            <div className="grid gap-4 md:grid-cols-3">
-                {webServices.map((item) => (
-                    <Card key={item.id}>
-                        <CardHeader>
-                            <CardTitle>{item.name}</CardTitle>
-                            <CardDescription>
-                                {item.description}
-                            </CardDescription>
-                        </CardHeader>
-                        <CardContent className="text-2xl font-semibold">
-                            Rp {Number(item.price).toLocaleString('id-ID')}
-                        </CardContent>
-                    </Card>
+            <div className="grid items-start gap-4 md:grid-cols-2 lg:grid-cols-3">
+                {webServices.map((item, index) => (
+                    <WebServiceCard
+                        key={item.id}
+                        item={item}
+                        featured={index === 1}
+                    />
                 ))}
             </div>
         </Section>

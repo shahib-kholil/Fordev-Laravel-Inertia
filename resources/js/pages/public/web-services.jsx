@@ -1,6 +1,7 @@
-import { Link } from '@inertiajs/react';
 import PublicLayout from '@/layouts/public-layout';
 import Pagination from '@/components/pagination';
+import { WebServiceCard } from '@/components/public/web-service-card';
+
 export default function WebServices({ webServices }) {
     return (
         <PublicLayout title="Katalog Jasa Web">
@@ -8,27 +9,13 @@ export default function WebServices({ webServices }) {
                 <h1 className="mb-6 text-3xl font-semibold">
                     Katalog Jasa Web
                 </h1>
-                <div className="grid gap-4 md:grid-cols-3">
-                    {webServices.data.map((item) => (
-                        <article
+                <div className="grid items-start gap-4 md:grid-cols-2 lg:grid-cols-3">
+                    {webServices.data.map((item, index) => (
+                        <WebServiceCard
                             key={item.id}
-                            className="rounded-xl border p-5"
-                        >
-                            <h2 className="text-lg font-semibold">
-                                <Link href={`/jasa-web/${item.slug}`}>
-                                    {item.name}
-                                </Link>
-                            </h2>
-                            <p className="text-muted-foreground">
-                                Rp {Number(item.price).toLocaleString('id-ID')}
-                            </p>
-                            <p className="mt-3 text-sm">{item.description}</p>
-                            <ul className="mt-3 list-inside list-disc text-sm">
-                                {item.features.map((feature) => (
-                                    <li key={feature}>{feature}</li>
-                                ))}
-                            </ul>
-                        </article>
+                            item={item}
+                            featured={index === 1}
+                        />
                     ))}
                 </div>
                 <div className="mt-6">
