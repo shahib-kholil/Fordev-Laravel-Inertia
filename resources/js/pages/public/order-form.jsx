@@ -2,6 +2,14 @@ import { useForm } from '@inertiajs/react';
 import InputError from '@/components/input-error';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Textarea } from "@/components/ui/textarea"
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from "@/components/ui/select"
 import PublicLayout from '@/layouts/public-layout';
 
 export default function OrderForm({ webServices, domains, defaults = {} }) {
@@ -64,34 +72,40 @@ export default function OrderForm({ webServices, domains, defaults = {} }) {
                     />
                 </Field>
                 <Field label="Jenis pesanan">
-                    <select
-                        className="h-9 w-full rounded-lg border bg-background px-2 text-sm"
+                    <Select
                         value={data.order_type}
-                        onChange={(e) => setData('order_type', e.target.value)}
+                        onValueChange={(value) => setData('order_type', value)}
                     >
-                        <option value="website">Website</option>
-                        <option value="domain">Domain</option>
-                        <option value="both">Website + Domain</option>
-                    </select>
+                        <SelectTrigger className="h-9 w-full">
+                            <SelectValue placeholder="Pilih jenis pesanan" />
+                        </SelectTrigger>
+                        <SelectContent position="popper" sideOffset={4} className="p-2 bg-background border border-input text-popover-foreground shadow-xl">
+                            <SelectItem value="website">Website</SelectItem>
+                            <SelectItem value="domain">Domain</SelectItem>
+                            <SelectItem value="both">Website + Domain</SelectItem>
+                        </SelectContent>
+                    </Select>
                 </Field>
                 {needsWeb && (
                     <Field label="Paket website" error={errors.web_service_id}>
-                        <select
-                            className="h-9 w-full rounded-lg border bg-background px-2 text-sm"
+                        <Select
                             value={data.web_service_id}
-                            onChange={(e) =>
-                                setData('web_service_id', e.target.value)
-                            }
+                            onValueChange={(value) => setData('web_service_id', value)}
                         >
-                            <option value="">Pilih paket</option>
-                            {webServices.map((item) => (
-                                <option key={item.id} value={item.id}>
-                                    {item.name}
-                                </option>
-                            ))}
-                        </select>
+                            <SelectTrigger className="h-9 w-full">
+                                <SelectValue placeholder="Pilih paket" />
+                            </SelectTrigger>
+                            <SelectContent position="popper" sideOffset={4} className="p-2 bg-background border border-input text-popover-foreground shadow-xl">
+                                {webServices.map((item) => (
+                                    <SelectItem key={item.id} value={String(item.id)}>
+                                        {item.name}
+                                    </SelectItem>
+                                ))}
+                            </SelectContent>
+                        </Select>
                     </Field>
                 )}
+
                 {needsDomain && (
                     <div className="grid gap-4">
                         <div className="grid gap-4 sm:grid-cols-[1fr_11rem]">
@@ -112,26 +126,27 @@ export default function OrderForm({ webServices, domains, defaults = {} }) {
                                     }
                                 />
                             </Field>
+
                             <Field label="Ekstensi" error={errors.domain_id}>
-                                <select
-                                    className="h-9 w-full rounded-lg border bg-background px-2 text-sm"
+                                <Select
                                     value={data.domain_id}
-                                    onChange={(e) =>
-                                        setData('domain_id', e.target.value)
-                                    }
+                                    onValueChange={(value) => setData('domain_id', value)}
                                 >
-                                    <option value="">Pilih ekstensi</option>
-                                    {domains.map((item) => (
-                                        <option key={item.id} value={item.id}>
-                                            {item.extension} - Rp{' '}
-                                            {Number(item.price).toLocaleString(
-                                                'id-ID',
-                                            )}
-                                        </option>
-                                    ))}
-                                </select>
+                                    <SelectTrigger className="h-9 w-full">
+                                        <SelectValue placeholder="Pilih ekstensi" />
+                                    </SelectTrigger>
+                                    <SelectContent position="popper" sideOffset={4}>
+                                        {domains.map((item) => (
+                                            <SelectItem key={item.id} value={String(item.id)}>
+                                                {item.extension} - Rp{' '}
+                                                {Number(item.price).toLocaleString('id-ID')}
+                                            </SelectItem>
+                                        ))}
+                                    </SelectContent>
+                                </Select>
                             </Field>
                         </div>
+
                         {selectedDomain && data.domain_name && (
                             <p className="rounded-lg border bg-muted/40 px-3 py-2 text-sm text-muted-foreground">
                                 Akan dicek ke Liqu.id saat dikirim:{' '}
@@ -146,8 +161,8 @@ export default function OrderForm({ webServices, domains, defaults = {} }) {
                     </div>
                 )}
                 <Field label="Catatan tambahan" error={errors.notes}>
-                    <textarea
-                        className="min-h-28 w-full rounded-lg border bg-transparent p-2 text-sm placeholder:text-foreground/60 dark:placeholder:text-foreground/70"
+                    <Textarea
+                        className="min-h-28 font-normal placeholder:font-normal placeholder:text-muted-foreground/60"
                         placeholder="Ceritakan kebutuhan website/domain Anda"
                         value={data.notes}
                         onChange={(e) => setData('notes', e.target.value)}
@@ -168,10 +183,10 @@ export default function OrderForm({ webServices, domains, defaults = {} }) {
 
 function Field({ label, error, children }) {
     return (
-        <label className="grid gap-2 text-sm font-medium">
-            <span>{label}</span>
+        <div className="grid gap-2 text-sm">
+            <label className="font-medium">{label}</label>
             {children}
             <InputError message={error} />
-        </label>
+        </div>
     );
 }

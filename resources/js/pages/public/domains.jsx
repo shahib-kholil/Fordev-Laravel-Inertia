@@ -4,6 +4,21 @@ import { useMemo, useState } from 'react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from '@/components/ui/select';
+import {
+    Table,
+    TableBody,
+    TableCell,
+    TableHead,
+    TableHeader,
+    TableRow,
+} from "@/components/ui/table"
 import PublicLayout from '@/layouts/public-layout';
 
 const cardClass = 'rounded-2xl border bg-card p-5 shadow-sm';
@@ -33,11 +48,11 @@ export default function Domains({ domains, filters = {}, check }) {
                     </p>
                     <form
                         onSubmit={submit}
-                        className="mt-6 grid gap-2 rounded-2xl border bg-background p-2 sm:grid-cols-[1fr_9rem_auto]"
+                        className="mt-6 grid gap-2 rounded-2xl border bg-background p-4 sm:grid-cols-[1fr_9rem_auto]"
                     >
                         <Input
                             aria-label="Nama domain"
-                            className="border-0 shadow-none focus-visible:ring-0"
+                            className="border shadow-none focus-visible:ring-0"
                             placeholder="namadomain"
                             value={data.name}
                             onChange={(e) =>
@@ -50,20 +65,24 @@ export default function Domains({ domains, filters = {}, check }) {
                             }
                             required
                         />
-                        <select
-                            aria-label="Ekstensi domain"
-                            className="h-9 w-full rounded-lg border bg-background px-2 text-sm"
+
+                        {/* Select Ekstensi Domain */}
+                        <Select
                             value={data.extension}
-                            onChange={(e) =>
-                                setData('extension', e.target.value)
-                            }
+                            onValueChange={(value) => setData('extension', value)}
                         >
-                            {extensions.map((item) => (
-                                <option key={item.id} value={item.extension}>
-                                    {item.extension}
-                                </option>
-                            ))}
-                        </select>
+                            <SelectTrigger aria-label="Ekstensi domain" className="h-9 w-full">
+                                <SelectValue placeholder="Ekstensi" />
+                            </SelectTrigger>
+                            <SelectContent position="popper" sideOffset={4} className="p-1 bg-background border border-input text-popover-foreground shadow-xl">
+                                {extensions.map((item) => (
+                                    <SelectItem key={item.id} value={item.extension}>
+                                        {item.extension}
+                                    </SelectItem>
+                                ))}
+                            </SelectContent>
+                        </Select>
+
                         <Button disabled={processing || !extensions.length}>
                             Cek domain
                         </Button>
@@ -95,7 +114,7 @@ function DomainResults({ check, extensions }) {
     const requested = domainOption(
         name,
         extensions.find((item) => item.extension === requestedExtension) ??
-            extensions[0],
+        extensions[0],
         check.available !== false,
     );
     const alternatives = extensions
@@ -146,16 +165,18 @@ function DomainResults({ check, extensions }) {
 
 function ExtensionCatalog({ extensions }) {
     const [sort, setSort] = useState('admin');
+
+    // 1. Dibuat copy [...extensions] agar tidak me-mutate props asli
     const rows = useMemo(
         () =>
-            extensions.sort((a, b) =>
+            [...extensions].sort((a, b) =>
                 sort === 'cheapest'
                     ? salePrice(a) - salePrice(b)
                     : sort === 'highest'
-                      ? salePrice(b) - salePrice(a)
-                      : sort === 'az'
-                        ? a.extension.localeCompare(b.extension)
-                        : 0,
+                        ? salePrice(b) - salePrice(a)
+                        : sort === 'az'
+                            ? a.extension.localeCompare(b.extension)
+                            : 0,
             ),
         [extensions, sort],
     );
@@ -174,58 +195,52 @@ function ExtensionCatalog({ extensions }) {
                     </p>
                 </div>
                 <div className="flex gap-2">
-                    <select
-                        aria-label="Urutkan ekstensi"
-                        className="h-9 rounded-lg border bg-background px-2 text-sm"
-                        value={sort}
-                        onChange={(e) => setSort(e.target.value)}
-                    >
-                        <option value="admin">Urutan admin</option>
-                        <option value="cheapest">Termurah</option>
-                        <option value="highest">Termahal</option>
-                        <option value="az">A-Z</option>
-                    </select>
+                    <Select value={sort} onValueChange={setSort}>
+                        <SelectTrigger aria-label="Urutkan ekstensi" className="h-9 w-[150px]">
+                            <SelectValue placeholder="Urutkan" />
+                        </SelectTrigger>
+                        <SelectContent position="popper" sideOffset={4}>
+                            <SelectItem value="admin">Default</SelectItem>
+                            <SelectItem value="cheapest">Termurah</SelectItem>
+                            <SelectItem value="highest">Termahal</SelectItem>
+                            <SelectItem value="az">A-Z</SelectItem>
+                        </SelectContent>
+                    </Select>
                 </div>
             </div>
-            <div className="mt-4 overflow-x-auto rounded-xl border">
-                <table className="w-full min-w-[560px] text-sm">
-                    <thead className="bg-muted/60 text-left">
-                        <tr>
-                            <th className="p-3">Ekstensi</th>
-                            <th className="p-3 text-right">Daftar</th>
-                            <th className="p-3 text-right">Perpanjang</th>
-                            <th className="p-3 text-right">Transfer</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {rows.map((item) => (
-                            <tr key={item.id} className="border-t">
-                                <td className="p-3 font-medium">
+
+            <div className="mt-4 overflow-x-auto rounded-xl border px-4">
+                <Table className="min-w-[560px]">
+                    <TableHeader>
+                        <TableRow>
+                            <TableHead className="font-semibold">Ekstensi</TableHead>
+                            <TableHead className="font-semibold">Tahun Pertama</TableHead>
+                            <TableHead className="font-semibold">Perpanjang</TableHead>
+                            <TableHead className="font-semibold">Transfer</TableHead>
+                        </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                        {rows.map((item, index) => (
+                            <TableRow
+                                key={item.id}
+                                className={index % 2 === 0 ? "bg-muted/60" : "bg-background"}
+                            >
+                                <TableCell className="font-semibold text-primary">
                                     {item.extension}
-                                </td>
-                                <td className="p-3 text-right">
-                                    <Price
-                                        option={domainOption(
-                                            'domain',
-                                            item,
-                                            true,
-                                        )}
-                                    />
-                                </td>
-                                <td className="p-3 text-right">
-                                    {formatRupiah(
-                                        item.renewal_price || item.price,
-                                    )}
-                                </td>
-                                <td className="p-3 text-right">
-                                    {item.transfer_price
-                                        ? formatRupiah(item.transfer_price)
-                                        : '-'}
-                                </td>
-                            </tr>
+                                </TableCell>
+                                <TableCell className="">
+                                    <Price option={domainOption('domain', item, true)} />
+                                </TableCell>
+                                <TableCell className="">
+                                    {formatRupiah(item.renewal_price || item.price)}
+                                </TableCell>
+                                <TableCell className="">
+                                    {item.transfer_price ? formatRupiah(item.transfer_price) : '-'}
+                                </TableCell>
+                            </TableRow>
                         ))}
-                    </tbody>
-                </table>
+                    </TableBody>
+                </Table>
             </div>
         </section>
     );
@@ -273,7 +288,7 @@ function BundleCard({ name, options }) {
                     )}
                 </span>
                 <p className="text-2xl font-bold">{formatRupiah(total)}</p>
-                <p className="text-xs text-muted-foreground">Tahun ke-1</p>
+                <p className="text-xs text-muted-foreground">Tahun pertama</p>
             </div>
             <p className="mt-3 text-sm text-muted-foreground">
                 Lebih hemat dengan visibilitas brand yang lebih tinggi. Kelola
@@ -349,14 +364,13 @@ function EmptyExtensions() {
 
 function Price({ option }) {
     return (
-        <div className="text-right">
+        <div className="">
             {option.normalPrice > option.salePrice && (
                 <p className="text-sm text-muted-foreground line-through">
                     {formatRupiah(option.normalPrice)}
                 </p>
             )}
             <p className="font-bold">{formatRupiah(option.salePrice)}</p>
-            <p className="text-xs text-muted-foreground">Tahun ke-1</p>
         </div>
     );
 }
