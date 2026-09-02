@@ -1,39 +1,11 @@
-import { Moon, Sun } from 'lucide-react';
-import { useEffect, useState } from 'react';
-import { Button } from '@/components/ui/button';
+import { AnimatedThemeToggler } from '@/components/ui/animated-theme-toggler';
 
 export default function ThemeToggle() {
-    const [dark, setDark] = useState(false);
-
-    useEffect(() => {
-        if (typeof document === 'undefined') return;
-        setDark(document.documentElement.classList.contains('dark'));
-    }, []);
-
-    function toggle() {
-        if (typeof document === 'undefined') return;
-
-        const next = !dark;
-        const root = document.documentElement;
-        const apply = () => root.classList.toggle('dark', next);
-
-        if (document.startViewTransition) {
-            document.startViewTransition(apply);
-        } else {
-            apply();
-        }
-
-        setDark(next);
-    }
-
     return (
-        <Button
-            variant="outline"
-            size="icon"
-            onClick={toggle}
+        <AnimatedThemeToggler
+            variant="circle"
+            className="inline-flex size-8 shrink-0 items-center justify-center rounded-lg border border-transparent bg-clip-padding text-sm font-medium whitespace-nowrap transition-all outline-none hover:bg-muted focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
             aria-label="Ganti tema"
-        >
-            {dark ? <Sun /> : <Moon />}
-        </Button>
+        />
     );
 }

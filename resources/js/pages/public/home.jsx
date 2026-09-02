@@ -153,7 +153,7 @@ function ProjectCard({ item, index }) {
                     className="absolute inset-0 size-full object-cover transition-transform duration-700 ease-out group-hover:scale-105"
                 />
             )}
-            <div className="absolute inset-x-0 bottom-0 h-2/3 bg-background/90 [mask-image:linear-gradient(to_top,black_55%,transparent)]" />
+            <div className="absolute inset-x-0 bottom-0 h-2/3 bg-background/60 [mask-image:linear-gradient(to_top,black_25%,transparent)]" />
 
             <Link
                 href={`/portofolio/${item.slug}`}
