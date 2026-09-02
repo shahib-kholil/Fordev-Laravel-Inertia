@@ -15,13 +15,13 @@ export function WebServiceCard({ item, featured = false }) {
             )}
             <h2 className="text-2xl font-semibold">{item.name}</h2>
             <p
-                className={`mt-2 min-h-12 text-sm ${featured ? 'text-primary-foreground/75' : 'text-muted-foreground'}`}
+                className={`mt-2 min-h-12 text-sm ${featured ? 'text-primary-foreground' : 'text-muted-foreground'}`}
             >
                 {item.description}
             </p>
             <p className="mt-6 text-3xl font-semibold">
                 Rp {Number(item.price).toLocaleString('id-ID')}
-                <span className="text-sm font-normal opacity-70">/paket</span>
+                <span className="text-sm font-normal">/paket</span>
             </p>
             <Button
                 asChild

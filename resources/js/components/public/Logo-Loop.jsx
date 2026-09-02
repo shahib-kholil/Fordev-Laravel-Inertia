@@ -316,7 +316,7 @@ export const LogoLoop = memo(
         }, [effectiveHoverSpeed]);
 
         const renderLogoItem = useCallback(
-            (item, key) => {
+            (item, key, isHidden = false) => {
                 if (renderItem) {
                     return (
                         <li
@@ -362,8 +362,8 @@ export const LogoLoop = memo(
                         src={item.src}
                         srcSet={item.srcSet}
                         sizes={item.sizes}
-                        width={item.width}
-                        height={item.height}
+                        width={item.width ?? logoHeight}
+                        height={item.height ?? logoHeight}
                         alt={item.alt ?? ''}
                         title={item.title}
                         loading="lazy"
@@ -386,6 +386,7 @@ export const LogoLoop = memo(
                         )}
                         href={item.href}
                         aria-label={itemAriaLabel || 'logo link'}
+                        tabIndex={isHidden ? -1 : undefined}
                         target="_blank"
                         rel="noreferrer noopener"
                     >
@@ -428,7 +429,11 @@ export const LogoLoop = memo(
                         ref={copyIndex === 0 ? seqRef : undefined}
                     >
                         {logos.map((item, itemIndex) =>
-                            renderLogoItem(item, `${copyIndex}-${itemIndex}`),
+                            renderLogoItem(
+                                item,
+                                `${copyIndex}-${itemIndex}`,
+                                copyIndex > 0,
+                            ),
                         )}
                     </ul>
                 )),

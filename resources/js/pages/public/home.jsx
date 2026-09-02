@@ -11,52 +11,52 @@ import MagicBento from '@/components/public/magic-bento';
 
 const techLogos = [
     {
-        src: 'https://cdn.jsdelivr.net/gh/devicons/devicon/icons/laravel/laravel-original.svg',
+        src: '/images/tech/laravel.svg',
         alt: 'Laravel',
         href: 'https://laravel.com',
     },
     {
-        src: 'https://cdn.jsdelivr.net/gh/devicons/devicon/icons/php/php-original.svg',
+        src: '/images/tech/php.svg',
         alt: 'PHP',
         href: 'https://php.net',
     },
     {
-        src: 'https://cdn.jsdelivr.net/gh/devicons/devicon/icons/react/react-original.svg',
+        src: '/images/tech/react.svg',
         alt: 'React',
         href: 'https://react.dev',
     },
     {
-        src: 'https://cdn.jsdelivr.net/gh/devicons/devicon/icons/python/python-original.svg',
+        src: '/images/tech/python.svg',
         alt: 'Python',
         href: 'https://www.python.org',
     },
     {
-        src: 'https://cdn.jsdelivr.net/gh/devicons/devicon/icons/django/django-plain.svg',
+        src: '/images/tech/django.svg',
         alt: 'Django',
         href: 'https://www.djangoproject.com',
     },
     {
-        src: 'https://cdn.jsdelivr.net/gh/devicons/devicon/icons/tailwindcss/tailwindcss-original.svg',
+        src: '/images/tech/tailwindcss.svg',
         alt: 'Tailwind CSS',
         href: 'https://tailwindcss.com',
     },
     {
-        src: 'https://cdn.jsdelivr.net/gh/devicons/devicon/icons/javascript/javascript-original.svg',
+        src: '/images/tech/javascript.svg',
         alt: 'JavaScript',
         href: 'https://developer.mozilla.org/docs/Web/JavaScript',
     },
     {
-        src: 'https://cdn.jsdelivr.net/gh/devicons/devicon/icons/docker/docker-original.svg',
+        src: '/images/tech/docker.svg',
         alt: 'Docker',
         href: 'https://docker.com',
     },
     {
-        src: 'https://cdn.jsdelivr.net/gh/devicons/devicon/icons/mysql/mysql-original.svg',
+        src: '/images/tech/mysql.svg',
         alt: 'MySQL',
         href: 'https://mysql.com',
     },
     {
-        src: 'https://cdn.jsdelivr.net/gh/devicons/devicon/icons/vitejs/vitejs-original.svg',
+        src: '/images/tech/vitejs.svg',
         alt: 'Vite',
         href: 'https://vite.dev',
     },
@@ -146,6 +146,10 @@ function ProjectCard({ item, index }) {
                 <img
                     src={`/storage/${item.image}`}
                     alt=""
+                    width="1200"
+                    height="700"
+                    loading="lazy"
+                    decoding="async"
                     className="absolute inset-0 size-full object-cover transition-transform duration-700 ease-out group-hover:scale-105"
                 />
             )}

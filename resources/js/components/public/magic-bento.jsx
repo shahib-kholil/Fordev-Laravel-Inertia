@@ -28,7 +28,7 @@ export default function MagicBento({ cards }) {
                     >
                         <div className="relative z-10 flex items-start justify-between gap-3">
                             <span
-                                className={`max-w-full truncate rounded-full border px-2.5 py-1 text-xs font-medium transition-colors duration-300 ${active ? 'border-primary-foreground/30 bg-primary-foreground/10' : 'bg-muted text-muted-foreground'}`}
+                                className={`max-w-full truncate rounded-full border px-2.5 py-1 text-xs font-medium transition-colors duration-300 ${active ? 'border-primary-foreground bg-primary-foreground text-primary' : 'bg-muted text-muted-foreground'}`}
                             >
                                 {card.label}
                             </span>
@@ -38,7 +38,7 @@ export default function MagicBento({ cards }) {
                             <h3 className="text-xl font-semibold sm:text-2xl">
                                 {card.title}
                             </h3>
-                            <p className="mt-2 max-h-24 max-w-xl text-sm leading-6 opacity-70 transition-[opacity,max-height] duration-500">
+                            <p className="mt-2 max-h-24 max-w-xl text-sm leading-6 transition-[opacity,max-height] duration-500">
                                 {active
                                     ? card.details || card.description
                                     : card.description}

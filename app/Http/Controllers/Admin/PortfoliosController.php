@@ -81,11 +81,32 @@ class PortfoliosController extends Controller
         $data['order_position'] = $data['order_position'] ?? 0;
 
         if ($request->hasFile('image')) {
-            $data['image'] = $request->file('image')->store('portfolios', 'public');
+            $data['image'] = $this->storeOptimizedImage($request);
         } else {
             unset($data['image']);
         }
 
         return $data;
+    }
+
+    private function storeOptimizedImage(Request $request): string
+    {
+        $file = $request->file('image');
+        $contents = file_get_contents($file->getRealPath());
+        $source = $contents === false ? false : @imagecreatefromstring($contents);
+
+        if ($source === false) {
+            return $file->store('portfolios', 'public');
+        }
+
+        imagealphablending($source, false);
+        imagesavealpha($source, true);
+
+        $path = 'portfolios/'.Str::uuid().'.webp';
+        $fullPath = Storage::disk('public')->path($path);
+        $written = @imagewebp($source, $fullPath, 82);
+        imagedestroy($source);
+
+        return $written ? $path : $file->store('portfolios', 'public');
     }
 }
