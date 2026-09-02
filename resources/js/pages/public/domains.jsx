@@ -52,7 +52,7 @@ export default function Domains({ domains, filters = {}, check }) {
                     >
                         <Input
                             aria-label="Nama domain"
-                            className="border shadow-none focus-visible:ring-0"
+                            className="border shadow-none placeholder:text-muted-foreground/50 focus-visible:ring-0 dark:placeholder:text-muted-foreground/50"
                             placeholder="namadomain"
                             value={data.name}
                             onChange={(e) =>
@@ -252,7 +252,7 @@ function ExtensionCatalog({ extensions }) {
                                         : 'bg-background'
                                 }
                             >
-                                <TableCell className="font-semibold text-primary">
+                                <TableCell className="font-semibold text-blue-600 dark:text-blue-400">
                                     {item.extension}
                                 </TableCell>
                                 <TableCell className="">

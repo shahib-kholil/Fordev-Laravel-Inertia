@@ -17,6 +17,7 @@ import {
     SheetContent,
     SheetHeader,
     SheetTitle,
+    SheetDescription,
     SheetTrigger,
 } from '@/components/ui/sheet';
 import { siteConfig } from '@/config/public-site';
@@ -72,9 +73,14 @@ export default function PublicLayout({ title, description, children }) {
                                 </SheetTrigger>
                                 <SheetContent side="right" className="w-72">
                                     <SheetHeader>
-                                        <SheetTitle>Menu ForDev</SheetTitle>
+                                        <SheetTitle className="font-bold">
+                                            Menu
+                                        </SheetTitle>
+                                        <SheetDescription className="sr-only">
+                                            Navigasi utama website ForDev
+                                        </SheetDescription>
                                     </SheetHeader>
-                                    <div className="mt-6 flex flex-col gap-2">
+                                    <div className="mt-6 flex flex-col gap-2 px-4 font-medium text-foreground/90 dark:text-foreground/80">
                                         {siteConfig.nav.map(([label, href]) => (
                                             <Button
                                                 key={href}
