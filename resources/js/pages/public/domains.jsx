@@ -432,6 +432,7 @@ function salePrice(item) {
 
 function domainOption(name, item, available) {
     return {
+        id: item.id,
         domain: `${name}${item.extension}`,
         extension: item.extension,
         salePrice: salePrice(item),
@@ -444,5 +445,5 @@ function domainOption(name, item, available) {
 }
 
 function orderUrl(option) {
-    return `/order?type=domain&domain_name=${option.domain.split('.')[0]}`;
+    return `/order?type=domain&domain_name=${encodeURIComponent(option.domain.split('.')[0])}&domain_id=${option.id ?? ''}`;
 }

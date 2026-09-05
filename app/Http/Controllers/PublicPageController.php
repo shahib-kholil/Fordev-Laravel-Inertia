@@ -41,6 +41,11 @@ class PublicPageController extends Controller
         return Inertia::render('public/web-service-detail', ['webService' => $webService]);
     }
 
+    public function contact(): Response
+    {
+        return Inertia::render('public/contact');
+    }
+
     public function domains(Request $request, DomainAvailabilityChecker $checker): Response
     {
         $check = null;
@@ -53,8 +58,9 @@ class PublicPageController extends Controller
             $check = $checker->check($data['name'], $data['extension']);
         }
 
+        $domains = Domain::query()->where('is_available', true)->orderBy('order_position')->orderBy('id')->paginate(20);
         return Inertia::render('public/domains', [
-            'domains' => Domain::query()->where('is_available', true)->orderBy('order_position')->orderBy('id')->paginate(20),
+            'domains' => $domains,
             'filters' => $data,
             'check' => $check,
         ]);

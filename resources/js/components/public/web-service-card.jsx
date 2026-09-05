@@ -28,8 +28,8 @@ export function WebServiceCard({ item, featured = false }) {
                 variant={featured ? 'secondary' : 'outline'}
                 className="mt-6 w-full"
             >
-                <Link href={`/order?web_service_id=${item.id}`}>
-                    Pilih paket
+                <Link href={`/jasa-web/${item.slug}`}>
+                    Lihat detail & konsultasi
                 </Link>
             </Button>
             <div

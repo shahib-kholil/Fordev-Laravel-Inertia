@@ -2,14 +2,52 @@
 
 namespace App\Services;
 
+use InvalidArgumentException;
+
 use App\Models\Order;
 use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Http\Client\PendingRequest;
 use Illuminate\Http\Client\RequestException;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Cache;
 
 class LiquidDomainClient
 {
+    public function balance(): int|float|array
+    {
+        return $this->http()->get('/account/balance')->throw()->json();
+    }
+
+    public function prices(): array
+    {
+        return Cache::remember('liquid:prices', now()->addMinutes(10), function () {
+            return $this->http()->get('/account/prices')->throw()->json() ?? [];
+        });
+    }
+
+    public function freshPrices(): array
+    {
+        Cache::forget('liquid:prices');
+
+        return $this->prices();
+    }
+
+    public function priceFor(string $extension): int|float|null
+    {
+        if (! $this->configured()) {
+            return null;
+        }
+
+        $price = $this->prices()[ltrim(strtolower($extension), '.')] ?? null;
+
+        return $price['register'] ?? $price['registration'] ?? null;
+    }
+
+    public function transactions(array $query = []): array
+    {
+        return $this->http()->get('/account/transactions', $query)->throw()->json() ?? [];
+    }
+
     public function check(string $name, string $extension): array
     {
         $domain = strtolower($name).'.'.ltrim(strtolower($extension), '.');
@@ -31,10 +69,8 @@ class LiquidDomainClient
         $domain = strtolower($name).'.'.ltrim(strtolower($extension), '.');
 
         try {
-            $response = $this->http()->get('/domains', [
-                'limit' => 1,
-                'tld' => ltrim(strtolower($extension), '.'),
-                'exact_domain_name' => $domain,
+            $response = $this->http()->get('/domains/availability', [
+                'domain' => $domain,
             ]);
         } catch (ConnectionException) {
             return null;
@@ -44,43 +80,91 @@ class LiquidDomainClient
             return null;
         }
 
-        return $response->json() === [];
+        $payload = $response->json();
+        $status = $payload[0][$domain]['status'] ?? null;
+
+        return $status === null ? null : $status === 'available';
     }
 
     /** @throws RequestException */
     public function signupCustomer(Order $order): string
     {
-        $response = $this->http()->post('/customers/signup', [
+        $existing = $this->http()->get('/customers', ['email' => $order->client_email])->throw()->json();
+        $customerId = $existing[0]['customer_id'] ?? $existing[0]['id'] ?? null;
+        if ($customerId) {
+            return (string) $customerId;
+        }
+
+        $response = $this->http()->asForm()->post('/customers', [
             'email' => $order->client_email,
             'name' => $order->client_name,
-            'password' => str()->password(16),
+            'password' => str()->password(15),
             'company' => $order->client_name,
-            'address_line_1' => '-',
-            'city' => '-',
-            'state' => '-',
+            'address_line_1' => 'Indonesia',
+            'city' => 'Paser',
+            'state' => 'Jawa Timur',
             'country_code' => 'ID',
-            'zipcode' => '00000',
-            'tel_cc_no' => 62,
-            'tel_no' => preg_replace('/\D+/', '', $order->client_phone),
+            'zipcode' => '69400',
+            'tel_cc_no' => '62',
+            'tel_no' => $this->telephoneNumber($order->client_phone),
         ])->throw();
 
-        return (string) ($response->json('customer_id') ?? $response->json('ID pelanggan') ?: throw new RequestException($response));
+        return (string) ($response->json('customer_id') ?? $response->json('id') ?? throw new RequestException($response));
     }
 
     /** @throws RequestException */
-    public function registerDomain(Order $order, string $customerId): array
+    public function createContact(Order $order, string $customerId): string
     {
-        $response = $this->http()->post('/domains/register', [
+        $response = $this->http()->asForm()->post("/customers/{$customerId}/contacts", [
+            'name' => $order->client_name,
+            'company' => $order->client_name,
+            'email' => $order->client_email,
+            'address_line_1' => 'Indonesia',
+            'city' => 'Paser',
+            'country_code' => 'id',
+            'state' => 'Jawa Timur',
+            'zipcode' => '69400',
+            'tel_cc_no' => '62',
+            'tel_no' => $this->telephoneNumber($order->client_phone),
+        ])->throw();
+
+        return (string) ($response->json('contact_id') ?? $response->json('id') ?? throw new RequestException($response));
+    }
+
+    /** @throws RequestException */
+    public function registerDomain(Order $order, string $customerId, string $contactId): array
+    {
+        $response = $this->http()->asForm()->post('/domains', [
             'domain_name' => strtolower($order->domain_name).$order->domain->extension,
             'customer_id' => $customerId,
-            'reg_contact_id' => $customerId,
-            'adm_contact_id' => $customerId,
-            'billing_contact_id' => $customerId,
-            'tech_contact_id' => $customerId,
-            'period' => 1,
+            'registrant_contact_id' => $contactId,
+            'admin_contact_id' => $contactId,
+            'billing_contact_id' => $contactId,
+            'tech_contact_id' => $contactId,
+            'years' => 1,
+            'invoice_option' => 'no_invoice',
         ])->throw();
 
         return $response->json() ?? [];
+    }
+
+    /** @throws RequestException */
+    public function domainDetailsByName(string $domain): array
+    {
+        return $this->http()->get('/domains/details-by-name', [
+            'domain_name' => strtolower($domain),
+        ])->throw()->json() ?? [];
+    }
+
+    private function telephoneNumber(string $phone): string
+    {
+        $number = ltrim(preg_replace('/\D+/', '', $phone), '0');
+
+        if ($number === '') {
+            throw new InvalidArgumentException('Nomor WhatsApp wajib diisi untuk registrasi domain.');
+        }
+
+        return $number;
     }
 
     private function configured(): bool
@@ -90,11 +174,17 @@ class LiquidDomainClient
 
     private function http(): PendingRequest
     {
-        return Http::baseUrl(config('services.liquid.base_url'))
+        $request = Http::baseUrl(config('services.liquid.base_url'))
             ->acceptJson()
             ->asJson()
             ->withBasicAuth(config('services.liquid.reseller_id'), config('services.liquid.api_key'))
             ->timeout(10)
             ->retry(2, 300);
+
+        if (filled(config('services.liquid.http_proxy'))) {
+            $request = $request->withOptions(['proxy' => config('services.liquid.http_proxy')]);
+        }
+
+        return $request;
     }
 }

@@ -1,7 +1,18 @@
-import { Link } from '@inertiajs/react';
+import { Link, usePage } from '@inertiajs/react';
+import { useState } from 'react';
+import { Button } from '@/components/ui/button';
 import PublicLayout from '@/layouts/public-layout';
 
 export default function WebServiceDetail({ webService }) {
+    const { publicSettings = {} } = usePage().props;
+    const [message, setMessage] = useState(
+        `Halo ForDev, saya tertarik dengan jasa ${webService.name}.`,
+    );
+    const whatsapp = (publicSettings.contact_whatsapp ?? '').replace(/\D/g, '');
+    const number = whatsapp.startsWith('0')
+        ? `62${whatsapp.slice(1)}`
+        : whatsapp;
+    const whatsappUrl = `https://wa.me/${number}?text=${encodeURIComponent(message)}`;
     return (
         <PublicLayout
             title={webService.name}
@@ -25,12 +36,21 @@ export default function WebServiceDetail({ webService }) {
                         </li>
                     ))}
                 </ul>
-                <Link
-                    href={`/order?web_service_id=${webService.id}`}
-                    className="mt-8 inline-block rounded-lg bg-primary px-4 py-2 text-primary-foreground"
+                <textarea
+                    className="mt-8 min-h-28 w-full rounded-lg border bg-background p-3"
+                    value={message}
+                    onChange={(e) => setMessage(e.target.value)}
+                    aria-label="Pesan WhatsApp"
+                />
+                <Button
+                    className="mt-3"
+                    asChild
+                    disabled={!message.trim() || !number}
                 >
-                    Minta Penawaran
-                </Link>
+                    <a href={whatsappUrl} target="_blank" rel="noreferrer">
+                        Kirim ke WhatsApp
+                    </a>
+                </Button>
             </article>
         </PublicLayout>
     );

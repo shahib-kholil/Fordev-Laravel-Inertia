@@ -1,5 +1,5 @@
-import { Head, Link, usePage } from '@inertiajs/react';
-import { ArrowRight, Copy, Menu } from 'lucide-react';
+import { Head, Link, router, usePage } from '@inertiajs/react';
+import { ArrowRight, Copy, LogOut, Menu } from 'lucide-react';
 import { useState } from 'react';
 
 import ShaderBackdrop from '@/components/public/shader-backdrop';
@@ -24,7 +24,8 @@ import {
 import { siteConfig } from '@/config/public-site';
 
 export default function PublicLayout({ title, description, children }) {
-    const { publicSettings = {} } = usePage().props;
+    const { publicSettings = {}, auth = {} } = usePage().props;
+    const user = auth.user;
     const metaDescription =
         description ?? 'ForDev jasa pembuatan website dan domain.';
 
@@ -61,6 +62,17 @@ export default function PublicLayout({ title, description, children }) {
                         </div>
                         <div className="flex items-center gap-1">
                             <ThemeToggle />
+                            {user && (
+                                <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    aria-label="Logout"
+                                    title="Logout"
+                                    onClick={() => router.post('/logout')}
+                                >
+                                    <LogOut />
+                                </Button>
+                            )}
                             <Sheet>
                                 <SheetTrigger asChild>
                                     <Button
@@ -74,17 +86,36 @@ export default function PublicLayout({ title, description, children }) {
                                 </SheetTrigger>
                                 <SheetContent side="right" className="w-72">
                                     <SheetHeader>
-                                        <SheetTitle className="font-bold">Menu</SheetTitle>
+                                        <SheetTitle className="font-bold">
+                                            Menu
+                                        </SheetTitle>
                                         <SheetDescription className="sr-only">
                                             Navigasi utama website ForDev
                                         </SheetDescription>
                                     </SheetHeader>
                                     <div className="mt-6 flex flex-col gap-2 px-4 font-medium text-foreground/90 dark:text-foreground/80">
                                         {siteConfig.nav.map(([label, href]) => (
-                                            <Button key={href} variant="ghost" className="justify-start" asChild>
+                                            <Button
+                                                key={href}
+                                                variant="ghost"
+                                                className="justify-start"
+                                                asChild
+                                            >
                                                 <Link href={href}>{label}</Link>
                                             </Button>
                                         ))}
+                                        {user && (
+                                            <Button
+                                                variant="ghost"
+                                                className="justify-start gap-2"
+                                                onClick={() =>
+                                                    router.post('/logout')
+                                                }
+                                            >
+                                                <LogOut />
+                                                Logout
+                                            </Button>
+                                        )}
                                     </div>
                                 </SheetContent>
                             </Sheet>

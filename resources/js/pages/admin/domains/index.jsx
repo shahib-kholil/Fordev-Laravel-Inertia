@@ -1,6 +1,6 @@
 import { Head, Link, router } from '@inertiajs/react';
 import { GripVertical } from 'lucide-react';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { AdminPageShell } from '@/components/admin/page-shell';
 import {
     AdminActions,
@@ -14,6 +14,10 @@ import AdminSearch from '@/components/admin-search';
 export default function DomainsIndex({ domains, filters }) {
     const [rows, setRows] = useState(domains.data);
     const [dragId, setDragId] = useState(null);
+
+    useEffect(() => {
+        setRows(domains.data);
+    }, [domains.data]);
 
     function move(targetId) {
         if (!dragId || dragId === targetId) return;

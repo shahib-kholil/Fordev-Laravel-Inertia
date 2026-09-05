@@ -18,27 +18,56 @@ class FordevFlowTest extends TestCase
 {
     use RefreshDatabase;
 
+    public function test_domain_details_by_name_are_returned_as_array(): void
+    {
+        config([
+            'services.liquid.reseller_id' => 'demo',
+            'services.liquid.api_key' => 'secret',
+        ]);
+        Http::fake([
+            '*domains/details-by-name*' => Http::response(['domain_name' => 'tokoku.com', 'status' => 'active']),
+        ]);
+
+        $details = app(\App\Services\LiquidDomainClient::class)->domainDetailsByName('TOKOKU.COM');
+
+        $this->assertSame(['domain_name' => 'tokoku.com', 'status' => 'active'], $details);
+    }
+
+    public function test_liquid_prices_are_returned_as_array(): void
+    {
+        config([
+            'services.liquid.reseller_id' => 'demo',
+            'services.liquid.api_key' => 'secret',
+        ]);
+        Http::fake([
+            '*account/prices' => Http::response(['com' => ['register' => 100000]]),
+        ]);
+
+        $prices = app(\App\Services\LiquidDomainClient::class)->prices();
+
+        $this->assertSame(['com' => ['register' => 100000]], $prices);
+    }
+
     public function test_public_pages_are_reachable(): void
     {
         $this->get('/')->assertOk();
         $this->get('/jasa-web')->assertOk();
         $this->get('/domain')->assertOk();
         $this->get('/portofolio')->assertOk();
-        $this->get('/order')->assertOk();
+        $this->get('/order')->assertRedirect('/login');
         $this->get('/cek-status-pesanan')->assertOk();
     }
 
     public function test_order_submission_creates_price_snapshots(): void
     {
-        Http::fake(['*' => Http::response([])]);
+        Http::fake(['*' => Http::response(['available' => true])]);
         Notification::fake();
 
         $webService = WebService::factory()->create(['price' => 2500000]);
         $domain = Domain::factory()->create(['price' => 185000]);
+        $this->actingAs(User::factory()->create(['name' => 'Budi', 'email' => 'budi@example.com']));
 
         $this->post('/order', [
-            'client_name' => 'Budi',
-            'client_email' => 'budi@example.com',
             'client_phone' => '08123456789',
             'order_type' => 'both',
             'web_service_id' => $webService->id,
@@ -62,14 +91,12 @@ class FordevFlowTest extends TestCase
         ]);
 
         Http::fake([
-            'api.liqu.id/v1/domains*' => Http::response([['domain_name' => 'tokoku.com']]),
+            '*domains/availability*' => Http::response([['tokoku.com' => ['status' => 'unavailable']]]),
         ]);
 
         $domain = Domain::factory()->create(['extension' => '.com']);
 
-        $this->from('/order')->post('/order', [
-            'client_name' => 'Budi',
-            'client_email' => 'budi@example.com',
+        $this->from('/order')->actingAs(User::factory()->create(['email' => 'budi@example.com']))->post('/order', [
             'client_phone' => '08123456789',
             'order_type' => 'domain',
             'domain_id' => $domain->id,
@@ -87,15 +114,13 @@ class FordevFlowTest extends TestCase
         ]);
 
         Http::fake([
-            'api.liqu.id/v1/domains*' => Http::response([]),
+            '*domains/availability*' => Http::response([['tokoku.id' => ['status' => 'available']]]),
         ]);
         Notification::fake();
 
         $domain = Domain::factory()->create(['extension' => '.id', 'price' => 250000]);
 
-        $this->post('/order', [
-            'client_name' => 'Siti',
-            'client_email' => 'siti@example.com',
+        $this->actingAs(User::factory()->create(['name' => 'Siti', 'email' => 'siti@example.com']))->post('/order', [
             'client_phone' => '08123456789',
             'order_type' => 'domain',
             'domain_id' => $domain->id,
@@ -131,7 +156,7 @@ class FordevFlowTest extends TestCase
             'services.liquid.reseller_id' => 'demo',
             'services.liquid.api_key' => 'secret',
         ]);
-        Http::fakeSequence()->push([])->push(['customer_id' => 'CUST-1'])->push(['domain_id' => 'DOM-1']);
+        Http::fakeSequence()->push([['tokoku.com' => ['status' => 'available']]])->push([])->push(['customer_id' => 'CUST-1'])->push(['contact_id' => 'CONT-1'])->push(['domain_id' => 'DOM-1'])->push(['domain_id' => 'DOM-1', 'order_status' => 'pending']);
 
         $this->actingAs(User::factory()->create(['role' => 'super_admin']));
         $domain = Domain::factory()->create(['extension' => '.com']);
@@ -140,6 +165,9 @@ class FordevFlowTest extends TestCase
         $this->put("/admin/orders/{$order->id}", ['status' => 'paid', 'admin_notes' => null, 'action' => 'approve_register'])->assertRedirect();
 
         $this->assertDatabaseHas(Order::class, ['id' => $order->id, 'status' => 'active', 'liquid_customer_id' => 'CUST-1', 'liquid_domain_id' => 'DOM-1']);
+        Http::assertSent(fn ($request) => str_ends_with($request->url(), '/domains')
+            && $request['invoice_option'] === 'no_invoice'
+            && $request['registrant_contact_id'] === 'CONT-1');
     }
 
     public function test_admin_register_reuses_user_liquid_customer_id(): void
@@ -148,7 +176,7 @@ class FordevFlowTest extends TestCase
             'services.liquid.reseller_id' => 'demo',
             'services.liquid.api_key' => 'secret',
         ]);
-        Http::fakeSequence()->push([])->push(['domain_id' => 'DOM-2']);
+        Http::fakeSequence()->push([['tokoku.com' => ['status' => 'available']]])->push(['contact_id' => 'CONT-2'])->push(['domain_id' => 'DOM-2'])->push(['domain_id' => 'DOM-2', 'order_status' => 'pending']);
         Notification::fake();
 
         $user = User::factory()->create(['role' => 'super_admin', 'email' => 'siti@example.com', 'liquid_customer_id' => 'CUST-OLD']);
@@ -192,7 +220,7 @@ class FordevFlowTest extends TestCase
             'services.liquid.reseller_id' => 'demo',
             'services.liquid.api_key' => 'secret',
         ]);
-        Http::fake(['api.liqu.id/v1/domains*' => Http::response([['domain_name' => 'tokoku.com']])]);
+        Http::fake(['*domains/availability*' => Http::response([['tokoku.com' => ['status' => 'unavailable']]])]);
 
         $this->actingAs(User::factory()->create(['role' => 'super_admin']));
         $domain = Domain::factory()->create(['extension' => '.com']);
@@ -209,7 +237,7 @@ class FordevFlowTest extends TestCase
             'services.liquid.reseller_id' => 'demo',
             'services.liquid.api_key' => 'secret',
         ]);
-        Http::fakeSequence()->push([])->push(['message' => 'saldo kurang'], 402);
+        Http::fakeSequence()->push([['tokoku.com' => ['status' => 'available']]])->push(['message' => 'saldo kurang'], 402);
 
         $this->actingAs(User::factory()->create(['role' => 'super_admin']));
         $domain = Domain::factory()->create(['extension' => '.com']);

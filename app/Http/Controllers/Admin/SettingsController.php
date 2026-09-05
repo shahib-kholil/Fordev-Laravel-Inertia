@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Setting;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -33,10 +34,18 @@ class SettingsController extends Controller
 
     public function update(Request $request): RedirectResponse
     {
+        $settings = Setting::query()->pluck('value', 'key');
         $data = $request->validate([
             'contact_email' => ['nullable', 'email', 'max:255'],
             'contact_whatsapp' => ['nullable', 'string', 'max:30'],
             'contact_address' => ['nullable', 'string', 'max:500'],
+            'payment_methods' => ['nullable', 'array'],
+            'payment_methods.*' => ['string', 'in:qris,dana,bank_transfer'],
+            'payment_details' => ['required', 'array'],
+            'payment_details.qris' => ['nullable', 'string', 'max:1000'],
+            'payment_qris' => ['nullable', 'image', 'max:2048'],
+            'payment_details.dana' => ['nullable', 'string', 'max:255'],
+            'payment_details.bank_transfer' => ['nullable', 'string', 'max:1000'],
             'social_instagram' => ['nullable', 'url', 'max:255'],
             'package_cards' => ['required', 'array', 'size:4'],
             'package_cards.*.label' => ['required', 'string', 'max:60'],
@@ -46,8 +55,18 @@ class SettingsController extends Controller
             'package_cards.*.href' => ['required', 'string', 'max:255', 'starts_with:/'],
         ]);
 
+        if ($request->hasFile('payment_qris')) {
+            $oldQris = json_decode($settings['payment_details'] ?? '{}', true)['qris'] ?? null;
+            $data['payment_details']['qris'] = $request->file('payment_qris')->store('payments', 'public');
+            if ($oldQris) {
+                Storage::disk('public')->delete($oldQris);
+            }
+        }
+
         $data['home_package_cards'] = json_encode($data['package_cards']);
-        unset($data['package_cards']);
+        $data['payment_methods'] = json_encode($data['payment_methods'] ?? ['qris', 'dana', 'bank_transfer']);
+        $data['payment_details'] = json_encode($data['payment_details']);
+        unset($data['package_cards'], $data['payment_qris']);
 
         foreach ($data as $key => $value) {
             Setting::query()->updateOrCreate(['key' => $key], ['value' => $value]);

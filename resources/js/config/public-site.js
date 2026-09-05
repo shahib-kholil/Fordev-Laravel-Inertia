@@ -6,7 +6,7 @@ export const siteConfig = {
         ['Domain', '/domain'],
         ['Projects', '/portofolio'],
         ['Jasa Web', '/jasa-web'],
-        ['Contact', '/order'],
+        ['Contact', '/contact'],
     ],
     hero: {
         eyebrow: 'ForDev ',

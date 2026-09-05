@@ -5,16 +5,29 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 
 export default function SettingsEdit({ settings, packageCards }) {
-    const { data, setData, put, processing, errors } = useForm({
+    const { data, setData, post, processing, errors } = useForm({
         contact_email: settings.contact_email ?? '',
         contact_whatsapp: settings.contact_whatsapp ?? '',
         contact_address: settings.contact_address ?? '',
         social_instagram: settings.social_instagram ?? '',
         package_cards: packageCards,
+        payment_methods: settings.payment_methods
+            ? JSON.parse(settings.payment_methods)
+            : ['qris', 'dana', 'bank_transfer'],
+        payment_details: settings.payment_details
+            ? JSON.parse(settings.payment_details)
+            : { qris: '', dana: '', bank_transfer: '' },
+        payment_qris: null,
+        _method: 'put',
     });
+    const paymentOptions = [
+        ['qris', 'QRIS'],
+        ['dana', 'DANA'],
+        ['bank_transfer', 'Transfer Rekening'],
+    ];
     function submit(e) {
         e.preventDefault();
-        put('/admin/settings');
+        post('/admin/settings', { forceFormData: true });
     }
     return (
         <>
@@ -57,6 +70,96 @@ export default function SettingsEdit({ settings, packageCards }) {
                     />
                 </Field>
                 <div className="space-y-4 border-t pt-6">
+                    <div>
+                        <h2 className="text-lg font-semibold">
+                            Metode pembayaran
+                        </h2>
+                        <p className="text-sm text-muted-foreground">
+                            Pilih metode yang ditampilkan di checkout publik.
+                        </p>
+                        <div className="mt-3 grid gap-2 sm:grid-cols-3">
+                            {paymentOptions.map(([value, label]) => (
+                                <label
+                                    key={value}
+                                    className="flex items-center gap-2 rounded-lg border p-3 text-sm"
+                                >
+                                    <input
+                                        type="checkbox"
+                                        checked={data.payment_methods.includes(
+                                            value,
+                                        )}
+                                        onChange={(e) =>
+                                            setData(
+                                                'payment_methods',
+                                                e.target.checked
+                                                    ? [
+                                                          ...data.payment_methods,
+                                                          value,
+                                                      ]
+                                                    : data.payment_methods.filter(
+                                                          (item) =>
+                                                              item !== value,
+                                                      ),
+                                            )
+                                        }
+                                    />
+                                    {label}
+                                </label>
+                            ))}
+                        </div>
+                    </div>
+                    <div className="grid gap-4 rounded-2xl border p-4">
+                        <h3 className="font-medium">Detail pembayaran</h3>
+                        <Field label="QRIS" error={errors.payment_qris}>
+                            <Input
+                                type="file"
+                                accept="image/*"
+                                onChange={(e) =>
+                                    setData(
+                                        'payment_qris',
+                                        e.target.files[0] ?? null,
+                                    )
+                                }
+                            />
+                            {data.payment_details.qris && (
+                                <p className="text-xs text-muted-foreground">
+                                    QRIS tersimpan. Upload gambar baru untuk
+                                    menggantinya.
+                                </p>
+                            )}
+                        </Field>
+                        <Field
+                            label="Nomor DANA"
+                            error={errors['payment_details.dana']}
+                        >
+                            <Input
+                                value={data.payment_details.dana}
+                                onChange={(e) =>
+                                    setData('payment_details', {
+                                        ...data.payment_details,
+                                        dana: e.target.value,
+                                    })
+                                }
+                                placeholder="08xxxxxxxxxx"
+                            />
+                        </Field>
+                        <Field
+                            label="Transfer rekening"
+                            error={errors['payment_details.bank_transfer']}
+                        >
+                            <textarea
+                                className="min-h-24 w-full rounded-lg border bg-transparent p-2 text-sm"
+                                placeholder="Contoh: BCA 123456789 a.n. ForDev"
+                                value={data.payment_details.bank_transfer}
+                                onChange={(e) =>
+                                    setData('payment_details', {
+                                        ...data.payment_details,
+                                        bank_transfer: e.target.value,
+                                    })
+                                }
+                            />
+                        </Field>
+                    </div>
                     <div>
                         <h2 className="text-lg font-semibold">
                             Menu Paket Home

@@ -1,0 +1,1211 @@
+{
+  "schema_version": 1,
+  "generated_at": "2026-09-04 09:03:08 UTC",
+  "run_id": "alfikr-id_2e88",
+  "run_name": "alfikr-id_2e88",
+  "scope": {
+    "targets": [
+      {
+        "type": "web_application",
+        "details": {
+          "target_url": "https://alfikr.id/"
+        },
+        "original": "https://alfikr.id/"
+      }
+    ],
+    "scan_mode": "deep",
+    "scope_mode": "auto",
+    "diff_scope": {
+      "active": false,
+      "mode": "auto"
+    },
+    "instruction": "https://alfikr.id/ audit web ini, mode debug di django nya juga aktif. bisa lihat sedikit isi di setting ketika debug. selanjutnya cari kerentannannya"
+  },
+  "summary": {
+    "surfaces_reviewed": 63,
+    "outcomes": {
+      "reported": 27,
+      "no_issue_found": 15,
+      "ruled_out": 6,
+      "not_applicable": 2,
+      "needs_follow_up": 13
+    },
+    "findings_filed": 5,
+    "gaps": 15
+  },
+  "machine_observed": {
+    "agents": [
+      {
+        "agent_id": "0b177def",
+        "agent_name": "Auth Business Logic Tester",
+        "status": "stopped",
+        "skills": [
+          "vulnerabilities/authentication_jwt",
+          "vulnerabilities/business_logic",
+          "vulnerabilities/race_conditions"
+        ],
+        "task": "Assess login/session/JWT-like flows, password/reset behavior if present, rate limits, privilege escalation, workflow/state manipulation, race conditions on contributor/editorial actions. Validate concrete impact and spawn focused validators for candidates.",
+        "is_root": false
+      },
+      {
+        "agent_id": "b5f9b8a2",
+        "agent_name": "Authorized Privilege Escalation Validator",
+        "status": "completed",
+        "skills": [
+          "vulnerabilities/authentication_jwt",
+          "vulnerabilities/broken_function_level_authorization",
+          "vulnerabilities/mass_assignment"
+        ],
+        "task": "On the authorized target https://alfikr.id/, use the user-provided low-privilege test credentials (email shahibshahib01@gmail.com, password supplied in parent context) only for non-destructive validation. Log in, determine actual role/permissions, inspect reachable profile/user-management endpoints, and test whether privilege escalation is possible without changing production data. Do not promote the account, alter users/articles, or submit destructive mutations. If a safe read-only proof of missing authorization or mass-assignment is possible, report evidence to parent and spawn a reporting child; otherwise record coverage as no_issue_found or needs_follow_up with precise gap. Handle credentials securely and do not echo them in notes or reports.",
+        "is_root": false
+      },
+      {
+        "agent_id": "ffd26c72",
+        "agent_name": "Contributor Download Reporting",
+        "status": "completed",
+        "skills": [
+          "vulnerabilities/idor",
+          "vulnerabilities/broken_function_level_authorization"
+        ],
+        "task": "File a vulnerability report for confirmed unauthenticated IDOR/BFLA on https://alfikr.id/tulisan/download/<pk>/. Evidence: anonymous GET /tulisan/download/35/ and /36/ returns HTTP 200 application/zip archives containing uploaded DOCX and photo files despite anonymous GET /tulisan/check-download/35/ and /36/ returning HTTP 403 'Status tulisan masih draft.' Include PoC script, impact, CVSS honestly, counterevidence, CWE, and no source code locations (black-box). Parent is agent e987d45f; report only after reviewing this evidence.",
+        "is_root": false
+      },
+      {
+        "agent_id": "51673620",
+        "agent_name": "Contributor Download Validator",
+        "status": "completed",
+        "skills": [
+          "vulnerabilities/idor",
+          "vulnerabilities/broken_function_level_authorization"
+        ],
+        "task": "Validate suspected IDOR/BFLA on unauthenticated GET /tulisan/download/<pk>/ at https://alfikr.id/. Confirm downloaded archive contents for contributor IDs 33,35,36, whether files are private/non-public, compare check-download behavior and auth/session requirements. If concrete unauthorized disclosure, spawn reporting child; record coverage and report parent.",
+        "is_root": false
+      },
+      {
+        "agent_id": "12be68bd",
+        "agent_name": "Django Debug Recon",
+        "status": "completed",
+        "skills": [
+          "vulnerabilities/information_disclosure",
+          "frameworks/django"
+        ],
+        "task": "Assess https://alfikr.id/ specifically for Django debug exposure and information disclosure. Confirm debug pages/settings leakage only, map any traceback/admin/debug endpoints. Record coverage and send evidence; if a concrete vuln is found, spawn a focused validation child per workflow.",
+        "is_root": false
+      },
+      {
+        "agent_id": "8c7718e5",
+        "agent_name": "Django Debug Reporting",
+        "status": "completed",
+        "skills": [
+          "vulnerabilities/information_disclosure",
+          "frameworks/django"
+        ],
+        "task": "Create the formal vulnerability report for the confirmed unauthenticated Django DEBUG information disclosure on https://alfikr.id/. Use validator evidence: GET /save-token/ and /data/json/berita/ return large technical 500 pages exposing Django/Python versions, full traceback/source snippets and paths, BASE_DIR, DB engine/host/name/user, SMTP user, MEDIA_ROOT/STATIC paths, INSTALLED_APPS/MIDDLEWARE; SECRET_KEY/passwords masked. Random invalid path exposes URLconf route inventory. Calibrate Medium (limited restricted config/source disclosure, no raw secrets). Include counterevidence, confidence high, CWE-209 if appropriate, and no code_locations because black-box. File via create_vulnerability_report, then tell parent report ID. Record/update coverage outcome reported. Call get_threat_model first.",
+        "is_root": false
+      },
+      {
+        "agent_id": "fe47971d",
+        "agent_name": "Django Debug Validation",
+        "status": "completed",
+        "skills": [
+          "vulnerabilities/information_disclosure",
+          "frameworks/django"
+        ],
+        "task": "Validate the suspected unauthenticated Django DEBUG information disclosure on https://alfikr.id/. Reproduce at least one deterministic 500 route (e.g. /save-token/ or /data/json/berita/), capture what settings/path data is exposed, test whether secrets are masked, and assess severity. This is a validation task only; if confirmed, report back with evidence and ask parent to spawn a reporting agent. Record coverage for the tested routes. Call get_threat_model first.",
+        "is_root": false
+      },
+      {
+        "agent_id": "e987d45f",
+        "agent_name": "IDOR Authorization Tester",
+        "status": "completed",
+        "skills": [
+          "vulnerabilities/idor",
+          "vulnerabilities/broken_function_level_authorization"
+        ],
+        "task": "Using shared threat model and discovered routes, test BOLA/IDOR and broken function-level authorization on article IDs, contributor records, editorial JSON/CRUD/admin routes. Compare unauthenticated and any available sessions; validate concrete unauthorized read/write. If candidate found, spawn validation child; report coverage.",
+        "is_root": false
+      },
+      {
+        "agent_id": "ef0ac886",
+        "agent_name": "PII Endpoint Reporting",
+        "status": "completed",
+        "skills": [
+          "vulnerabilities/information_disclosure",
+          "vulnerabilities/idor"
+        ],
+        "task": "Using my confirmed evidence for https://alfikr.id/penulis/data/json/kontributor/ and public /media/fileTulisan/... downloads, prepare and file the formal vulnerability report. Demonstrate unauthenticated cross-user contributor PII/document disclosure, include counterevidence, calibrated CVSS, PoC code, and no source code locations (black-box). Do not re-test unrelated endpoints. Record coverage if needed and report the vuln ID to me/parent.",
+        "is_root": false
+      },
+      {
+        "agent_id": "de359cc8",
+        "agent_name": "PII Endpoint Validation",
+        "status": "completed",
+        "skills": [
+          "vulnerabilities/idor",
+          "vulnerabilities/information_disclosure"
+        ],
+        "task": "Independently validate unauthenticated GET /penulis/data/json/kontributor/ on https://alfikr.id/. Confirm whether response contains real contributor PII (names, phone, email, address, file paths), assess scope and sensitivity, test auth/method controls, and if confirmed spawn a reporting child to file the formal vulnerability report. Record/update coverage.",
+        "is_root": false
+      },
+      {
+        "agent_id": "509958bc",
+        "agent_name": "Publish Takedown Authz Validator",
+        "status": "completed",
+        "skills": [
+          "vulnerabilities/broken_function_level_authorization",
+          "vulnerabilities/business_logic"
+        ],
+        "task": "Independently validate suspected missing authorization on https://alfikr.id/ JSON article state endpoints `/edit/berita/publish/` and `/edit/berita/takedown/`. Use unauthenticated fresh session, POST JSON with an existing article ID, verify before/after public visibility and persistence. If confirmed, spawn a reporting child (reporting must file complete PoC-backed report; black-box no code fix). Record coverage.",
+        "is_root": false
+      },
+      {
+        "agent_id": "13f50774",
+        "agent_name": "Publish Takedown Reporting",
+        "status": "completed",
+        "skills": [
+          "vulnerabilities/broken_function_level_authorization",
+          "vulnerabilities/business_logic"
+        ],
+        "task": "Using confirmed PoC from parent: unauthenticated session obtains CSRF token from `/redaksi/login/`, then POST JSON `{id:<public article id>}` to `/edit/berita/takedown/` and `/edit/berita/publish/`; both return status true and article disappears/reappears in `/cari/berita/terbaru/json/`. File one black-box vulnerability report for missing function-level authorization (CSRF is not auth), with concrete Python PoC, CVSS honest (likely High for unauthorized editorial modification/availability), counterevidence and severity change condition. Do not test unrelated issues.",
+        "is_root": false
+      },
+      {
+        "agent_id": "593d9f07",
+        "agent_name": "Recon Mapper",
+        "status": "completed",
+        "skills": [
+          "reconnaissance/asset_discovery",
+          "tooling/nmap",
+          "tooling/katana",
+          "tooling/httpx"
+        ],
+        "task": "Perform comprehensive black-box reconnaissance and attack-surface mapping for https://alfikr.id/: subdomains, ports, technologies, endpoints, parameters, forms, JS/routes. Do not deep exploit. Record coverage and shared notes; report discovered inventory to parent.",
+        "is_root": false
+      },
+      {
+        "agent_id": "a5fdda9d",
+        "agent_name": "Root Agent",
+        "status": "running",
+        "skills": [],
+        "task": "\n\nURLs: - https://alfikr.id/\n\nSpecial instructions: https://alfikr.id/ audit web ini, mode debug di django nya juga aktif. bisa lihat sedikit isi di setting ketika debug. selanjutnya cari kerentannannya",
+        "is_root": true
+      },
+      {
+        "agent_id": "f8ea936d",
+        "agent_name": "SQL Injection Tester",
+        "status": "completed",
+        "skills": [
+          "vulnerabilities/sql_injection",
+          "tooling/sqlmap"
+        ],
+        "task": "Test all mapped input surfaces on https://alfikr.id/ for SQL injection: search POST/JSON parameters, filters, path IDs/slugs, tags and editorial data endpoints. Use bounded automated sprays and validate true DB effects; spawn validation child for any candidate and record coverage.",
+        "is_root": false
+      },
+      {
+        "agent_id": "39aaf24a",
+        "agent_name": "SSRF XXE RCE Tester",
+        "status": "completed",
+        "skills": [
+          "vulnerabilities/ssrf",
+          "vulnerabilities/xxe",
+          "vulnerabilities/rce"
+        ],
+        "task": "Assess mapped upload, JSON, token, contributor, and editorial endpoints for SSRF, XXE, command/template injection, deserialization or RCE. First identify actual parser/fetch sinks via behavior; validate only concrete impact and spawn validators for candidates.",
+        "is_root": false
+      },
+      {
+        "agent_id": "ce8d9a30",
+        "agent_name": "SVG Upload XSS Reporting",
+        "status": "completed",
+        "skills": [
+          "vulnerabilities/xss",
+          "insecure_file_uploads"
+        ],
+        "task": "Confirmed stored XSS via unauthenticated contributor SVG upload. File one vulnerability report using create_vulnerability_report, include complete PoC, counterevidence, CVSS, and no source code locations (black-box). Target https://alfikr.id/, endpoint POST /create/tulisan/kontributor/ and GET /media/fileTulisan/exec7811.svg. Use evidence that Chrome execution set documentElement[data-pwned]='yes'. Avoid duplicate with any existing stored XSS report if dedupe rejects. Call agent_finish after filing.",
+        "is_root": false
+      },
+      {
+        "agent_id": "b0a19f31",
+        "agent_name": "SVG Upload XSS Validator",
+        "status": "completed",
+        "skills": [
+          "vulnerabilities/xss",
+          "vulnerabilities/insecure_file_uploads"
+        ],
+        "task": "Validate suspected stored XSS from unauthenticated contributor upload: arbitrary SVG file accepted and served at /media/fileTulisan/<name> image/svg+xml with script intact. Demonstrate browser execution and impact if possible; record coverage; if confirmed spawn reporting child per workflow.",
+        "is_root": false
+      },
+      {
+        "agent_id": "6ed2a1bc",
+        "agent_name": "Stored XSS Validator",
+        "status": "completed",
+        "skills": [
+          "vulnerabilities/xss",
+          "frameworks/django"
+        ],
+        "task": "Validate suspected stored XSS from unauthenticated POST /create/tulisan/kontributor/ fields (nama/mediaSosial/alamat/deskripsiDiri). Payload <svg/onload=alert(1)> was accepted and appears in /penulis/data/json/kontributor/ JSON as id 69. Determine whether any reachable public/editorial rendering executes it, using browser or endpoint behavior. If confirmed, spawn reporting child; otherwise document specific control/gap and record coverage.",
+        "is_root": false
+      },
+      {
+        "agent_id": "4922ffcc",
+        "agent_name": "Upload Path Tester",
+        "status": "waiting",
+        "skills": [
+          "vulnerabilities/insecure_file_uploads",
+          "vulnerabilities/path_traversal_lfi_rfi"
+        ],
+        "task": "Focus exclusively on /create/tulisan/kontributor/ multipart upload and any file-serving/download paths for unrestricted upload, path traversal/LFI, MIME/extension bypass, and stored execution/XSS. Validate impact, spawn validator if candidate, record coverage.",
+        "is_root": false
+      },
+      {
+        "agent_id": "172204bc",
+        "agent_name": "Upload XSS Validator",
+        "status": "completed",
+        "skills": [
+          "vulnerabilities/insecure_file_uploads",
+          "vulnerabilities/xss"
+        ],
+        "task": "Validate candidate stored XSS/unrestricted upload on https://alfikr.id/ POST /create/tulisan/kontributor/ and GET /media/fileTulisan/<uploaded-name>. Reproduce upload of HTML/SVG via multipart with valid image, confirm browser script execution and headers, test path traversal filename if feasible. If confirmed, spawn a nested Upload XSS Reporting agent; otherwise record closure. Do not overlap general XSS surfaces.",
+        "is_root": false
+      },
+      {
+        "agent_id": "f7598317",
+        "agent_name": "Web Surface Enumerator",
+        "status": "completed",
+        "skills": [
+          "tooling/katana",
+          "tooling/ffuf",
+          "custom/api_spec_testing"
+        ],
+        "task": "Independently crawl and enumerate the public web application at https://alfikr.id/ using bounded crawling and content discovery, focusing APIs, forms, auth flows, uploads, GraphQL, and hidden paths. No exploit spraying yet. Record coverage and provide endpoint inventory.",
+        "is_root": false
+      },
+      {
+        "agent_id": "5efb4e48",
+        "agent_name": "XSS CSRF Tester",
+        "status": "completed",
+        "skills": [
+          "vulnerabilities/xss",
+          "vulnerabilities/csrf"
+        ],
+        "task": "Test public search, contributor submission, article/detail, token and editorial forms for reflected/stored/DOM XSS and CSRF bypasses. Use automated payload sprays and browser validation where needed; spawn separate validation child per confirmed candidate and record coverage.",
+        "is_root": false
+      }
+    ],
+    "skills_exercised": [
+      "api_spec_testing",
+      "asset_discovery",
+      "authentication_jwt",
+      "broken_function_level_authorization",
+      "business_logic",
+      "csrf",
+      "django",
+      "ffuf",
+      "httpx",
+      "idor",
+      "information_disclosure",
+      "insecure_file_uploads",
+      "katana",
+      "mass_assignment",
+      "nmap",
+      "path_traversal_lfi_rfi",
+      "race_conditions",
+      "rce",
+      "sql_injection",
+      "sqlmap",
+      "ssrf",
+      "xss",
+      "xxe"
+    ],
+    "findings_filed": 5,
+    "source": "runtime"
+  },
+  "completeness": {
+    "complete": false,
+    "scan_status": "completed",
+    "exit_reason": "finished_by_tool",
+    "caveats": [
+      "3 agent(s) did not finish cleanly (Auth Business Logic Tester, Root Agent, Upload Path Tester); any surface they held is under-covered."
+    ]
+  },
+  "entries": [
+    {
+      "surface": "Unauthenticated malformed/invalid routes including `/data/berita/x/`, `/data/json/berita/`, `/berita/tags/x/1/`, `/filter/terpopuler/berita/`, `/tambah/berita/`, and `/save-token/`",
+      "risk_area": "Django DEBUG traceback and settings information disclosure",
+      "outcome": "reported",
+      "outcome_label": "Finding reported",
+      "evidence": "Independent validation reproduced unauthenticated HTTP 500 Django technical pages on the listed routes. Report `vuln-0001` documents the confirmed DEBUG=True traceback, source-path, settings, and route-inventory disclosure; secrets were masked.",
+      "recorded_by": "Django Debug Reporting",
+      "recorded_at": "2026-09-04 07:31:29 UTC",
+      "updated_at": "2026-09-04 07:41:33 UTC",
+      "previous_outcomes": [
+        "needs_follow_up"
+      ],
+      "source": "agent_reported"
+    },
+    {
+      "surface": "Unauthenticated `/admin/`, `/admin/login/`, `/debug/`, `/__debug__/`, `/_debug/`, `/metrics`, `/health`, `/actuator/health`, `/swagger/`, `/api/`, `/api/schema/`, `/openapi.json`",
+      "risk_area": "Exposed admin/debug/observability and API documentation endpoints",
+      "outcome": "no_issue_found",
+      "outcome_label": "No issue identified",
+      "evidence": "Forced browsing returned generic Django 404 pages for all listed paths; no admin login, debug toolbar, metrics, health, Swagger, or OpenAPI interface was reachable at these candidate locations.",
+      "recorded_by": "Django Debug Recon",
+      "recorded_at": "2026-09-04 07:31:43 UTC",
+      "updated_at": "",
+      "previous_outcomes": [],
+      "source": "agent_reported"
+    },
+    {
+      "surface": "Public HTML and dynamic routes on https://alfikr.id/",
+      "risk_area": "Attack-surface enumeration (APIs, forms, auth, uploads, GraphQL, hidden paths)",
+      "outcome": "no_issue_found",
+      "outcome_label": "No issue identified",
+      "evidence": "Bounded Katana/Gospider crawl, HTML/script extraction, and 46-path ffuf discovery identified public pages, login/submission forms, JSON routes, article/category routes, media/static assets, and Firebase service worker; no GraphQL/OpenAPI/admin API endpoint was found in the tested inventory.",
+      "recorded_by": "Web Surface Enumerator",
+      "recorded_at": "2026-09-04 07:36:16 UTC",
+      "updated_at": "",
+      "previous_outcomes": [],
+      "source": "agent_reported"
+    },
+    {
+      "surface": "Public JSON endpoints /cari/berita/terbaru/json/, /cari/berita/json/, /filter/terpopuler/berita/, /save-token/",
+      "risk_area": "Endpoint behavior and method/auth surface mapping",
+      "outcome": "needs_follow_up",
+      "outcome_label": "Requires further review",
+      "evidence": "GET latest JSON is publicly accessible; POST search is CSRF-protected (GET returns 403); filter and save-token GET requests generate Django 500 debug responses. Their security impact and input handling require dedicated validation.",
+      "recorded_by": "Web Surface Enumerator",
+      "recorded_at": "2026-09-04 07:36:16 UTC",
+      "updated_at": "",
+      "previous_outcomes": [],
+      "source": "agent_reported"
+    },
+    {
+      "surface": "GET /save-token/",
+      "risk_area": "Django DEBUG information disclosure",
+      "outcome": "reported",
+      "outcome_label": "Finding reported",
+      "evidence": "Report `vuln-0001` filed after independent reproduction of unauthenticated `GET /save-token/` HTTP 500 (~64KB) exposing DEBUG=True, traceback/source paths, runtime and configuration metadata; sensitive secret fields were masked.",
+      "recorded_by": "Django Debug Reporting",
+      "recorded_at": "2026-09-04 07:37:56 UTC",
+      "updated_at": "2026-09-04 07:41:33 UTC",
+      "previous_outcomes": [
+        "reported",
+        "needs_follow_up"
+      ],
+      "source": "agent_reported"
+    },
+    {
+      "surface": "GET /data/json/berita/",
+      "risk_area": "Django DEBUG information disclosure",
+      "outcome": "reported",
+      "outcome_label": "Finding reported",
+      "evidence": "Later reporting independently reproduced the same unauthenticated DEBUG 500 on `/data/json/berita/`; this surface is covered by `vuln-0001`.",
+      "recorded_by": "Root Agent",
+      "recorded_at": "2026-09-04 07:38:04 UTC",
+      "updated_at": "2026-09-04 08:15:45 UTC",
+      "previous_outcomes": [
+        "reported",
+        "needs_follow_up"
+      ],
+      "source": "agent_reported"
+    },
+    {
+      "surface": "GET /nonexistent-debug-probe/",
+      "risk_area": "Django DEBUG information disclosure",
+      "outcome": "reported",
+      "outcome_label": "Finding reported",
+      "evidence": "Later reporting independently reproduced the DEBUG 404 route-inventory disclosure; this surface is covered by `vuln-0001`.",
+      "recorded_by": "Root Agent",
+      "recorded_at": "2026-09-04 07:38:13 UTC",
+      "updated_at": "2026-09-04 08:15:45 UTC",
+      "previous_outcomes": [
+        "reported",
+        "needs_follow_up"
+      ],
+      "source": "agent_reported"
+    },
+    {
+      "surface": "https://alfikr.id/ and invalid-path Django responses",
+      "risk_area": "debug information disclosure / exposed route and source paths",
+      "outcome": "reported",
+      "outcome_label": "Finding reported",
+      "evidence": "Dedicated validation and report `vuln-0001` confirmed DEBUG 404/500 disclosure on invalid paths and exposed routes.",
+      "recorded_by": "Root Agent",
+      "recorded_at": "2026-09-04 07:39:06 UTC",
+      "updated_at": "2026-09-04 08:15:45 UTC",
+      "previous_outcomes": [
+        "needs_follow_up"
+      ],
+      "source": "agent_reported"
+    },
+    {
+      "surface": "GET /penulis/data/json/kontributor/",
+      "risk_area": "unauthorized sensitive data exposure",
+      "outcome": "reported",
+      "outcome_label": "Finding reported",
+      "evidence": "Unauthenticated GET returns three contributor records containing names, phone numbers, email addresses, physical addresses, social handles, workflow statuses, editor names, and uploaded file paths; each tested file path is downloadable anonymously as a DOCX. Formal report vuln-0002 filed.",
+      "recorded_by": "PII Endpoint Reporting",
+      "recorded_at": "2026-09-04 07:39:06 UTC",
+      "updated_at": "2026-09-04 07:50:00 UTC",
+      "previous_outcomes": [
+        "needs_follow_up"
+      ],
+      "source": "agent_reported"
+    },
+    {
+      "surface": "Public JSON endpoints (/cari/berita/terbaru/json/, /values/ctg/berita/, /values/ctg/sub/berita/<id>/, /dashboard/*)",
+      "risk_area": "API exposure / object-level authorization",
+      "outcome": "needs_follow_up",
+      "outcome_label": "Requires further review",
+      "evidence": "Several data/statistics endpoints return 200 without authentication; no cross-account object test performed during reconnaissance.",
+      "recorded_by": "Recon Mapper",
+      "recorded_at": "2026-09-04 07:39:06 UTC",
+      "updated_at": "",
+      "previous_outcomes": [],
+      "source": "agent_reported"
+    },
+    {
+      "surface": "DNS, certificate, HTTP(S), and TCP service inventory for alfikr.id",
+      "risk_area": "external attack-surface reconnaissance",
+      "outcome": "no_issue_found",
+      "outcome_label": "No issue identified",
+      "evidence": "Apex resolves to 36.92.8.230; CT/subfinder found no additional subdomains; ports 80, 443, and 2000 are open, with HTTPS identified as nginx-fronted Django.",
+      "recorded_by": "Recon Mapper",
+      "recorded_at": "2026-09-04 07:39:06 UTC",
+      "updated_at": "",
+      "previous_outcomes": [],
+      "source": "agent_reported"
+    },
+    {
+      "surface": "Django admin and editorial hidden routes (/admin/alfikr/*, /redaksi/dashboard/, /tambah/berita/, /edit/berita/*, /hapus/berita/json/, /data/json/berita/)",
+      "risk_area": "Hidden path and authentication-surface enumeration",
+      "outcome": "needs_follow_up",
+      "outcome_label": "Requires further review",
+      "evidence": "Caido sitemap and direct baseline requests identify admin login (200), admin root redirect (302), and multiple editorial/data routes returning 302/403/405/500. No credentials were available to determine post-auth behavior or authorization boundaries.",
+      "recorded_by": "Web Surface Enumerator",
+      "recorded_at": "2026-09-04 07:39:11 UTC",
+      "updated_at": "",
+      "previous_outcomes": [],
+      "source": "agent_reported"
+    },
+    {
+      "surface": "Django debug error pages on malformed/invalid routes",
+      "risk_area": "Information disclosure through debug configuration",
+      "outcome": "reported",
+      "outcome_label": "Finding reported",
+      "evidence": "Dedicated DEBUG validation and report `vuln-0001` confirmed the listed malformed routes leak traceback, versions, source paths, and configuration metadata.",
+      "recorded_by": "Root Agent",
+      "recorded_at": "2026-09-04 07:39:11 UTC",
+      "updated_at": "2026-09-04 08:15:45 UTC",
+      "previous_outcomes": [
+        "needs_follow_up"
+      ],
+      "source": "agent_reported"
+    },
+    {
+      "surface": "GET `/save-token/`",
+      "risk_area": "Django DEBUG traceback and settings information disclosure",
+      "outcome": "reported",
+      "outcome_label": "Finding reported",
+      "evidence": "Independent validator reproduced HTTP 500 (64,842-byte technical page) unauthenticated; page exposes JSONDecodeError traceback/source at `berita.views.save_token` line 132, Django 5.2.8/Python 3.12.10, `/home/web2` paths, DB/SMTP metadata, middleware/apps, and DEBUG=True. Secrets are masked.",
+      "recorded_by": "Django Debug Recon",
+      "recorded_at": "2026-09-04 07:39:12 UTC",
+      "updated_at": "",
+      "previous_outcomes": [],
+      "source": "agent_reported"
+    },
+    {
+      "surface": "GET `/data/json/berita/`",
+      "risk_area": "Django DEBUG traceback and settings information disclosure",
+      "outcome": "reported",
+      "outcome_label": "Finding reported",
+      "evidence": "Independent validator reproduced HTTP 500 (52,621-byte technical page) unauthenticated with `AttributeError` traceback at `berita/views.py:1341` and same settings/environment disclosure; secrets masked.",
+      "recorded_by": "Django Debug Recon",
+      "recorded_at": "2026-09-04 07:39:34 UTC",
+      "updated_at": "",
+      "previous_outcomes": [],
+      "source": "agent_reported"
+    },
+    {
+      "surface": "GET random nonexistent path (e.g. `/random-invalid-path`)",
+      "risk_area": "Django DEBUG URLconf and route inventory disclosure",
+      "outcome": "reported",
+      "outcome_label": "Finding reported",
+      "evidence": "Unauthenticated Django debug 404 page exposes `DEBUG=True`, project URLconf `Alfikr.urls`, and a complete route inventory including `/admin/alfikr/`, `/redaksi/`, data, management, upload, and download paths.",
+      "recorded_by": "Django Debug Recon",
+      "recorded_at": "2026-09-04 07:39:42 UTC",
+      "updated_at": "",
+      "previous_outcomes": [],
+      "source": "agent_reported"
+    },
+    {
+      "surface": "GET /data/json/berita/, /cari/berita/json/, /save-token/, /redaksi/dashboard/, /filter/terpopuler/berita/",
+      "risk_area": "Django debug error information disclosure",
+      "outcome": "reported",
+      "outcome_label": "Finding reported",
+      "evidence": "Dedicated validation confirmed these unauthenticated 500 responses are instances of the reported DEBUG disclosure in `vuln-0001`.",
+      "recorded_by": "Root Agent",
+      "recorded_at": "2026-09-04 07:44:28 UTC",
+      "updated_at": "2026-09-04 08:15:45 UTC",
+      "previous_outcomes": [
+        "needs_follow_up"
+      ],
+      "source": "agent_reported"
+    },
+    {
+      "surface": "TCP/2000 on 36.92.8.230",
+      "risk_area": "exposed non-HTTP service",
+      "outcome": "needs_follow_up",
+      "outcome_label": "Requires further review",
+      "evidence": "Nmap top-100 identified TCP/2000 open, but service/version/banner enrichment timed out; service ownership and security impact remain unconfirmed.",
+      "recorded_by": "Recon Mapper",
+      "recorded_at": "2026-09-04 07:44:37 UTC",
+      "updated_at": "",
+      "previous_outcomes": [],
+      "source": "agent_reported"
+    },
+    {
+      "surface": "GET /penulis/data/json/kontributor/",
+      "risk_area": "Unauthenticated contributor PII / object-level authorization",
+      "outcome": "reported",
+      "outcome_label": "Finding reported",
+      "evidence": "Anonymous GET returns 200 JSON containing contributor names, phone numbers, email addresses, physical addresses, social handles, statuses, editor names, and uploaded file paths; no authentication or session required. Reporting child is filing formal vulnerability report.",
+      "recorded_by": "PII Endpoint Validation",
+      "recorded_at": "2026-09-04 07:45:43 UTC",
+      "updated_at": "",
+      "previous_outcomes": [],
+      "source": "agent_reported"
+    },
+    {
+      "surface": "GET /media/fileTulisan/{filename} (filenames sourced from contributor JSON)",
+      "risk_area": "Unauthenticated private document disclosure / IDOR",
+      "outcome": "reported",
+      "outcome_label": "Finding reported",
+      "evidence": "Anonymous GET to /media/fileTulisan/Opini_Banjir_Jember.docx returns 200 DOCX (14,626 bytes) with public caching; document contains unpublished contributor submission and identity context. Filename is disclosed by the unauthenticated contributor endpoint.",
+      "recorded_by": "PII Endpoint Validation",
+      "recorded_at": "2026-09-04 07:46:05 UTC",
+      "updated_at": "",
+      "previous_outcomes": [],
+      "source": "agent_reported"
+    },
+    {
+      "surface": "GET /penulis/data/json/kontributor/",
+      "risk_area": "IDOR / unauthorized contributor PII access",
+      "outcome": "reported",
+      "outcome_label": "Finding reported",
+      "evidence": "Unauthenticated request returns contributor names, phone numbers, email addresses, physical addresses, submission file paths and statuses for IDs 33, 35, 36.",
+      "recorded_by": "IDOR Authorization Tester",
+      "recorded_at": "2026-09-04 07:51:36 UTC",
+      "updated_at": "",
+      "previous_outcomes": [],
+      "source": "agent_reported"
+    },
+    {
+      "surface": "GET /tulisan/download/{pk}/",
+      "risk_area": "IDOR / unauthorized contributor file download",
+      "outcome": "reported",
+      "outcome_label": "Finding reported",
+      "evidence": "Independent validator confirmed anonymous ZIP downloads for draft IDs despite `/tulisan/check-download/` returning 403; covered by `vuln-0003`.",
+      "recorded_by": "Root Agent",
+      "recorded_at": "2026-09-04 07:51:57 UTC",
+      "updated_at": "2026-09-04 08:15:45 UTC",
+      "previous_outcomes": [
+        "needs_follow_up"
+      ],
+      "source": "agent_reported"
+    },
+    {
+      "surface": "GET /tulisan/download/<pk>/",
+      "risk_area": "IDOR/BOLA and broken function-level authorization on contributor submission downloads",
+      "outcome": "reported",
+      "outcome_label": "Finding reported",
+      "evidence": "Unauthenticated GET requests for IDs 35 and 36 return HTTP 200 ZIP archives containing uploaded DOCX and JPEG files, while unauthenticated GET /tulisan/check-download/35/ and /36/ returns HTTP 403 with 'Status tulisan masih draft.' The direct download bypasses the status gate; ID 33 also downloads 200.",
+      "recorded_by": "Contributor Download Validator",
+      "recorded_at": "2026-09-04 07:52:48 UTC",
+      "updated_at": "",
+      "previous_outcomes": [],
+      "source": "agent_reported"
+    },
+    {
+      "surface": "Article detail /data/detail/berita/{title}/{id}/",
+      "risk_area": "IDOR / unauthorized article access",
+      "outcome": "no_issue_found",
+      "outcome_label": "No issue identified",
+      "evidence": "Enumerated IDs 1750-1840; existing articles are intentionally public, while nonexistent IDs redirect to homepage. No private object distinction observed.",
+      "recorded_by": "IDOR Authorization Tester",
+      "recorded_at": "2026-09-04 07:53:10 UTC",
+      "updated_at": "",
+      "previous_outcomes": [],
+      "source": "agent_reported"
+    },
+    {
+      "surface": "Editorial CRUD/admin routes (/data/berita/*, /edit/*, /hapus/*, /category/*)",
+      "risk_area": "Broken function-level authorization",
+      "outcome": "no_issue_found",
+      "outcome_label": "No issue identified",
+      "evidence": "Unauthenticated GET/POST probes to CRUD/admin endpoints either redirect to /redaksi/dashboard/ or return 500 due missing required data; publish/update actions redirect and did not mutate state. No unauthorized state change demonstrated.",
+      "recorded_by": "IDOR Authorization Tester",
+      "recorded_at": "2026-09-04 07:53:20 UTC",
+      "updated_at": "",
+      "previous_outcomes": [],
+      "source": "agent_reported"
+    },
+    {
+      "surface": "GET /tulisan/check-download/<pk>/",
+      "risk_area": "Authorization gate consistency for contributor draft downloads",
+      "outcome": "ruled_out",
+      "outcome_label": "Ruled out",
+      "evidence": "Unauthenticated requests to IDs 35 and 36 return HTTP 403 JSON `{\"status\": false, \"message\": \"Status tulisan masih draft.\"}`; this status gate itself blocks draft downloads, although the sibling direct-download route bypasses it.",
+      "recorded_by": "Contributor Download Validator",
+      "recorded_at": "2026-09-04 07:53:42 UTC",
+      "updated_at": "",
+      "previous_outcomes": [],
+      "source": "agent_reported"
+    },
+    {
+      "surface": "GET /tulisan/download/<pk>/",
+      "risk_area": "IDOR / broken object-level authorization on contributor archives",
+      "outcome": "reported",
+      "outcome_label": "Finding reported",
+      "evidence": "Anonymous GET requests for IDs 35 and 36 returned HTTP 200 application/zip archives containing DOCX and photo files, while check-download for both IDs returned 403 draft-status responses; reported as vuln-0003.",
+      "recorded_by": "Contributor Download Reporting",
+      "recorded_at": "2026-09-04 07:55:17 UTC",
+      "updated_at": "",
+      "previous_outcomes": [],
+      "source": "agent_reported"
+    },
+    {
+      "surface": "GET /tulisan/check-download/{pk}/ vs GET /tulisan/download/{pk}/",
+      "risk_area": "Broken function-level authorization / workflow bypass",
+      "outcome": "reported",
+      "outcome_label": "Finding reported",
+      "evidence": "For draft contributor IDs 35 and 36, check-download endpoint enforces 403 status draft, but direct download endpoint returns 200 ZIP with DOCX and photo, bypassing workflow gate.",
+      "recorded_by": "IDOR Authorization Tester",
+      "recorded_at": "2026-09-04 07:55:55 UTC",
+      "updated_at": "",
+      "previous_outcomes": [],
+      "source": "agent_reported"
+    },
+    {
+      "surface": "POST /create/tulisan/kontributor/",
+      "risk_area": "CSRF",
+      "outcome": "ruled_out",
+      "outcome_label": "Ruled out",
+      "evidence": "Unauthenticated submission without token or with invalid token returned HTTP 403; valid same-origin token accepted. Django CSRF middleware blocks missing/foreign Origin requests.",
+      "recorded_by": "XSS CSRF Tester",
+      "recorded_at": "2026-09-04 07:59:47 UTC",
+      "updated_at": "",
+      "previous_outcomes": [],
+      "source": "agent_reported"
+    },
+    {
+      "surface": "POST /redaksi/login/",
+      "risk_area": "CSRF",
+      "outcome": "ruled_out",
+      "outcome_label": "Ruled out",
+      "evidence": "Requests without or with invalid `csrfmiddlewaretoken` returned HTTP 403; valid token request reached application and returned normal login JSON.",
+      "recorded_by": "XSS CSRF Tester",
+      "recorded_at": "2026-09-04 07:59:57 UTC",
+      "updated_at": "",
+      "previous_outcomes": [],
+      "source": "agent_reported"
+    },
+    {
+      "surface": "POST /save-token/",
+      "risk_area": "CSRF",
+      "outcome": "ruled_out",
+      "outcome_label": "Ruled out",
+      "evidence": "JSON POST without token returned 403, foreign Origin returned 403, and same-origin request with current `X-CSRFToken` succeeded. Endpoint enforces CSRF.",
+      "recorded_by": "XSS CSRF Tester",
+      "recorded_at": "2026-09-04 08:00:03 UTC",
+      "updated_at": "",
+      "previous_outcomes": [],
+      "source": "agent_reported"
+    },
+    {
+      "surface": "POST /create/tulisan/kontributor/ multipart upload",
+      "risk_area": "SSRF / XXE / RCE via uploaded documents",
+      "outcome": "no_issue_found",
+      "outcome_label": "No issue identified",
+      "evidence": "Uploaded XML/SVG/PHP and traversal-named files are stored and served, but no server-side parser, URL fetch, or code execution was observed; PHP content served as octet-stream rather than executed. SVG script handling remains delegated to XSS validation.",
+      "recorded_by": "SSRF XXE RCE Tester",
+      "recorded_at": "2026-09-04 08:00:04 UTC",
+      "updated_at": "",
+      "previous_outcomes": [],
+      "source": "agent_reported"
+    },
+    {
+      "surface": "POST /create/tulisan/kontributor/ and GET /media/fileTulisan/<name>",
+      "risk_area": "Unrestricted file upload / stored XSS / server-side execution",
+      "outcome": "reported",
+      "outcome_label": "Finding reported",
+      "evidence": "Confirmed arbitrary file upload and stored XSS: unauthenticated multipart submission accepts attacker-controlled HTML/SVG/JS despite UI extension restrictions, stores under `/media/fileTulisan/`, and serves inline with attacker MIME/body absent `Content-Disposition` and `X-Content-Type-Options`. Uploaded HTML executed JavaScript in a browser; sibling validation/reporting filed this root cause as `vuln-0005`. Filename traversal attempts were normalized and did not demonstrate path escape.",
+      "recorded_by": "Upload Path Tester",
+      "recorded_at": "2026-09-04 08:00:04 UTC",
+      "updated_at": "2026-09-04 08:13:08 UTC",
+      "previous_outcomes": [
+        "needs_follow_up",
+        "needs_follow_up",
+        "reported"
+      ],
+      "source": "agent_reported"
+    },
+    {
+      "surface": "POST /save-token/ JSON token",
+      "risk_area": "SSRF / deserialization / injection",
+      "outcome": "no_issue_found",
+      "outcome_label": "No issue identified",
+      "evidence": "Endpoint only calls JSON parsing and stores `token` via ORM get_or_create; URL/gopher strings are accepted as opaque values and no outbound request or execution occurred.",
+      "recorded_by": "SSRF XXE RCE Tester",
+      "recorded_at": "2026-09-04 08:00:09 UTC",
+      "updated_at": "",
+      "previous_outcomes": [],
+      "source": "agent_reported"
+    },
+    {
+      "surface": "POST /cari/berita/ and POST /cari/berita/json/",
+      "risk_area": "Reflected XSS",
+      "outcome": "no_issue_found",
+      "outcome_label": "No issue identified",
+      "evidence": "Sprayed marker and SVG payloads in form and JSON search parameters; HTML responses did not contain markers and JSON responses returned fixed article records without reflection.",
+      "recorded_by": "XSS CSRF Tester",
+      "recorded_at": "2026-09-04 08:00:09 UTC",
+      "updated_at": "",
+      "previous_outcomes": [],
+      "source": "agent_reported"
+    },
+    {
+      "surface": "POST /cari/berita/json/ and GET /filter/terpopuler/berita/",
+      "risk_area": "SSRF / XXE / RCE",
+      "outcome": "not_applicable",
+      "outcome_label": "Not applicable",
+      "evidence": "These search/filter handlers expose ORM query and template/JSON response errors but accept no URL/XML/document input and showed no execution or server-side fetch primitive.",
+      "recorded_by": "SSRF XXE RCE Tester",
+      "recorded_at": "2026-09-04 08:00:14 UTC",
+      "updated_at": "",
+      "previous_outcomes": [],
+      "source": "agent_reported"
+    },
+    {
+      "surface": "GET /data/detail/berita/{title}/{id}/ and GET /detail/berita/ctg/{slug}/",
+      "risk_area": "Reflected XSS",
+      "outcome": "no_issue_found",
+      "outcome_label": "No issue identified",
+      "evidence": "Path payloads were either HTML-escaped in Django DEBUG 404 pages or URL-encoded in article share links; no attacker markup appeared in executable HTML context. Category payload redirected to homepage.",
+      "recorded_by": "XSS CSRF Tester",
+      "recorded_at": "2026-09-04 08:00:21 UTC",
+      "updated_at": "",
+      "previous_outcomes": [],
+      "source": "agent_reported"
+    },
+    {
+      "surface": "Editorial/data routes /redaksi/dashboard/, /data/json/berita/, /data/berita/x/",
+      "risk_area": "SSRF / XXE / RCE",
+      "outcome": "not_applicable",
+      "outcome_label": "Not applicable",
+      "evidence": "Unauthenticated requests reach Django views and fail on AnonymousUser attributes; no attacker-controlled URL/XML or command sink is present in observed behavior. Authenticated editorial credentials were unavailable for deeper parser testing.",
+      "recorded_by": "SSRF XXE RCE Tester",
+      "recorded_at": "2026-09-04 08:00:26 UTC",
+      "updated_at": "",
+      "previous_outcomes": [],
+      "source": "agent_reported"
+    },
+    {
+      "surface": "GET /penulis/data/json/kontributor/",
+      "risk_area": "Stored XSS",
+      "outcome": "needs_follow_up",
+      "outcome_label": "Requires further review",
+      "evidence": "Attacker-controlled contributor fields are stored verbatim and exposed unauthenticated as JSON (id 69). Rendering context in authenticated editorial dashboard could not be reached because dashboard consistently returns 500/redirects without credentials; execution impact remains unconfirmed.",
+      "recorded_by": "XSS CSRF Tester",
+      "recorded_at": "2026-09-04 08:02:56 UTC",
+      "updated_at": "",
+      "previous_outcomes": [],
+      "source": "agent_reported"
+    },
+    {
+      "surface": "GET /cari/berita/ (client-side rendering)",
+      "risk_area": "DOM XSS",
+      "outcome": "needs_follow_up",
+      "outcome_label": "Requires further review",
+      "evidence": "Page JavaScript assigns API-controlled `title`, `category`, and `img` values directly into `innerHTML` templates. Public JSON currently contains trusted article data, but ability for an attacker to alter article fields was not established.",
+      "recorded_by": "XSS CSRF Tester",
+      "recorded_at": "2026-09-04 08:03:31 UTC",
+      "updated_at": "",
+      "previous_outcomes": [],
+      "source": "agent_reported"
+    },
+    {
+      "surface": "GET / (client-side rendering)",
+      "risk_area": "DOM XSS",
+      "outcome": "needs_follow_up",
+      "outcome_label": "Requires further review",
+      "evidence": "Homepage JavaScript renders `title`, `category`, and `img` from `/filter/terpopuler/berita/` into `innerHTML` without visible escaping. Endpoint currently errors for some filters and attacker ability to modify article data was not confirmed.",
+      "recorded_by": "XSS CSRF Tester",
+      "recorded_at": "2026-09-04 08:03:38 UTC",
+      "updated_at": "",
+      "previous_outcomes": [],
+      "source": "agent_reported"
+    },
+    {
+      "surface": "POST /cari/berita/",
+      "risk_area": "SQL injection",
+      "outcome": "no_issue_found",
+      "outcome_label": "No issue identified",
+      "evidence": "Obtained the public CSRF token and tested benign, quote, tautology, contradiction, comment, and SLEEP payloads in `cari`, `tahun`, and `bulan`; responses remained application HTML with no SQL errors, predicate effects, or repeatable timing shift.",
+      "recorded_by": "SQL Injection Tester",
+      "recorded_at": "2026-09-04 08:05:29 UTC",
+      "updated_at": "",
+      "previous_outcomes": [],
+      "source": "agent_reported"
+    },
+    {
+      "surface": "POST /cari/berita/json/",
+      "risk_area": "SQL injection",
+      "outcome": "no_issue_found",
+      "outcome_label": "No issue identified",
+      "evidence": "With a valid CSRF token, sprayed all JSON/form fields using quotes, tautologies, contradictions, comments, and SLEEP variants; normal searches returned expected result counts or 'not found', with no SQL exception or reliable timing oracle.",
+      "recorded_by": "SQL Injection Tester",
+      "recorded_at": "2026-09-04 08:05:38 UTC",
+      "updated_at": "",
+      "previous_outcomes": [],
+      "source": "agent_reported"
+    },
+    {
+      "surface": "GET /filter/terpopuler/berita/?filter=",
+      "risk_area": "SQL injection",
+      "outcome": "ruled_out",
+      "outcome_label": "Ruled out",
+      "evidence": "All tested filter values, including quotes, tautologies, and SLEEP strings, produced the same Django TypeError (`NoneType` not iterable) at the application lookup path; no SQL parser error, differential result, or repeatable delay was observed.",
+      "recorded_by": "SQL Injection Tester",
+      "recorded_at": "2026-09-04 08:05:46 UTC",
+      "updated_at": "",
+      "previous_outcomes": [],
+      "source": "agent_reported"
+    },
+    {
+      "surface": "GET /data/detail/berita/{slug}/{id}/",
+      "risk_area": "SQL injection",
+      "outcome": "no_issue_found",
+      "outcome_label": "No issue identified",
+      "evidence": "Tested valid article ID 1830 with normal, quote, tautology, comment, and SLEEP slug variants; route returned the same article page without SQL error or repeatable timing oracle. Non-integer ID payloads are rejected by Django URL typing with 404.",
+      "recorded_by": "SQL Injection Tester",
+      "recorded_at": "2026-09-04 08:05:56 UTC",
+      "updated_at": "",
+      "previous_outcomes": [],
+      "source": "agent_reported"
+    },
+    {
+      "surface": "GET /detail/berita/sub/ctg/{id}/{ctg}/all/{page}/",
+      "risk_area": "SQL injection",
+      "outcome": "no_issue_found",
+      "outcome_label": "No issue identified",
+      "evidence": "Valid page values returned normal HTML; quote, tautology, and SLEEP payloads in integer page segments were rejected with 404 by Django URL converters, and invalid numeric IDs only triggered a generic debug application exception.",
+      "recorded_by": "SQL Injection Tester",
+      "recorded_at": "2026-09-04 08:06:06 UTC",
+      "updated_at": "",
+      "previous_outcomes": [],
+      "source": "agent_reported"
+    },
+    {
+      "surface": "Unauthenticated contributor submission fields (id=69) and public contributor/detail routes",
+      "risk_area": "Stored XSS",
+      "outcome": "needs_follow_up",
+      "outcome_label": "Requires further review",
+      "evidence": "POSTed SVG payloads in `nama`, `mediaSosial`, `alamat`, and `deskripsiDiri`; `/penulis/data/json/kontributor/` returns them verbatim as `application/json` (non-executable). `/penulis/kontributor/` and `/detail/tulisan/kontributor/69/` redirect unauthenticated requests to `/redaksi/dashboard/`, so authenticated editorial templates that may render these fields could not be reached or ruled out without valid editor credentials.",
+      "recorded_by": "Stored XSS Validator",
+      "recorded_at": "2026-09-04 08:06:29 UTC",
+      "updated_at": "",
+      "previous_outcomes": [],
+      "source": "agent_reported"
+    },
+    {
+      "surface": "GET /berita/tags/{tag}/{id}/",
+      "risk_area": "SQL injection",
+      "outcome": "needs_follow_up",
+      "outcome_label": "Requires further review",
+      "evidence": "Route consistently raises a `NoneType.tags` exception for tested tags and IDs, preventing a clean result oracle; no SQL parser error was seen, but the underlying query behavior cannot be fully confirmed without source or a known existing tag/article combination.",
+      "recorded_by": "SQL Injection Tester",
+      "recorded_at": "2026-09-04 08:06:31 UTC",
+      "updated_at": "",
+      "previous_outcomes": [],
+      "source": "agent_reported"
+    },
+    {
+      "surface": "POST /edit/berita/publish/ and /edit/berita/takedown/",
+      "risk_area": "Missing function-level authorization / business logic state manipulation",
+      "outcome": "reported",
+      "outcome_label": "Finding reported",
+      "evidence": "Unauthenticated fresh session with a valid CSRF token can POST JSON `{id:1830}`; both endpoints return `{\"status\": true}` and takedown removes the article from `/cari/berita/terbaru/json/`, while publish restores it.",
+      "recorded_by": "Auth Business Logic Tester",
+      "recorded_at": "2026-09-04 08:06:47 UTC",
+      "updated_at": "",
+      "previous_outcomes": [],
+      "source": "agent_reported"
+    },
+    {
+      "surface": "POST /redaksi/login/",
+      "risk_area": "Authentication brute force / account enumeration",
+      "outcome": "needs_follow_up",
+      "outcome_label": "Requires further review",
+      "evidence": "Valid-CSRF wrong-email attempts consistently reveal `Email belum terdaftar!` versus known blocked email `Akun Anda telah diblokir`; twelve rapid attempts showed no throttling or lockout, but no valid account was available to prove credential guessing or account takeover impact.",
+      "recorded_by": "Auth Business Logic Tester",
+      "recorded_at": "2026-09-04 08:06:53 UTC",
+      "updated_at": "2026-09-04 08:07:03 UTC",
+      "previous_outcomes": [
+        "no_issue_found"
+      ],
+      "source": "agent_reported"
+    },
+    {
+      "surface": "GET /tulisan/download/{pk}/",
+      "risk_area": "Object-level authorization / contributor workflow bypass",
+      "outcome": "reported",
+      "outcome_label": "Finding reported",
+      "evidence": "IDOR validator and reporter confirmed draft archive downloads bypass the companion authorization check; covered by `vuln-0003`.",
+      "recorded_by": "Root Agent",
+      "recorded_at": "2026-09-04 08:07:10 UTC",
+      "updated_at": "2026-09-04 08:15:45 UTC",
+      "previous_outcomes": [
+        "needs_follow_up"
+      ],
+      "source": "agent_reported"
+    },
+    {
+      "surface": "POST /create/tulisan/kontributor/",
+      "risk_area": "Business logic / duplicate submission and workflow integrity",
+      "outcome": "needs_follow_up",
+      "outcome_label": "Requires further review",
+      "evidence": "Public users can submit unlimited contributor records with valid CSRF; repeated identical submissions each returned success and created new draft records. No deduplication or per-identity rate limit was observed, but direct operational impact (storage exhaustion or editorial queue abuse) was not quantified.",
+      "recorded_by": "Auth Business Logic Tester",
+      "recorded_at": "2026-09-04 08:07:20 UTC",
+      "updated_at": "",
+      "previous_outcomes": [],
+      "source": "agent_reported"
+    },
+    {
+      "surface": "GET /firebase-messaging-sw.js",
+      "risk_area": "DOM XSS",
+      "outcome": "no_issue_found",
+      "outcome_label": "No issue identified",
+      "evidence": "Service worker is static Firebase messaging code; no attacker-controlled input or dynamic HTML sinks observed.",
+      "recorded_by": "XSS CSRF Tester",
+      "recorded_at": "2026-09-04 08:07:50 UTC",
+      "updated_at": "",
+      "previous_outcomes": [],
+      "source": "agent_reported"
+    },
+    {
+      "surface": "`/media/fileTulisan/*.svg` and `.html` uploaded by unauthenticated contributors",
+      "risk_area": "Stored XSS via uploaded active content",
+      "outcome": "reported",
+      "outcome_label": "Finding reported",
+      "evidence": "Dedicated validator and report `vuln-0005` confirmed browser execution from uploaded SVG served inline.",
+      "recorded_by": "Root Agent",
+      "recorded_at": "2026-09-04 08:08:06 UTC",
+      "updated_at": "2026-09-04 08:15:45 UTC",
+      "previous_outcomes": [
+        "reported",
+        "needs_follow_up"
+      ],
+      "source": "agent_reported"
+    },
+    {
+      "surface": "POST /edit/berita/takedown/ and POST /edit/berita/publish/",
+      "risk_area": "Broken function-level authorization / unauthorized editorial state change",
+      "outcome": "reported",
+      "outcome_label": "Finding reported",
+      "evidence": "Unauthenticated session with only a CSRF token successfully hid and restored an arbitrary public article; report vuln-0004 filed with reproduction and remediation.",
+      "recorded_by": "Publish Takedown Reporting",
+      "recorded_at": "2026-09-04 08:08:45 UTC",
+      "updated_at": "",
+      "previous_outcomes": [],
+      "source": "agent_reported"
+    },
+    {
+      "surface": "POST /edit/berita/publish/ and /edit/berita/takedown/",
+      "risk_area": "Missing authorization / vertical privilege escalation",
+      "outcome": "reported",
+      "outcome_label": "Finding reported",
+      "evidence": "Unauthenticated session obtains csrftoken from /redaksi/login/ and POSTs JSON {\"id\":1829}; both endpoints return status:true. Subsequent authenticated-free search JSON shows article 1829 disappears after takedown and reappears after publish, proving durable public visibility mutation.",
+      "recorded_by": "Publish Takedown Authz Validator",
+      "recorded_at": "2026-09-04 08:09:28 UTC",
+      "updated_at": "",
+      "previous_outcomes": [],
+      "source": "agent_reported"
+    },
+    {
+      "surface": "POST /create/tulisan/kontributor/ and /media/fileTulisan/<name>.svg",
+      "risk_area": "Stored XSS via unrestricted SVG upload",
+      "outcome": "reported",
+      "outcome_label": "Finding reported",
+      "evidence": "Unauthenticated multipart submission accepted an SVG payload when filename was .svg (or arbitrary content with .docx); GET returned 200 image/svg+xml with script intact. Chromium execution was verified: opening /media/fileTulisan/exec7811.svg set documentElement[data-pwned] to yes.",
+      "recorded_by": "SVG Upload XSS Validator",
+      "recorded_at": "2026-09-04 08:10:25 UTC",
+      "updated_at": "",
+      "previous_outcomes": [],
+      "source": "agent_reported"
+    },
+    {
+      "surface": "POST /create/tulisan/kontributor/ and GET /media/fileTulisan/exec7811.svg",
+      "risk_area": "Stored XSS via SVG upload",
+      "outcome": "reported",
+      "outcome_label": "Finding reported",
+      "evidence": "Unauthenticated multipart upload accepted an SVG and served it inline as image/svg+xml; Chrome execution set documentElement[data-pwned]='yes'. Report vuln-0005 filed.",
+      "recorded_by": "SVG Upload XSS Reporting",
+      "recorded_at": "2026-09-04 08:11:52 UTC",
+      "updated_at": "",
+      "previous_outcomes": [],
+      "source": "agent_reported"
+    },
+    {
+      "surface": "POST /create/tulisan/kontributor/ and GET /media/fileTulisan/<name>",
+      "risk_area": "Stored XSS via arbitrary HTML upload",
+      "outcome": "reported",
+      "outcome_label": "Finding reported",
+      "evidence": "Independent reproduction: authenticated only by CSRF token, multipart accepted `unique7744.html` with HTML MIME and returned JSON status true. Public GET served exact script as `text/html` without `Content-Disposition` or `X-Content-Type-Options`; Chromium executed it (document title changed to `XSS_EXEC`). Existing report/coverage entries cover the same root cause; no duplicate filed.",
+      "recorded_by": "Upload XSS Validator",
+      "recorded_at": "2026-09-04 08:21:18 UTC",
+      "updated_at": "",
+      "previous_outcomes": [],
+      "source": "agent_reported"
+    },
+    {
+      "surface": "POST /create/tulisan/kontributor/ multipart upload",
+      "risk_area": "RCE via uploaded PHP/script files",
+      "outcome": "ruled_out",
+      "outcome_label": "Ruled out",
+      "evidence": "A `.php` payload was accepted and publicly served, but GET returned the literal PHP source as `application/octet-stream`; no interpreter execution or transformed output occurred. This specific upload-serving path is static-only for PHP content.",
+      "recorded_by": "Upload XSS Validator",
+      "recorded_at": "2026-09-04 08:21:42 UTC",
+      "updated_at": "",
+      "previous_outcomes": [],
+      "source": "agent_reported"
+    },
+    {
+      "surface": "POST /create/tulisan/kontributor/ upload pipeline",
+      "risk_area": "Server-side code execution from uploaded scripts and extension bypasses",
+      "outcome": "no_issue_found",
+      "outcome_label": "No issue identified",
+      "evidence": "Uploaded `.php`, `.phtml`, `.cgi`, `.py`, and double-extension canaries; retrieval either returned 404 or static source/octet-stream. The `.php` canary response contained literal PHP source (`<?php echo \"RCE_MARKER_7744\"; ?>`), demonstrating no interpreter execution.",
+      "recorded_by": "SVG Upload XSS Reporting",
+      "recorded_at": "2026-09-04 08:23:46 UTC",
+      "updated_at": "",
+      "previous_outcomes": [],
+      "source": "agent_reported"
+    },
+    {
+      "surface": "Django deployment and contributor-upload execution model",
+      "risk_area": "Django-specific RCE via uploaded Python/template payloads",
+      "outcome": "needs_follow_up",
+      "outcome_label": "Requires further review",
+      "evidence": "The deployed target exposes no source repository to trace template/deserialization/command sinks; upload retrieval tests only established static serving and do not cover privileged editorial processing paths.",
+      "recorded_by": "SVG Upload XSS Reporting",
+      "recorded_at": "2026-09-04 08:25:36 UTC",
+      "updated_at": "",
+      "previous_outcomes": [],
+      "source": "agent_reported"
+    },
+    {
+      "surface": "Authenticated `/redaksi/profile/` and `/admin/alfikr/*` using low-privilege Editor test account",
+      "risk_area": "Privilege escalation / mass assignment / admin authorization",
+      "outcome": "needs_follow_up",
+      "outcome_label": "Requires further review",
+      "evidence": "Login succeeded and profile rendered role `Editor`; only `Wartawan` and `Editor` options were shown. Read-only admin GET reached a Django DEBUG 500 and user-management paths returned 404. No role-changing mutation was attempted to avoid altering production data, so server-side handling of forged `status_role=Admin` remains unverified.",
+      "recorded_by": "Authorized Privilege Escalation Validator",
+      "recorded_at": "2026-09-04 08:46:05 UTC",
+      "updated_at": "",
+      "previous_outcomes": [],
+      "source": "agent_reported"
+    }
+  ],
+  "gaps": [
+    {
+      "kind": "needs_follow_up",
+      "surface": "Public JSON endpoints /cari/berita/terbaru/json/, /cari/berita/json/, /filter/terpopuler/berita/, /save-token/",
+      "risk_area": "Endpoint behavior and method/auth surface mapping",
+      "detail": "GET latest JSON is publicly accessible; POST search is CSRF-protected (GET returns 403); filter and save-token GET requests generate Django 500 debug responses. Their security impact and input handling require dedicated validation."
+    },
+    {
+      "kind": "needs_follow_up",
+      "surface": "Public JSON endpoints (/cari/berita/terbaru/json/, /values/ctg/berita/, /values/ctg/sub/berita/<id>/, /dashboard/*)",
+      "risk_area": "API exposure / object-level authorization",
+      "detail": "Several data/statistics endpoints return 200 without authentication; no cross-account object test performed during reconnaissance."
+    },
+    {
+      "kind": "needs_follow_up",
+      "surface": "Django admin and editorial hidden routes (/admin/alfikr/*, /redaksi/dashboard/, /tambah/berita/, /edit/berita/*, /hapus/berita/json/, /data/json/berita/)",
+      "risk_area": "Hidden path and authentication-surface enumeration",
+      "detail": "Caido sitemap and direct baseline requests identify admin login (200), admin root redirect (302), and multiple editorial/data routes returning 302/403/405/500. No credentials were available to determine post-auth behavior or authorization boundaries."
+    },
+    {
+      "kind": "needs_follow_up",
+      "surface": "TCP/2000 on 36.92.8.230",
+      "risk_area": "exposed non-HTTP service",
+      "detail": "Nmap top-100 identified TCP/2000 open, but service/version/banner enrichment timed out; service ownership and security impact remain unconfirmed."
+    },
+    {
+      "kind": "needs_follow_up",
+      "surface": "GET /penulis/data/json/kontributor/",
+      "risk_area": "Stored XSS",
+      "detail": "Attacker-controlled contributor fields are stored verbatim and exposed unauthenticated as JSON (id 69). Rendering context in authenticated editorial dashboard could not be reached because dashboard consistently returns 500/redirects without credentials; execution impact remains unconfirmed."
+    },
+    {
+      "kind": "needs_follow_up",
+      "surface": "GET /cari/berita/ (client-side rendering)",
+      "risk_area": "DOM XSS",
+      "detail": "Page JavaScript assigns API-controlled `title`, `category`, and `img` values directly into `innerHTML` templates. Public JSON currently contains trusted article data, but ability for an attacker to alter article fields was not established."
+    },
+    {
+      "kind": "needs_follow_up",
+      "surface": "GET / (client-side rendering)",
+      "risk_area": "DOM XSS",
+      "detail": "Homepage JavaScript renders `title`, `category`, and `img` from `/filter/terpopuler/berita/` into `innerHTML` without visible escaping. Endpoint currently errors for some filters and attacker ability to modify article data was not confirmed."
+    },
+    {
+      "kind": "needs_follow_up",
+      "surface": "Unauthenticated contributor submission fields (id=69) and public contributor/detail routes",
+      "risk_area": "Stored XSS",
+      "detail": "POSTed SVG payloads in `nama`, `mediaSosial`, `alamat`, and `deskripsiDiri`; `/penulis/data/json/kontributor/` returns them verbatim as `application/json` (non-executable). `/penulis/kontributor/` and `/detail/tulisan/kontributor/69/` redirect unauthenticated requests to `/redaksi/dashboard/`, so authenticated editorial templates that may render these fields could not be reached or ruled out without valid editor credentials."
+    },
+    {
+      "kind": "needs_follow_up",
+      "surface": "GET /berita/tags/{tag}/{id}/",
+      "risk_area": "SQL injection",
+      "detail": "Route consistently raises a `NoneType.tags` exception for tested tags and IDs, preventing a clean result oracle; no SQL parser error was seen, but the underlying query behavior cannot be fully confirmed without source or a known existing tag/article combination."
+    },
+    {
+      "kind": "needs_follow_up",
+      "surface": "POST /redaksi/login/",
+      "risk_area": "Authentication brute force / account enumeration",
+      "detail": "Valid-CSRF wrong-email attempts consistently reveal `Email belum terdaftar!` versus known blocked email `Akun Anda telah diblokir`; twelve rapid attempts showed no throttling or lockout, but no valid account was available to prove credential guessing or account takeover impact."
+    },
+    {
+      "kind": "needs_follow_up",
+      "surface": "POST /create/tulisan/kontributor/",
+      "risk_area": "Business logic / duplicate submission and workflow integrity",
+      "detail": "Public users can submit unlimited contributor records with valid CSRF; repeated identical submissions each returned success and created new draft records. No deduplication or per-identity rate limit was observed, but direct operational impact (storage exhaustion or editorial queue abuse) was not quantified."
+    },
+    {
+      "kind": "needs_follow_up",
+      "surface": "Django deployment and contributor-upload execution model",
+      "risk_area": "Django-specific RCE via uploaded Python/template payloads",
+      "detail": "The deployed target exposes no source repository to trace template/deserialization/command sinks; upload retrieval tests only established static serving and do not cover privileged editorial processing paths."
+    },
+    {
+      "kind": "needs_follow_up",
+      "surface": "Authenticated `/redaksi/profile/` and `/admin/alfikr/*` using low-privilege Editor test account",
+      "risk_area": "Privilege escalation / mass assignment / admin authorization",
+      "detail": "Login succeeded and profile rendered role `Editor`; only `Wartawan` and `Editor` options were shown. Read-only admin GET reached a Django DEBUG 500 and user-management paths returned 404. No role-changing mutation was attempted to avoid altering production data, so server-side handling of forged `status_role=Admin` remains unverified."
+    },
+    {
+      "kind": "unrecorded_risk_class",
+      "risk_area": "race conditions",
+      "detail": "Agent(s) Auth Business Logic Tester were assigned the 'race_conditions' skill, but no coverage entry records this class being assessed. Treat it as unexamined, not as clean."
+    },
+    {
+      "kind": "agent_recorded_no_coverage",
+      "agent_name": "Django Debug Validation",
+      "detail": "Django Debug Validation ran (status: completed) without recording any coverage. Whatever it examined is absent from this record."
+    }
+  ]
+}

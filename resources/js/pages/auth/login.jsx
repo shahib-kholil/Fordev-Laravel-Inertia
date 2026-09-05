@@ -84,6 +84,16 @@ export default function Login({ status = null, canResetPassword = false }) {
                                 {processing && <Spinner />}
                                 Log in
                             </Button>
+                            <Button
+                                type="button"
+                                variant="outline"
+                                asChild
+                                className="w-full"
+                            >
+                                <a href="/auth/google/redirect">
+                                    Masuk dengan Google
+                                </a>
+                            </Button>
                         </div>
 
                         <div className="text-center text-sm text-muted-foreground">

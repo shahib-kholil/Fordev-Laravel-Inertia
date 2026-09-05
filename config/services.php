@@ -35,10 +35,17 @@ return [
         ],
     ],
 
+    'google' => [
+        'client_id' => env('GOOGLE_CLIENT_ID'),
+        'client_secret' => env('GOOGLE_CLIENT_SECRET'),
+        'redirect' => env('GOOGLE_REDIRECT_URI', env('APP_URL').'/auth/google/callback'),
+    ],
+
     'liquid' => [
-        'base_url' => env('LIQUID_API_BASE_URL', 'https://api.liqu.id/v1'),
+        'base_url' => env('LIQUID_API_BASE_URL', 'https://api.domainsas.com/v1'),
         'reseller_id' => env('LIQUID_RESELLER_ID'),
         'api_key' => env('LIQUID_API_KEY'),
+        'http_proxy' => env('LIQUID_HTTP_PROXY'),
     ],
 
 ];
