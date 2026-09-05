@@ -86,8 +86,9 @@ export default function Login({ status = null, canResetPassword = false }) {
                             </Button>
                         </div>
 
-                        <div className="text-center text-sm text-muted-foreground">
-                            Akses admin dibuat oleh super admin.
+                        <div className="flex items-center justify-center gap-1 text-center text-sm text-muted-foreground">
+                            <span aria-hidden="true">©</span>
+                            <span>Created by For Developers</span>
                         </div>
                     </>
                 )}

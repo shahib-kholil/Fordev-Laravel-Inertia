@@ -68,6 +68,7 @@ export default function PublicLayout({ title, description, children }) {
                                     size="icon"
                                     aria-label="Logout"
                                     title="Logout"
+                                    className="hidden md:inline-flex"
                                     onClick={() => router.post('/logout')}
                                 >
                                     <LogOut />

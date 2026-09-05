@@ -8,7 +8,7 @@ export default function Register() {
             <div className="space-y-4 text-center">
                 <h1 className="text-xl font-semibold">Registrasi ditutup</h1>
                 <p className="text-sm text-muted-foreground">
-                    Akses admin dibuat oleh super admin.
+                    © Created by For Developers.
                 </p>
                 <Link href="/login" className="text-sm underline">
                     Masuk
