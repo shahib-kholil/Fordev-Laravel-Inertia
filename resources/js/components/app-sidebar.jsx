@@ -9,6 +9,7 @@ import {
     ShoppingCart,
     Package,
     Images,
+    Users,
 } from 'lucide-react';
 import AppLogo from '@/components/app-logo';
 import { NavFooter } from '@/components/nav-footer';
@@ -60,6 +61,11 @@ const mainNavItems = [
         title: 'Settings',
         href: '/admin/settings',
         icon: Settings,
+    },
+    {
+        title: 'Kelola User / RBAC',
+        href: '/admin/users',
+        icon: Users,
     },
 ];
 

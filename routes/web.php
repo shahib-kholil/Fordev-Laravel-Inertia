@@ -7,6 +7,7 @@ use App\Http\Controllers\Admin\PortfoliosController;
 use App\Http\Controllers\Admin\SettingsController;
 use App\Http\Controllers\Admin\TestimonialsController;
 use App\Http\Controllers\Admin\WebServicesController;
+use App\Http\Controllers\Admin\UsersController;
 use App\Http\Controllers\Auth\GoogleController;
 use App\Http\Controllers\OrderController;
 use App\Http\Controllers\PublicPageController;
@@ -47,6 +48,8 @@ Route::middleware(['auth', 'verified', 'admin'])->group(function () {
     Route::get('admin/settings', [SettingsController::class, 'edit'])->name('admin.settings.edit');
     Route::put('admin/settings', [SettingsController::class, 'update'])->name('admin.settings.update');
     Route::resource('admin/orders', OrdersController::class)->names('admin.orders')->only(['index', 'show', 'update']);
+    Route::get('admin/users', [UsersController::class, 'index'])->name('admin.users.index');
+    Route::put('admin/users/{user}', [UsersController::class, 'update'])->name('admin.users.update');
 });
 
 require __DIR__.'/settings.php';
