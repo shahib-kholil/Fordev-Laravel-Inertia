@@ -21,12 +21,15 @@ class FordevFlowTest extends TestCase
     public function test_liquid_phone_formats_are_normalized_to_twelve_local_digits(): void
     {
         config(['services.liquid.reseller_id' => 'demo', 'services.liquid.api_key' => 'secret']);
-        Http::fake(['*customers' => Http::response(['customer_id' => 'cus_1'])]);
+        Http::fake([
+            '*customers?email=*' => Http::response([]),
+            '*customers' => Http::response(['customer_id' => 'cus_1']),
+        ]);
         $order = Order::factory()->make(['client_phone' => '+62 81234567890']);
 
         app(\App\Services\LiquidDomainClient::class)->signupCustomer($order);
 
-        Http::assertSent(fn ($request) => $request['tel_cc_no'] === '62' && $request['tel_no'] === '081234567890');
+        Http::assertSent(fn ($request) => $request->url() === config('services.liquid.base_url').'/customers' && $request['tel_cc_no'] === '62' && $request['tel_no'] === '081234567890');
     }
 
     public function test_domain_details_by_name_are_returned_as_array(): void
