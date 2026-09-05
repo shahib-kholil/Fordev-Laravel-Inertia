@@ -272,14 +272,14 @@ function TestimonialsSection({ testimonials }) {
                             key={item.id}
                             type="button"
                             onClick={() => setActiveIndex(index)}
-                            className={`group rounded-2xl border p-3 text-left transition-all ${activeIndex === index ? 'border-primary shadow-md' : 'hidden bg-card hover:border-primary/50 sm:block'}`}
+                            className={`group rounded-2xl border-0 p-3 text-left transition-all sm:border ${activeIndex === index ? 'sm:border-primary sm:shadow-md' : 'hidden bg-card sm:block hover:sm:border-primary/50'}`}
                         >
                             <div className="aspect-[4/3] overflow-hidden rounded-xl bg-muted">
                                 {item.client_photo ? (
                                     <img
                                         src={`/storage/${item.client_photo}`}
                                         alt={item.client_name}
-                                        className="size-full object-cover grayscale transition duration-500 group-hover:grayscale-0"
+                                        className="size-full object-cover grayscale-0 transition duration-500 sm:grayscale sm:group-hover:grayscale-0"
                                     />
                                 ) : (
                                     <div className="grid size-full place-items-center">
@@ -289,7 +289,7 @@ function TestimonialsSection({ testimonials }) {
                                     </div>
                                 )}
                             </div>
-                            <div className="mt-3 border-t pt-3">
+                            <div className="mt-3 border-t-0 pt-3 sm:border-t">
                                 <p className="font-semibold">
                                     {item.client_name}
                                 </p>
