@@ -158,10 +158,11 @@ class LiquidDomainClient
 
     private function telephoneNumber(string $phone): string
     {
-        $number = ltrim(preg_replace('/\D+/', '', $phone), '0');
+        $number = preg_replace('/\D+/', '', $phone);
+        $number = preg_replace('/^62/', '0', $number);
 
-        if ($number === '') {
-            throw new InvalidArgumentException('Nomor WhatsApp wajib diisi untuk registrasi domain.');
+        if ($number === '' || ! preg_match('/^0\d{11}$/', $number)) {
+            throw new InvalidArgumentException('Nomor WhatsApp harus berisi tepat 12 digit, diawali 0.');
         }
 
         return $number;

@@ -20,7 +20,7 @@ class OrderFactory extends Factory
             'order_number' => 'FRD-'.now()->format('Ymd').'-'.Str::upper(Str::random(4)),
             'client_name' => fake()->name(),
             'client_email' => fake()->safeEmail(),
-            'client_phone' => fake()->phoneNumber(),
+            'client_phone' => '081234567890',
             'order_type' => 'both',
             'web_service_id' => $webService?->id,
             'web_service_price_snapshot' => $webService?->price,

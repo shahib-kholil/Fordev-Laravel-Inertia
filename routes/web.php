@@ -47,6 +47,10 @@ Route::middleware(['auth', 'verified', 'admin'])->group(function () {
     Route::resource('admin/testimonials', TestimonialsController::class)->names('admin.testimonials')->except('show');
     Route::get('admin/settings', [SettingsController::class, 'edit'])->name('admin.settings.edit');
     Route::put('admin/settings', [SettingsController::class, 'update'])->name('admin.settings.update');
+    Route::middleware('super_admin')->group(function () {
+        Route::get('admin/users', [UsersController::class, 'index'])->name('admin.users.index');
+        Route::put('admin/users/{user}', [UsersController::class, 'update'])->name('admin.users.update');
+    });
     Route::resource('admin/orders', OrdersController::class)->names('admin.orders')->only(['index', 'show', 'update']);
     Route::get('admin/users', [UsersController::class, 'index'])->name('admin.users.index');
     Route::put('admin/users/{user}', [UsersController::class, 'update'])->name('admin.users.update');

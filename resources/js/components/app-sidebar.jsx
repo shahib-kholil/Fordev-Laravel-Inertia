@@ -1,4 +1,4 @@
-import { Link } from '@inertiajs/react';
+import { Link, usePage } from '@inertiajs/react';
 import {
     BookOpen,
     FolderGit2,
@@ -83,6 +83,12 @@ const footerNavItems = [
 ];
 
 export function AppSidebar() {
+    const { auth } = usePage().props;
+    const items =
+        auth?.user?.role === 'super_admin'
+            ? mainNavItems
+            : mainNavItems.filter((item) => item.href !== '/admin/users');
+
     return (
         <Sidebar collapsible="icon" variant="inset">
             <SidebarHeader>
@@ -98,7 +104,7 @@ export function AppSidebar() {
             </SidebarHeader>
 
             <SidebarContent>
-                <NavMain items={mainNavItems} />
+                <NavMain items={items} />
             </SidebarContent>
 
             <SidebarFooter>
