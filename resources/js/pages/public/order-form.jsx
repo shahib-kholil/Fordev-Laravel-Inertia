@@ -30,6 +30,7 @@ export default function OrderForm({
     const [copiedPayment, setCopiedPayment] = useState('');
     const phoneRef = useRef(null);
     const domainNameRef = useRef(null);
+
     const domainIdRef = useRef(null);
     const { data, setData, post, processing, errors } = useForm({
         client_phone: '',

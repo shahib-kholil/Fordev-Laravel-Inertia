@@ -10,8 +10,25 @@ import { Spinner } from '@/components/ui/spinner';
 import { store } from '@/routes/login';
 import { request } from '@/routes/password';
 import PasskeyVerify from '@/components/passkey-verify';
+import { useEffect } from 'react';
 
-export default function Login({ status = null, canResetPassword = false }) {
+export default function Login({
+    status = null,
+    canResetPassword = false,
+    turnstileSiteKey = null,
+}) {
+    useEffect(() => {
+        if (
+            !turnstileSiteKey ||
+            document.querySelector('script[src*="turnstile"]')
+        )
+            return;
+        const script = document.createElement('script');
+        script.src = 'https://challenges.cloudflare.com/turnstile/v0/api.js';
+        script.async = true;
+        document.head.appendChild(script);
+    }, [turnstileSiteKey]);
+
     return (
         <>
             <Head title="Log in" />
@@ -73,6 +90,18 @@ export default function Login({ status = null, canResetPassword = false }) {
                                 />
                                 <Label htmlFor="remember">Remember me</Label>
                             </div>
+
+                            {turnstileSiteKey && (
+                                <div className="flex justify-center">
+                                    <div
+                                        className="cf-turnstile"
+                                        data-sitekey={turnstileSiteKey}
+                                    />
+                                </div>
+                            )}
+                            <InputError
+                                message={errors['cf-turnstile-response']}
+                            />
 
                             <Button
                                 type="submit"

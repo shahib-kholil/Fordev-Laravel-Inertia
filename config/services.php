@@ -41,6 +41,11 @@ return [
         'redirect' => env('GOOGLE_REDIRECT_URI', env('APP_URL').'/auth/google/callback'),
     ],
 
+    'turnstile' => [
+        'site_key' => env('CLOUDFLARE_TURNSTILE_SITE_KEY'),
+        'secret_key' => env('CLOUDFLARE_TURNSTILE_SECRET_KEY'),
+    ],
+
     'liquid' => [
         'base_url' => env('LIQUID_API_BASE_URL', 'https://api.domainsas.com/v1'),
         'reseller_id' => env('LIQUID_RESELLER_ID'),

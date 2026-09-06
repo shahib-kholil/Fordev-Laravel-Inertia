@@ -6,10 +6,13 @@ use App\Actions\Fortify\CreateNewUser;
 use App\Actions\Fortify\ResetUserPassword;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rules\Password;
+use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
 use Laravel\Fortify\Features;
 use Laravel\Fortify\Fortify;
@@ -30,6 +33,7 @@ class FortifyServiceProvider extends ServiceProvider
     public function boot(): void
     {
         $this->configureActions();
+        $this->configureAuthentication();
         $this->configureViews();
         $this->configureRateLimiting();
     }
@@ -43,6 +47,25 @@ class FortifyServiceProvider extends ServiceProvider
         Fortify::createUsersUsing(CreateNewUser::class);
     }
 
+    private function configureAuthentication(): void
+    {
+        Fortify::authenticateUsing(function (Request $request) {
+            $secret = config('services.turnstile.secret_key');
+            $token = $request->input('cf-turnstile-response');
+
+            if (filled($secret) && (! filled($token) || Http::asForm()->timeout(5)->post(
+                'https://challenges.cloudflare.com/turnstile/v0/siteverify',
+                ['secret' => $secret, 'response' => $token, 'remoteip' => $request->ip()],
+            )->json('success') !== true)) {
+                throw ValidationException::withMessages(['cf-turnstile-response' => 'Verifikasi keamanan gagal. Silakan coba lagi.']);
+            }
+
+            $user = \App\Models\User::query()->where('email', $request->input('email'))->first();
+
+            return $user && Hash::check($request->input('password'), $user->password) ? $user : null;
+        });
+    }
+
     /**
      * Configure Fortify views.
      */
@@ -51,6 +74,7 @@ class FortifyServiceProvider extends ServiceProvider
         Fortify::loginView(fn (Request $request) => Inertia::render('auth/login', [
             'canResetPassword' => Features::enabled(Features::resetPasswords()),
             'status' => $request->session()->get('status'),
+            'turnstileSiteKey' => config('services.turnstile.site_key'),
         ]));
 
         Fortify::resetPasswordView(fn (Request $request) => Inertia::render('auth/reset-password', [

@@ -18,6 +18,12 @@ class FordevFlowTest extends TestCase
 {
     use RefreshDatabase;
 
+    protected function setUp(): void
+    {
+        parent::setUp();
+        config(['services.turnstile.site_key' => null, 'services.turnstile.secret_key' => null]);
+    }
+
     public function test_liquid_phone_formats_are_normalized_to_twelve_local_digits(): void
     {
         config(['services.liquid.reseller_id' => 'demo', 'services.liquid.api_key' => 'secret']);
