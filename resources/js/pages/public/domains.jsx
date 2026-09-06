@@ -48,7 +48,7 @@ export default function Domains({ domains, filters = {}, check }) {
                     </p>
                     <form
                         onSubmit={submit}
-                        className="mt-6 grid gap-2 rounded-2xl border bg-background p-4 sm:grid-cols-[1fr_9rem_auto]"
+                        className="mt-6 grid grid-cols-[minmax(0,1fr)_5.5rem] gap-2 rounded-2xl border bg-background p-4 sm:grid-cols-[1fr_9rem_auto]"
                     >
                         <Input
                             aria-label="Nama domain"
@@ -95,7 +95,10 @@ export default function Domains({ domains, filters = {}, check }) {
                             </SelectContent>
                         </Select>
 
-                        <Button disabled={processing || !extensions.length}>
+                        <Button
+                            className="col-span-2 sm:col-span-1"
+                            disabled={processing || !extensions.length}
+                        >
                             Cek domain
                         </Button>
                     </form>
@@ -445,5 +448,11 @@ function domainOption(name, item, available) {
 }
 
 function orderUrl(option) {
-    return `/order?type=domain&domain_name=${encodeURIComponent(option.domain.split('.')[0])}&domain_id=${option.id ?? ''}`;
+    const params = new URLSearchParams({
+        type: 'domain',
+        domain_name: option.domain.split('.')[0],
+        domain_id: String(option.id ?? ''),
+    });
+
+    return `/order?${params.toString()}`;
 }

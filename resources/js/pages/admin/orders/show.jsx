@@ -69,7 +69,6 @@ export default function OrderShow({ order, statuses }) {
                     <p>
                         Diskon snapshot: {order.domain_discount_snapshot ?? 0}
                     </p>
-                    <p>Biaya ICANN: {order.icann_fee_snapshot ?? 0}</p>
                     <p>Privasi WHOIS: {order.whois_privacy_snapshot ?? 0}</p>
                     <p>Pajak: {order.tax_snapshot ?? 0}</p>
                     <p className="font-semibold">

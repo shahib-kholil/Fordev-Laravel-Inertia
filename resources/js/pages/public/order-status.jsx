@@ -63,6 +63,15 @@ export default function OrderStatus({ order, paymentDetails = {} }) {
                             method={order.payment_method}
                             details={paymentDetails}
                         />
+                        {['failed', 'api_error', 'refund_needed'].includes(
+                            order.status,
+                        ) && (
+                            <div className="rounded-xl border border-amber-500/40 bg-amber-500/10 p-4 text-sm text-amber-700 dark:text-amber-300">
+                                Pendaftaran domain belum berhasil. Tim ForDev
+                                akan memeriksa pesanan ini dan menghubungi kamu
+                                jika diperlukan.
+                            </div>
+                        )}
                         {order.admin_notes && (
                             <div className="rounded-xl bg-muted/50 p-4 text-sm">
                                 {order.admin_notes}

@@ -51,6 +51,7 @@ return [
         'reseller_id' => env('LIQUID_RESELLER_ID'),
         'api_key' => env('LIQUID_API_KEY'),
         'http_proxy' => env('LIQUID_HTTP_PROXY'),
+        'panel_url' => env('LIQUID_PANEL_URL'),
     ],
 
 ];

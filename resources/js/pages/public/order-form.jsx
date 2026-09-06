@@ -1,5 +1,5 @@
 import { useForm } from '@inertiajs/react';
-import { AlertCircle, Check, Copy } from 'lucide-react';
+import { AlertCircle, Check, Copy, HelpCircle } from 'lucide-react';
 import { useRef, useState } from 'react';
 import InputError from '@/components/input-error';
 import { Button } from '@/components/ui/button';
@@ -30,14 +30,23 @@ export default function OrderForm({
     const [copiedPayment, setCopiedPayment] = useState('');
     const phoneRef = useRef(null);
     const domainNameRef = useRef(null);
-
     const domainIdRef = useRef(null);
+    const addressRef = useRef(null);
+    const cityRef = useRef(null);
+    const stateRef = useRef(null);
+    const zipcodeRef = useRef(null);
     const { data, setData, post, processing, errors } = useForm({
         client_phone: '',
-        order_type: defaults.order_type ?? 'website',
+        order_type: 'domain',
         web_service_id: '',
         domain_id: defaults.domain_id ?? '',
         domain_name: defaults.domain_name ?? '',
+        company: '',
+        address_line_1: '',
+        city: '',
+        state: '',
+        zipcode: '',
+        country_code: 'ID',
         notes: '',
         website_url: '',
         payment_method: '',
@@ -68,6 +77,17 @@ export default function OrderForm({
         data.domain_name.trim() &&
         data.domain_id,
     );
+    const formComplete = Boolean(
+        phoneValid &&
+        data.client_phone.trim() &&
+        (!needsWeb || data.web_service_id) &&
+        (!needsDomain ||
+            (cartComplete &&
+                data.address_line_1.trim() &&
+                data.city.trim() &&
+                data.state.trim() &&
+                data.zipcode.trim())),
+    );
     const canNavigateToStep = (target, current) =>
         target <= current ||
         (target === 3 && cartComplete) ||
@@ -75,7 +95,7 @@ export default function OrderForm({
 
     function submit(e) {
         e.preventDefault();
-        if (!cartComplete) {
+        if (!formComplete) {
             setCheckoutStep(2);
             return;
         }
@@ -87,13 +107,21 @@ export default function OrderForm({
             setCartNotice('Pilih metode pembayaran terlebih dahulu.');
             return;
         }
-        if (checkoutStep === 2 && !cartComplete) {
+        if (checkoutStep === 2 && !formComplete) {
             const missing =
                 !data.client_phone.trim() || !phoneValid
                     ? ['Nomor WhatsApp', phoneRef]
                     : !data.domain_name.trim()
                       ? ['Nama domain', domainNameRef]
-                      : ['Ekstensi domain', domainIdRef];
+                      : !data.domain_id
+                        ? ['Ekstensi domain', domainIdRef]
+                        : !data.address_line_1.trim()
+                          ? ['Alamat lengkap', addressRef]
+                          : !data.city.trim()
+                            ? ['Kota', cityRef]
+                            : !data.state.trim()
+                              ? ['Provinsi', stateRef]
+                              : ['Kode pos', zipcodeRef];
             setCartNotice(
                 !data.client_phone.trim()
                     ? 'Lengkapi Nomor WhatsApp terlebih dahulu.'
@@ -139,9 +167,6 @@ export default function OrderForm({
                                 : 'Minta Penawaran'}
                         </h1>
                     </div>
-                    <p className="text-sm text-slate-600 dark:text-slate-300">
-                        Langkah aman, tanpa pembayaran otomatis.
-                    </p>
                 </div>
                 <div
                     className={
@@ -151,7 +176,7 @@ export default function OrderForm({
                     }
                 >
                     <div className="space-y-4">
-                        <p className="rounded-xl border bg-muted/40 px-4 py-3 text-sm text-slate-600 dark:text-slate-300">
+                        <p className="rounded-xl border bg-primary/40 px-4 py-3 text-sm text-slate-600 dark:text-slate-300">
                             Pesanan dibuat sebagai{' '}
                             <strong>{buyer?.name}</strong> ({buyer?.email}).
                         </p>
@@ -177,6 +202,11 @@ export default function OrderForm({
                                     Tetap buat pesanan baru
                                 </Button>
                             </div>
+                        )}
+                        {errors.form && (
+                            <p className="rounded-xl border border-amber-500/40 bg-amber-500/10 px-4 py-3 text-sm text-amber-700 dark:text-amber-300">
+                                {errors.form}
+                            </p>
                         )}
                         <div
                             className={
@@ -222,68 +252,14 @@ export default function OrderForm({
                                         <InputError message={cartNotice} />
                                     )}
                             </Field>
-                            <Field label="Jenis pesanan">
-                                <Select
-                                    value={data.order_type}
-                                    onValueChange={(value) =>
-                                        setData('order_type', value)
-                                    }
-                                >
-                                    <SelectTrigger className="h-9 w-full">
-                                        <SelectValue placeholder="Pilih jenis pesanan" />
-                                    </SelectTrigger>
-                                    <SelectContent
-                                        position="popper"
-                                        sideOffset={4}
-                                        className="border border-input bg-background p-2 text-popover-foreground shadow-xl"
-                                    >
-                                        <SelectItem value="website">
-                                            Website
-                                        </SelectItem>
-                                        <SelectItem value="domain">
-                                            Domain
-                                        </SelectItem>
-                                        <SelectItem value="both">
-                                            Website + Domain
-                                        </SelectItem>
-                                    </SelectContent>
-                                </Select>
-                            </Field>
-                            {needsWeb && (
-                                <Field
-                                    label="Paket website"
-                                    error={errors.web_service_id}
-                                >
-                                    <Select
-                                        value={data.web_service_id}
-                                        onValueChange={(value) =>
-                                            setData('web_service_id', value)
-                                        }
-                                    >
-                                        <SelectTrigger className="h-9 w-full">
-                                            <SelectValue placeholder="Pilih paket" />
-                                        </SelectTrigger>
-                                        <SelectContent
-                                            position="popper"
-                                            sideOffset={4}
-                                            className="border border-input bg-background p-2 text-popover-foreground shadow-xl"
-                                        >
-                                            {webServices.map((item) => (
-                                                <SelectItem
-                                                    key={item.id}
-                                                    value={String(item.id)}
-                                                >
-                                                    {item.name}
-                                                </SelectItem>
-                                            ))}
-                                        </SelectContent>
-                                    </Select>
-                                </Field>
-                            )}
-
+                            <input
+                                type="hidden"
+                                name="order_type"
+                                value="domain"
+                            />
                             {needsDomain && (
                                 <div className="grid gap-4">
-                                    <div className="grid gap-4 sm:grid-cols-[1fr_11rem]">
+                                    <div className="grid grid-cols-[minmax(0,1fr)_5.5rem] gap-4 sm:grid-cols-[1fr_11rem]">
                                         <Field
                                             label="Nama domain"
                                             error={errors.domain_name}
@@ -357,16 +333,91 @@ export default function OrderForm({
                                         </Field>
                                     </div>
 
+                                    <div className="grid gap-4 sm:grid-cols-2">
+                                        <Field
+                                            label="Nama perusahaan (opsional)"
+                                            error={errors.company}
+                                        >
+                                            <Input
+                                                value={data.company}
+                                                onChange={(e) =>
+                                                    setData(
+                                                        'company',
+                                                        e.target.value,
+                                                    )
+                                                }
+                                            />
+                                        </Field>
+                                        <Field
+                                            label="Alamat lengkap"
+                                            error={errors.address_line_1}
+                                        >
+                                            <Input
+                                                ref={addressRef}
+                                                value={data.address_line_1}
+                                                onChange={(e) =>
+                                                    setData(
+                                                        'address_line_1',
+                                                        e.target.value,
+                                                    )
+                                                }
+                                                required
+                                            />
+                                        </Field>
+                                        <Field label="Kota" error={errors.city}>
+                                            <Input
+                                                ref={cityRef}
+                                                value={data.city}
+                                                onChange={(e) =>
+                                                    setData(
+                                                        'city',
+                                                        e.target.value,
+                                                    )
+                                                }
+                                                required
+                                            />
+                                        </Field>
+                                        <Field
+                                            label="Provinsi"
+                                            error={errors.state}
+                                        >
+                                            <Input
+                                                ref={stateRef}
+                                                value={data.state}
+                                                onChange={(e) =>
+                                                    setData(
+                                                        'state',
+                                                        e.target.value,
+                                                    )
+                                                }
+                                                required
+                                            />
+                                        </Field>
+                                        <Field
+                                            label="Kode pos"
+                                            error={errors.zipcode}
+                                        >
+                                            <Input
+                                                ref={zipcodeRef}
+                                                value={data.zipcode}
+                                                onChange={(e) =>
+                                                    setData(
+                                                        'zipcode',
+                                                        e.target.value,
+                                                    )
+                                                }
+                                                required
+                                            />
+                                        </Field>
+                                    </div>
                                     {selectedDomain && data.domain_name && (
                                         <p className="rounded-lg border bg-muted/40 px-3 py-2 text-sm text-slate-600 dark:text-slate-300">
-                                            Akan dicek ke Liqu.id saat dikirim:{' '}
+                                            Data di atas diperlukan untuk
+                                            registrasi domain.{' '}
                                             <strong>
-                                                {data.domain_name}
-                                                {selectedDomain.extension}
+                                                Kami sangat memprioritaskan
+                                                privasi dan keamanan data Anda.
                                             </strong>
-                                            . Jika kredensial API belum diisi,
-                                            pesanan tetap masuk untuk dicek
-                                            manual.
                                         </p>
                                     )}
                                 </div>
@@ -394,15 +445,6 @@ export default function OrderForm({
                                 }
                             />
                         </div>
-                        {isDomainCheckout && checkoutStep === 2 && (
-                            <div className="rounded-xl border bg-card p-5 text-sm">
-                                <p className="font-medium">Detail domain</p>
-                                <p className="mt-2 text-slate-600 dark:text-slate-300">
-                                    {data.domain_name}
-                                    {selectedDomain.extension}
-                                </p>
-                            </div>
-                        )}
                         {isDomainCheckout && checkoutStep === 3 && (
                             <div className="space-y-4 rounded-xl border bg-card p-5">
                                 <div>
@@ -561,7 +603,7 @@ export default function OrderForm({
                             />
                         )}
                     </div>
-                    {isDomainCheckout && (
+                    {isDomainCheckout ? (
                         <div className="space-y-3 lg:col-start-2 lg:row-start-1">
                             <OrderSummary
                                 domain={selectedDomain}
@@ -596,6 +638,13 @@ export default function OrderForm({
                                 )}
                             </div>
                         </div>
+                    ) : (
+                        <Button
+                            type="submit"
+                            disabled={processing || !formComplete}
+                        >
+                            {processing ? 'Memproses...' : 'Kirim Pesanan'}
+                        </Button>
                     )}
                 </div>
             </form>
@@ -604,12 +653,16 @@ export default function OrderForm({
 }
 
 function OrderSummary({ domain, name }) {
-    const price = Number(domain.promo_price || domain.price);
+    const normalPrice = Number(domain.price);
+    const price = Number(domain.promo_price || normalPrice);
     const tax = Math.round(price * 0.11);
+    const normalTax = Math.round(normalPrice * 0.11);
+    const discounted = price < normalPrice;
+    const [showTaxInfo, setShowTaxInfo] = useState(false);
     return (
-        <aside className="h-fit rounded-2xl border bg-card p-5 shadow-sm">
+        <aside className="h-fit rounded-2xl border-2 border-input bg-card p-5 shadow-sm">
             <h2 className="text-xl font-semibold">Daftar pesanan</h2>
-            <p className="mt-4 font-medium">
+            <p className="mt-4 font-semibold">
                 {name}
                 {domain.extension}
             </p>
@@ -618,21 +671,61 @@ function OrderSummary({ domain, name }) {
                     label="Registrasi domain – 1 tahun"
                     value={price}
                 />
-                <SummaryLine label="Biaya ICANN" value={3313} />
+                {discounted && (
+                    <div className="flex justify-between gap-3 text-xs text-muted-foreground">
+                        <span>Harga normal</span>
+                        <span className="line-through">
+                            Rp {normalPrice.toLocaleString('id-ID')}
+                        </span>
+                    </div>
+                )}
                 <SummaryLine label="Proteksi Privasi Domain WHOIS" value={0} />
                 <hr />
-                <SummaryLine label="Pajak" value={tax} />
+                <div className="relative">
+                    <SummaryLine
+                        label={
+                            <span className="inline-flex items-center gap-1">
+                                Pajak
+                                <button
+                                    type="button"
+                                    aria-label="Informasi pajak"
+                                    aria-expanded={showTaxInfo}
+                                    onClick={() =>
+                                        setShowTaxInfo((value) => !value)
+                                    }
+                                    className="rounded-full text-muted-foreground hover:text-foreground"
+                                >
+                                    <HelpCircle className="size-4" />
+                                </button>
+                            </span>
+                        }
+                        value={tax}
+                    />
+                    {showTaxInfo && (
+                        <p className="mt-2 rounded-lg bg-muted px-3 py-2 text-xs text-muted-foreground">
+                            Pajak sebesar 11% dihitung dari harga domain setelah
+                            diskon.
+                        </p>
+                    )}
+                </div>
                 <hr />
-                <SummaryLine label="Total" value={price + tax + 3313} strong />
+                {discounted && (
+                    <SummaryLine
+                        label="Total sebelum diskon"
+                        value={normalPrice + normalTax}
+                        muted
+                    />
+                )}
+                <SummaryLine label="Total" value={price + tax} strong />
             </div>
         </aside>
     );
 }
 
-function SummaryLine({ label, value, strong = false }) {
+function SummaryLine({ label, value, strong = false, muted = false }) {
     return (
         <div
-            className={`flex justify-between gap-3 ${strong ? 'text-lg font-bold' : ''}`}
+            className={`flex justify-between gap-3 ${strong ? 'text-lg font-bold' : ''} ${muted ? 'text-sm text-muted-foreground line-through' : ''}`}
         >
             <span>{label}</span>
             <span>Rp {Number(value).toLocaleString('id-ID')}</span>

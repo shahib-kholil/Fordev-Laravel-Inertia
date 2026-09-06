@@ -8,7 +8,7 @@ use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notification;
 
-class OrderActiveNotification extends Notification implements ShouldQueue
+class DomainRegistrationFailedNotification extends Notification implements ShouldQueue
 {
     use Queueable;
 
@@ -22,11 +22,11 @@ class OrderActiveNotification extends Notification implements ShouldQueue
     public function toMail(object $notifiable): MailMessage
     {
         return (new MailMessage)
-            ->subject('Domain aktif '.$this->order->order_number)
-            ->line('Pesanan domain Anda sudah aktif.')
+            ->subject('Pendaftaran domain memerlukan perhatian '.$this->order->order_number)
+            ->line('Pendaftaran domain belum berhasil diselesaikan.')
             ->line('Domain: '.$this->order->domain_name.($this->order->domain?->extension ?? ''))
-            ->line('Akun Resellercamp menggunakan email pembelian Anda. Gunakan fitur Forgot Password di panel provider untuk membuat password.')
-            ->action('Kelola Domain', config('services.liquid.panel_url', url('/cek-status-pesanan')))
-            ->line('Order: '.$this->order->order_number);
+            ->line('Status: '.$this->order->status)
+            ->line('Tim ForDev akan memeriksa pesanan Anda dan menghubungi Anda jika diperlukan.')
+            ->action('Cek Status Pesanan', url('/cek-status-pesanan'));
     }
 }

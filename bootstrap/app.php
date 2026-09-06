@@ -9,6 +9,7 @@ use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
 use Illuminate\Http\Middleware\AddLinkHeadersForPreloadedAssets;
 use Illuminate\Http\Request;
+use Illuminate\Http\Exceptions\ThrottleRequestsException;
 
 return Application::configure(basePath: dirname(__DIR__))
     ->withRouting(
@@ -18,6 +19,11 @@ return Application::configure(basePath: dirname(__DIR__))
     )
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->encryptCookies(except: ['appearance', 'sidebar_state']);
+        $middleware->redirectGuestsTo(function (Request $request) {
+            return $request->is('order')
+                ? route('login', ['login_notice' => 'domain'])
+                : route('login');
+        });
         $middleware->web(append: [
             HandleAppearance::class,
             HandleInertiaRequests::class,
@@ -26,6 +32,15 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->alias(['admin' => EnsureAdmin::class, 'super_admin' => EnsureSuperAdmin::class]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
+        $exceptions->render(function (ThrottleRequestsException $exception, Request $request) {
+            if ($request->header('X-Inertia')) {
+                return back()->withErrors([
+                    'form' => 'Terlalu banyak percobaan. Silakan tunggu sebentar lalu coba lagi.',
+                ]);
+            }
+
+            return back()->with('error', 'Terlalu banyak percobaan. Silakan tunggu sebentar lalu coba lagi.');
+        });
         $exceptions->shouldRenderJsonWhen(
             fn(Request $request) => $request->is('api/*'),
         );

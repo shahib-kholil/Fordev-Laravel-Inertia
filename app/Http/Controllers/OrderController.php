@@ -48,21 +48,24 @@ class OrderController extends Controller
 
         $data = $request->validate([
             'client_phone' => ['required', 'string', 'regex:/^[0-9+()\s-]{8,30}$/'],
-            'order_type' => ['required', Rule::in(['website', 'domain', 'both'])],
-            'web_service_id' => ['required_if:order_type,website,both', 'nullable', 'exists:web_services,id'],
-            'domain_id' => ['required_if:order_type,domain,both', 'nullable', 'exists:domains,id'],
-            'domain_name' => ['required_if:order_type,domain,both', 'nullable', 'string', 'max:255'],
+            'order_type' => ['nullable', Rule::in(['domain'])],
+            'domain_id' => ['required', 'exists:domains,id'],
+            'domain_name' => ['required', 'string', 'max:255'],
+            'company' => ['nullable', 'string', 'max:255'],
+            'address_line_1' => ['required', 'string', 'max:255'],
+            'city' => ['required', 'string', 'max:100'],
+            'state' => ['required', 'string', 'max:100'],
+            'zipcode' => ['required', 'string', 'max:20'],
+            'country_code' => ['required', 'string', 'size:2'],
             'notes' => ['nullable', 'string'],
             'payment_method' => ['nullable', Rule::in(['qris', 'dana', 'bank_transfer'])],
         ]);
 
-        $webService = isset($data['web_service_id']) ? WebService::find($data['web_service_id']) : null;
         $domain = isset($data['domain_id']) ? Domain::find($data['domain_id']) : null;
-        $domainPrice = $domain && in_array($data['order_type'], ['domain', 'both'], true)
-            ? ($domain->promo_price ?: $domain->price)
-            : null;
+        $data['order_type'] = 'domain';
+        $domainPrice = $domain?->promo_price ?: $domain?->price;
 
-        if ($domain && in_array($data['order_type'], ['domain', 'both'], true)) {
+        if ($domain) {
             $existing = Order::query()
                 ->where('client_email', $request->user()->email)
                 ->where('domain_id', $domain->id)
@@ -89,13 +92,13 @@ class OrderController extends Controller
             'client_name' => $request->user()->name,
             'client_email' => $request->user()->email,
             'order_number' => 'FRD-'.now()->format('Ymd').'-'.Str::upper(Str::random(4)),
-            'web_service_price_snapshot' => $webService?->price,
+            'web_service_price_snapshot' => null,
             'domain_price_snapshot' => $domainPrice,
             'domain_discount_snapshot' => $domain ? max(0, $domain->price - $domainPrice) : null,
-            'icann_fee_snapshot' => $domain ? 3313 : 0,
+            'icann_fee_snapshot' => 0,
             'whois_privacy_snapshot' => 0,
             'tax_snapshot' => $domainPrice ? (int) round($domainPrice * 0.11) : 0,
-            'total_snapshot' => $domainPrice ? (int) round($domainPrice * 1.11) + 3313 : null,
+            'total_snapshot' => $domainPrice ? (int) round($domainPrice * 1.11) : null,
             'status' => 'pending_confirmation',
         ]);
 

@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Models\Order;
 use App\Models\User;
 use App\Notifications\OrderActiveNotification;
+use App\Notifications\DomainRegistrationFailedNotification;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Notification;
 use Throwable;
@@ -52,7 +53,13 @@ class LiquidDomainRegistrar
                 Notification::route('mail', $order->client_email)->notify(new OrderActiveNotification($order->refresh()));
             });
         } catch (Throwable $e) {
-            $order->update(['status' => 'api_error', 'liquid_error' => $e->getMessage()]);
+            $order->update([
+                'status' => 'api_error',
+                'liquid_error' => $e->getMessage(),
+                'admin_notes' => 'Registrasi gagal. Tim ForDev perlu memeriksa pesanan ini.',
+            ]);
+            Notification::route('mail', $order->client_email)
+                ->notify(new DomainRegistrationFailedNotification($order->refresh()));
         }
     }
 }

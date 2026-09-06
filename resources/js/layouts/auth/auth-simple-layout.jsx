@@ -1,5 +1,4 @@
 import { Link } from '@inertiajs/react';
-import AppLogoIcon from '@/components/app-logo-icon';
 import { home } from '@/routes';
 
 export default function AuthSimpleLayout({ children, title, description }) {
@@ -12,8 +11,12 @@ export default function AuthSimpleLayout({ children, title, description }) {
                             href={home()}
                             className="flex flex-col items-center gap-2 font-medium"
                         >
-                            <div className="mb-1 flex h-9 w-9 items-center justify-center rounded-md">
-                                <AppLogoIcon className="size-9 fill-current text-[var(--foreground)] dark:text-white" />
+                            <div className="mb-1 flex h-12 w-12 items-center justify-center overflow-hidden rounded-xl">
+                                <img
+                                    src="/favicon.svg"
+                                    alt="ForDev"
+                                    className="size-12 object-contain"
+                                />
                             </div>
                             <span className="sr-only">{title}</span>
                         </Link>

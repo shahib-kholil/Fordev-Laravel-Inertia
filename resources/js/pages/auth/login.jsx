@@ -10,14 +10,21 @@ import { Spinner } from '@/components/ui/spinner';
 import { store } from '@/routes/login';
 import { request } from '@/routes/password';
 import PasskeyVerify from '@/components/passkey-verify';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 
 export default function Login({
     status = null,
     canResetPassword = false,
     turnstileSiteKey = null,
 }) {
+    const [notice, setNotice] = useState('');
+
     useEffect(() => {
+        const params = new URLSearchParams(window.location.search);
+        if (params.get('login_notice') === 'domain') {
+            setNotice('Silakan login terlebih dahulu untuk memesan domain.');
+        }
+
         if (
             !turnstileSiteKey ||
             document.querySelector('script[src*="turnstile"]')
@@ -34,6 +41,12 @@ export default function Login({
             <Head title="Log in" />
 
             <PasskeyVerify />
+
+            {notice && (
+                <div className="mb-4 rounded-lg border border-amber-500/40 bg-amber-500/10 px-4 py-3 text-sm text-amber-700 dark:text-amber-300">
+                    {notice}
+                </div>
+            )}
 
             <Form
                 {...store.form()}
