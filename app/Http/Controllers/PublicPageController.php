@@ -59,6 +59,7 @@ class PublicPageController extends Controller
         }
 
         $domains = Domain::query()->where('is_available', true)->orderBy('order_position')->orderBy('id')->paginate(20);
+
         return Inertia::render('public/domains', [
             'domains' => $domains,
             'filters' => $data,

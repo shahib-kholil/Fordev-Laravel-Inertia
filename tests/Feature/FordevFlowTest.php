@@ -5,9 +5,9 @@ namespace Tests\Feature;
 use App\Models\Domain;
 use App\Models\Order;
 use App\Models\User;
-use App\Models\WebService;
 use App\Notifications\OrderActiveNotification;
 use App\Notifications\OrderPendingPaymentNotification;
+use App\Services\LiquidDomainClient;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Http;
@@ -33,7 +33,7 @@ class FordevFlowTest extends TestCase
         ]);
         $order = Order::factory()->make(['client_phone' => '+62 81234567890']);
 
-        app(\App\Services\LiquidDomainClient::class)->signupCustomer($order);
+        app(LiquidDomainClient::class)->signupCustomer($order);
 
         Http::assertSent(fn ($request) => $request->url() === config('services.liquid.base_url').'/customers' && $request['tel_cc_no'] === '62' && $request['tel_no'] === '081234567890');
     }
@@ -48,7 +48,7 @@ class FordevFlowTest extends TestCase
             '*domains/details-by-name*' => Http::response(['domain_name' => 'tokoku.com', 'status' => 'active']),
         ]);
 
-        $details = app(\App\Services\LiquidDomainClient::class)->domainDetailsByName('TOKOKU.COM');
+        $details = app(LiquidDomainClient::class)->domainDetailsByName('TOKOKU.COM');
 
         $this->assertSame(['domain_name' => 'tokoku.com', 'status' => 'active'], $details);
     }
@@ -63,7 +63,7 @@ class FordevFlowTest extends TestCase
             '*account/prices' => Http::response(['com' => ['register' => 100000]]),
         ]);
 
-        $prices = app(\App\Services\LiquidDomainClient::class)->prices();
+        $prices = app(LiquidDomainClient::class)->prices();
 
         $this->assertSame(['com' => ['register' => 100000]], $prices);
     }
@@ -74,7 +74,7 @@ class FordevFlowTest extends TestCase
         $this->get('/jasa-web')->assertOk();
         $this->get('/domain')->assertOk();
         $this->get('/portofolio')->assertOk();
-        $this->get('/order')->assertRedirect('/login');
+        $this->get('/order')->assertRedirect('/login?login_notice=domain');
         $this->get('/cek-status-pesanan')->assertOk();
     }
 
@@ -83,21 +83,23 @@ class FordevFlowTest extends TestCase
         Http::fake(['*' => Http::response(['available' => true])]);
         Notification::fake();
 
-        $webService = WebService::factory()->create(['price' => 2500000]);
         $domain = Domain::factory()->create(['price' => 185000]);
         $this->actingAs(User::factory()->create(['name' => 'Budi', 'email' => 'budi@example.com']));
 
         $this->post('/order', [
             'client_phone' => '08123456789',
-            'order_type' => 'both',
-            'web_service_id' => $webService->id,
+            'order_type' => 'domain',
             'domain_id' => $domain->id,
             'domain_name' => 'tokoku',
+            'address_line_1' => 'Jl. Merdeka No. 1',
+            'city' => 'Jakarta',
+            'state' => 'DKI Jakarta',
+            'zipcode' => '10110',
+            'country_code' => 'ID',
         ])->assertRedirect('/cek-status-pesanan');
 
         $this->assertDatabaseHas(Order::class, [
             'client_email' => 'budi@example.com',
-            'web_service_price_snapshot' => 2500000,
             'domain_price_snapshot' => 185000,
             'status' => 'pending_confirmation',
         ]);
@@ -121,6 +123,11 @@ class FordevFlowTest extends TestCase
             'order_type' => 'domain',
             'domain_id' => $domain->id,
             'domain_name' => 'tokoku',
+            'address_line_1' => 'Jl. Merdeka No. 1',
+            'city' => 'Jakarta',
+            'state' => 'DKI Jakarta',
+            'zipcode' => '10110',
+            'country_code' => 'ID',
         ])->assertRedirect('/order')->assertSessionHasErrors('domain_name');
 
         $this->assertDatabaseMissing(Order::class, ['client_email' => 'budi@example.com']);
@@ -145,6 +152,11 @@ class FordevFlowTest extends TestCase
             'order_type' => 'domain',
             'domain_id' => $domain->id,
             'domain_name' => 'tokoku',
+            'address_line_1' => 'Jl. Merdeka No. 1',
+            'city' => 'Jakarta',
+            'state' => 'DKI Jakarta',
+            'zipcode' => '10110',
+            'country_code' => 'ID',
         ])->assertRedirect('/cek-status-pesanan');
 
         $this->assertDatabaseHas(Order::class, [

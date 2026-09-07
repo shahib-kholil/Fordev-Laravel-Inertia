@@ -2,14 +2,13 @@
 
 namespace App\Services;
 
-use InvalidArgumentException;
-
 use App\Models\Order;
 use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Http\Client\PendingRequest;
 use Illuminate\Http\Client\RequestException;
-use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Http;
+use InvalidArgumentException;
 
 class LiquidDomainClient
 {

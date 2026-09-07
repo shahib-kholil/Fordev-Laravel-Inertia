@@ -2,28 +2,29 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\StoreOrderRequest;
 use App\Models\Domain;
 use App\Models\Order;
 use App\Models\Setting;
 use App\Models\WebService;
 use App\Notifications\NewOrderNotification;
+use App\Services\IndonesianLocationService;
 use App\Services\LiquidDomainClient;
-
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Str;
-use Illuminate\Validation\Rule;
 use Inertia\Inertia;
 use Inertia\Response;
 
 class OrderController extends Controller
 {
-    public function create(Request $request): Response
+    public function create(Request $request, IndonesianLocationService $locations): Response
     {
         return Inertia::render('public/order-form', [
             'webServices' => WebService::query()->where('is_active', true)->get(),
             'domains' => Domain::query()->where('is_available', true)->get(),
+            'locations' => $locations->all(),
             'defaults' => [
                 'order_type' => request('type', 'website'),
                 'domain_id' => request('domain_id', ''),
@@ -41,25 +42,12 @@ class OrderController extends Controller
         ]);
     }
 
-    public function store(Request $request, LiquidDomainClient $liquid): RedirectResponse
+    public function store(StoreOrderRequest $request, LiquidDomainClient $liquid): RedirectResponse
     {
 
         abort_if($request->filled('website_url'), 422);
 
-        $data = $request->validate([
-            'client_phone' => ['required', 'string', 'regex:/^[0-9+()\s-]{8,30}$/'],
-            'order_type' => ['nullable', Rule::in(['domain'])],
-            'domain_id' => ['required', 'exists:domains,id'],
-            'domain_name' => ['required', 'string', 'max:255'],
-            'company' => ['nullable', 'string', 'max:255'],
-            'address_line_1' => ['required', 'string', 'max:255'],
-            'city' => ['required', 'string', 'max:100'],
-            'state' => ['required', 'string', 'max:100'],
-            'zipcode' => ['required', 'string', 'max:20'],
-            'country_code' => ['required', 'string', 'size:2'],
-            'notes' => ['nullable', 'string'],
-            'payment_method' => ['nullable', Rule::in(['qris', 'dana', 'bank_transfer'])],
-        ]);
+        $data = $request->validated();
 
         $domain = isset($data['domain_id']) ? Domain::find($data['domain_id']) : null;
         $data['order_type'] = 'domain';
@@ -73,7 +61,7 @@ class OrderController extends Controller
                 ->latest()
                 ->first();
 
-            if ($existing && !$request->boolean('confirm_new_order')) {
+            if ($existing && ! $request->boolean('confirm_new_order')) {
                 return back()
                     ->withErrors(['pending_order' => "Kamu masih memiliki pesanan {$existing->order_number} yang belum selesai."])
                     ->with('pending_order_number', $existing->order_number)

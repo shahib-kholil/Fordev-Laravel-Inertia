@@ -6,11 +6,12 @@ use App\Http\Controllers\Admin\OrdersController;
 use App\Http\Controllers\Admin\PortfoliosController;
 use App\Http\Controllers\Admin\SettingsController;
 use App\Http\Controllers\Admin\TestimonialsController;
-use App\Http\Controllers\Admin\WebServicesController;
 use App\Http\Controllers\Admin\UsersController;
+use App\Http\Controllers\Admin\WebServicesController;
 use App\Http\Controllers\Auth\GoogleController;
 use App\Http\Controllers\OrderController;
 use App\Http\Controllers\PublicPageController;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
 
@@ -22,10 +23,11 @@ Route::get('domain', [PublicPageController::class, 'domains'])->name('public.dom
 Route::get('portofolio', [PublicPageController::class, 'portfolios'])->name('public.portfolios');
 Route::get('portofolio/{portfolio:slug}', [PublicPageController::class, 'portfolio'])->name('public.portfolios.show');
 Route::middleware('auth')->group(function () {
-    Route::post('logout', function (\Illuminate\Http\Request $request) {
+    Route::post('logout', function (Request $request) {
         Auth::logout();
         $request->session()->invalidate();
         $request->session()->regenerateToken();
+
         return to_route('home');
     })->name('logout');
     Route::get('order', [OrderController::class, 'create'])->name('orders.create')->middleware('throttle:20,1');

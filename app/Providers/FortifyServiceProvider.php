@@ -4,10 +4,11 @@ namespace App\Providers;
 
 use App\Actions\Fortify\CreateNewUser;
 use App\Actions\Fortify\ResetUserPassword;
+use App\Models\User;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Support\Str;
@@ -60,7 +61,7 @@ class FortifyServiceProvider extends ServiceProvider
                 throw ValidationException::withMessages(['cf-turnstile-response' => 'Verifikasi keamanan gagal. Silakan coba lagi.']);
             }
 
-            $user = \App\Models\User::query()->where('email', $request->input('email'))->first();
+            $user = User::query()->where('email', $request->input('email'))->first();
 
             return $user && Hash::check($request->input('password'), $user->password) ? $user : null;
         });

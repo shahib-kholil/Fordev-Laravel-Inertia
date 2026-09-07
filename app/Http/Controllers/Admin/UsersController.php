@@ -28,6 +28,7 @@ class UsersController extends Controller
         $data = $request->validate(['role' => ['required', Rule::in(self::ROLES)]]);
         abort_if($request->user()->is($user) && $data['role'] !== 'super_admin', 422, 'Super Admin tidak dapat menurunkan role dirinya sendiri.');
         $user->update($data);
+
         return back();
     }
 }

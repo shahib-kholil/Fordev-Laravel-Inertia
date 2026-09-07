@@ -153,16 +153,14 @@ function DomainResults({ check, extensions }) {
                     </h2>
                 )}
             </div>
-            <div className="grid gap-4 lg:grid-cols-2">
-                <HeroDomain
-                    option={requested}
-                    title="Sesuai Permintaan"
-                    unavailable={!isAvailable}
-                />
-                {isAvailable && bundle.length > 1 && (
-                    <BundleCard name={name} options={bundle} />
-                )}
-            </div>
+            {isAvailable && (
+                <div className="grid gap-4 lg:grid-cols-2">
+                    <HeroDomain option={requested} title="Sesuai Permintaan" />
+                    {bundle.length > 1 && (
+                        <BundleCard name={name} options={bundle} />
+                    )}
+                </div>
+            )}
             <PromoNote />
             <div>
                 <h3 className="text-xl font-semibold">
@@ -286,7 +284,7 @@ function ExtensionCatalog({ extensions }) {
     );
 }
 
-function HeroDomain({ option, title, unavailable }) {
+function HeroDomain({ option, title }) {
     return (
         <article className={cardClass}>
             <Badge>{title}</Badge>
@@ -294,18 +292,15 @@ function HeroDomain({ option, title, unavailable }) {
                 <div>
                     <h3 className="text-2xl font-semibold">{option.domain}</h3>
                     <p className="mt-3 text-sm text-muted-foreground">
-                        {unavailable
-                            ? 'Domain utama tidak tersedia, coba alternatif di bawah.'
-                            : 'Domain ini cocok untuk brand, bisnis, atau komunitas Anda.'}
+                        Domain ini cocok untuk brand, bisnis, atau komunitas
+                        Anda.
                     </p>
                 </div>
                 <Price option={option} />
             </div>
-            {!unavailable && (
-                <Button className="mt-5" asChild>
-                    <Link href={orderUrl(option)}>Daftarkan domain</Link>
-                </Button>
-            )}
+            <Button className="mt-5" asChild>
+                <Link href={orderUrl(option)}>Daftarkan domain</Link>
+            </Button>
         </article>
     );
 }

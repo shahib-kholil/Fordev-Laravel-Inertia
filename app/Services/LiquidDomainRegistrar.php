@@ -4,8 +4,8 @@ namespace App\Services;
 
 use App\Models\Order;
 use App\Models\User;
-use App\Notifications\OrderActiveNotification;
 use App\Notifications\DomainRegistrationFailedNotification;
+use App\Notifications\OrderActiveNotification;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Notification;
 use Throwable;

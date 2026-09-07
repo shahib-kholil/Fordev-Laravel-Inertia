@@ -4,7 +4,6 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\Domain;
-
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
@@ -71,7 +70,6 @@ class DomainsController extends Controller
 
         return back();
     }
-
 
     private function validated(Request $request, ?Domain $domain = null): array
     {

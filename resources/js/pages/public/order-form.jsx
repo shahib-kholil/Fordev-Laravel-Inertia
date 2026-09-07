@@ -1,10 +1,15 @@
 import { useForm } from '@inertiajs/react';
-import { AlertCircle, Check, Copy, HelpCircle } from 'lucide-react';
+import { AlertCircle, Check, Copy } from 'lucide-react';
 import { useRef, useState } from 'react';
 import InputError from '@/components/input-error';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
+import SearchSelect from '@/components/ui/search-select';
+import { countries } from '@/data/countries';
+import Field from '@/components/order/field';
+import OrderSummary from '@/components/order/order-summary';
+import PaymentMethods from '@/components/order/payment-methods';
 import {
     Select,
     SelectContent,
@@ -23,11 +28,15 @@ export default function OrderForm({
     pendingOrder,
     paymentMethods = ['qris', 'dana', 'bank_transfer'],
     paymentDetails = {},
+    locations = [],
 }) {
     const [checkoutStep, setCheckoutStep] = useState(2);
     const [cartNotice, setCartNotice] = useState('');
     const [invalidField, setInvalidField] = useState('');
     const [copiedPayment, setCopiedPayment] = useState('');
+    const [countrySearch, setCountrySearch] = useState('');
+    const [stateSearch, setStateSearch] = useState('');
+    const [citySearch, setCitySearch] = useState('');
     const phoneRef = useRef(null);
     const domainNameRef = useRef(null);
     const domainIdRef = useRef(null);
@@ -35,6 +44,8 @@ export default function OrderForm({
     const cityRef = useRef(null);
     const stateRef = useRef(null);
     const zipcodeRef = useRef(null);
+    const countryRef = useRef(null);
+
     const { data, setData, post, processing, errors } = useForm({
         client_phone: '',
         order_type: 'domain',
@@ -53,6 +64,12 @@ export default function OrderForm({
         confirm_new_order: false,
     });
     const paymentComplete = Boolean(data.payment_method);
+
+    const states = locations.map((province) => province.name);
+    const selectedProvince = locations.find(
+        (province) => province.name === data.state,
+    );
+    const cities = selectedProvince?.cities?.map((city) => city.name) ?? [];
 
     async function copyPayment(value, method) {
         if (!value) return;
@@ -115,13 +132,15 @@ export default function OrderForm({
                       ? ['Nama domain', domainNameRef]
                       : !data.domain_id
                         ? ['Ekstensi domain', domainIdRef]
-                        : !data.address_line_1.trim()
-                          ? ['Alamat lengkap', addressRef]
-                          : !data.city.trim()
-                            ? ['Kota', cityRef]
-                            : !data.state.trim()
-                              ? ['Provinsi', stateRef]
-                              : ['Kode pos', zipcodeRef];
+                        : !data.country_code.trim()
+                          ? ['Negara', countryRef]
+                          : !data.state.trim()
+                            ? ['Provinsi', stateRef]
+                            : !data.city.trim()
+                              ? ['Kota', cityRef]
+                              : !data.zipcode.trim()
+                                ? ['Kode pos', zipcodeRef]
+                                : ['Alamat lengkap', addressRef];
             setCartNotice(
                 !data.client_phone.trim()
                     ? 'Lengkapi Nomor WhatsApp terlebih dahulu.'
@@ -300,7 +319,13 @@ export default function OrderForm({
 
                                         <Field
                                             label="Ekstensi"
-                                            error={errors.domain_id}
+                                            error={
+                                                errors.domain_id ||
+                                                (invalidField ===
+                                                'Ekstensi domain'
+                                                    ? cartNotice
+                                                    : '')
+                                            }
                                         >
                                             <Select
                                                 value={data.domain_id}
@@ -310,7 +335,12 @@ export default function OrderForm({
                                             >
                                                 <SelectTrigger
                                                     ref={domainIdRef}
-                                                    className="h-9 w-full"
+                                                    className={
+                                                        invalidField ===
+                                                        'Ekstensi domain'
+                                                            ? 'h-9 w-full border-destructive'
+                                                            : 'h-9 w-full'
+                                                    }
                                                 >
                                                     <SelectValue placeholder="Pilih ekstensi" />
                                                 </SelectTrigger>
@@ -349,44 +379,120 @@ export default function OrderForm({
                                             />
                                         </Field>
                                         <Field
-                                            label="Alamat lengkap"
-                                            error={errors.address_line_1}
+                                            label="Negara"
+                                            error={
+                                                errors.country_code ||
+                                                (invalidField === 'Negara'
+                                                    ? cartNotice
+                                                    : '')
+                                            }
                                         >
-                                            <Input
-                                                ref={addressRef}
-                                                value={data.address_line_1}
-                                                onChange={(e) =>
-                                                    setData(
-                                                        'address_line_1',
-                                                        e.target.value,
-                                                    )
+                                            <SearchSelect
+                                                ref={countryRef}
+                                                value={data.country_code}
+                                                placeholder="Pilih negara"
+                                                search={countrySearch}
+                                                setSearch={setCountrySearch}
+                                                options={countries.map(
+                                                    (item) => ({
+                                                        value: item.code,
+                                                        label: item.name,
+                                                    }),
+                                                )}
+                                                onChange={(value) =>
+                                                    setData((current) => ({
+                                                        ...current,
+                                                        country_code: value,
+                                                        state: '',
+                                                        city: '',
+                                                    }))
                                                 }
-                                                required
-                                            />
-                                        </Field>
-                                        <Field label="Kota" error={errors.city}>
-                                            <Input
-                                                ref={cityRef}
-                                                value={data.city}
-                                                onChange={(e) =>
-                                                    setData(
-                                                        'city',
-                                                        e.target.value,
-                                                    )
-                                                }
-                                                required
                                             />
                                         </Field>
                                         <Field
                                             label="Provinsi"
-                                            error={errors.state}
+                                            error={
+                                                errors.state ||
+                                                (invalidField === 'Provinsi'
+                                                    ? cartNotice
+                                                    : '')
+                                            }
                                         >
-                                            <Input
+                                            <SearchSelect
                                                 ref={stateRef}
                                                 value={data.state}
+                                                placeholder="Pilih provinsi"
+                                                search={stateSearch}
+                                                setSearch={setStateSearch}
+                                                options={states.map(
+                                                    (value) => ({
+                                                        value,
+                                                        label: value,
+                                                    }),
+                                                )}
+                                                onChange={(value) =>
+                                                    setData((current) => ({
+                                                        ...current,
+                                                        state: value,
+                                                        city: '',
+                                                    }))
+                                                }
+                                                disabled={!states.length}
+                                                invalid={
+                                                    invalidField === 'Provinsi'
+                                                }
+                                            />
+                                        </Field>
+                                        <Field
+                                            label="Kota"
+                                            error={
+                                                errors.city ||
+                                                (invalidField === 'Kota'
+                                                    ? cartNotice
+                                                    : '')
+                                            }
+                                        >
+                                            <SearchSelect
+                                                ref={cityRef}
+                                                value={data.city}
+                                                placeholder="Pilih kota"
+                                                search={citySearch}
+                                                setSearch={setCitySearch}
+                                                options={cities.map(
+                                                    (value) => ({
+                                                        value,
+                                                        label: value,
+                                                    }),
+                                                )}
+                                                onChange={(value) =>
+                                                    setData('city', value)
+                                                }
+                                                disabled={!cities.length}
+                                                invalid={
+                                                    invalidField === 'Kota'
+                                                }
+                                            />
+                                        </Field>
+                                        <Field
+                                            label="Kode pos"
+                                            error={
+                                                errors.zipcode ||
+                                                (invalidField === 'Kode pos'
+                                                    ? cartNotice
+                                                    : '')
+                                            }
+                                        >
+                                            <Input
+                                                ref={zipcodeRef}
+                                                className={
+                                                    invalidField === 'Kode pos'
+                                                        ? 'border-destructive pr-10'
+                                                        : ''
+                                                }
+                                                value={data.zipcode}
                                                 onChange={(e) =>
                                                     setData(
-                                                        'state',
+                                                        'zipcode',
                                                         e.target.value,
                                                     )
                                                 }
@@ -394,15 +500,27 @@ export default function OrderForm({
                                             />
                                         </Field>
                                         <Field
-                                            label="Kode pos"
-                                            error={errors.zipcode}
+                                            label="Alamat lengkap"
+                                            error={
+                                                errors.address_line_1 ||
+                                                (invalidField ===
+                                                'Alamat lengkap'
+                                                    ? cartNotice
+                                                    : '')
+                                            }
                                         >
                                             <Input
-                                                ref={zipcodeRef}
-                                                value={data.zipcode}
+                                                ref={addressRef}
+                                                className={
+                                                    invalidField ===
+                                                    'Alamat lengkap'
+                                                        ? 'border-destructive pr-10'
+                                                        : ''
+                                                }
+                                                value={data.address_line_1}
                                                 onChange={(e) =>
                                                     setData(
-                                                        'zipcode',
+                                                        'address_line_1',
                                                         e.target.value,
                                                     )
                                                 }
@@ -446,156 +564,19 @@ export default function OrderForm({
                             />
                         </div>
                         {isDomainCheckout && checkoutStep === 3 && (
-                            <div className="space-y-4 rounded-xl border bg-card p-5">
-                                <div>
-                                    <p className="font-medium">
-                                        Pilih metode pembayaran
-                                    </p>
-                                    <p className="mt-1 text-sm text-slate-600 dark:text-slate-300">
-                                        Pilih salah satu metode pembayaran yang
-                                        tersedia.
-                                    </p>
-                                </div>
-                                <div className="flex min-w-0 flex-col gap-3 pb-1 sm:flex-row">
-                                    {[
-                                        ['qris', 'QRIS'],
-                                        ['dana', 'DANA'],
-                                        ['bank_transfer', 'Transfer Rekening'],
-                                    ]
-                                        .filter(([value]) =>
-                                            paymentMethods.includes(value),
-                                        )
-                                        .map(([value, label]) => (
-                                            <button
-                                                key={value}
-                                                type="button"
-                                                onClick={() => {
-                                                    setData(
-                                                        'payment_method',
-                                                        value,
-                                                    );
-                                                    setCartNotice('');
-                                                }}
-                                                className={`min-w-0 flex-1 rounded-3xl border p-4 text-left transition-[flex,background-color,color,box-shadow] duration-500 ease-out sm:p-5 ${data.payment_method === value ? 'bg-primary text-primary-foreground shadow-lg sm:flex-[2]' : 'bg-card text-card-foreground hover:bg-accent'}`}
-                                            >
-                                                <span className="font-medium">
-                                                    {label}
-                                                </span>
-                                                {data.payment_method ===
-                                                    value && (
-                                                    <>
-                                                        <span
-                                                            className={`mt-1 block text-xs ${data.payment_method === value ? 'text-primary-foreground/90' : 'text-foreground'}`}
-                                                        >
-                                                            {value === 'qris' &&
-                                                            paymentDetails[
-                                                                value
-                                                            ] ? (
-                                                                <>
-                                                                    <img
-                                                                        src={
-                                                                            paymentDetails[
-                                                                                value
-                                                                            ].startsWith(
-                                                                                'http',
-                                                                            )
-                                                                                ? paymentDetails[
-                                                                                      value
-                                                                                  ]
-                                                                                : `/storage/${paymentDetails[value]}`
-                                                                        }
-                                                                        alt="QRIS"
-                                                                        className="mt-3 max-h-48 rounded-lg bg-white p-2"
-                                                                    />
-                                                                    <a
-                                                                        href={
-                                                                            paymentDetails[
-                                                                                value
-                                                                            ].startsWith(
-                                                                                'http',
-                                                                            )
-                                                                                ? paymentDetails[
-                                                                                      value
-                                                                                  ]
-                                                                                : `/storage/${paymentDetails[value]}`
-                                                                        }
-                                                                        download
-                                                                        target="_blank"
-                                                                        rel="noreferrer"
-                                                                        className="mt-3 inline-flex rounded-lg bg-white px-3 py-2 text-xs font-semibold text-slate-900 shadow-sm hover:bg-slate-100"
-                                                                    >
-                                                                        Download
-                                                                        QRIS
-                                                                    </a>
-                                                                </>
-                                                            ) : (
-                                                                paymentDetails[
-                                                                    value
-                                                                ] ||
-                                                                'Pembayaran manual'
-                                                            )}
-                                                        </span>
-                                                        {[
-                                                            'dana',
-                                                            'bank_transfer',
-                                                        ].includes(value) &&
-                                                            paymentDetails[
-                                                                value
-                                                            ] && (
-                                                                <span
-                                                                    role="button"
-                                                                    tabIndex={0}
-                                                                    className={`mt-3 inline-flex items-center gap-1 text-xs font-medium ${data.payment_method === value ? 'text-primary-foreground' : 'text-primary'}`}
-                                                                    onClick={(
-                                                                        event,
-                                                                    ) => {
-                                                                        event.stopPropagation();
-                                                                        copyPayment(
-                                                                            paymentDetails[
-                                                                                value
-                                                                            ],
-                                                                            value,
-                                                                        );
-                                                                    }}
-                                                                    onKeyDown={(
-                                                                        event,
-                                                                    ) => {
-                                                                        if (
-                                                                            event.key ===
-                                                                                'Enter' ||
-                                                                            event.key ===
-                                                                                ' '
-                                                                        ) {
-                                                                            event.preventDefault();
-                                                                            event.stopPropagation();
-                                                                            copyPayment(
-                                                                                paymentDetails[
-                                                                                    value
-                                                                                ],
-                                                                                value,
-                                                                            );
-                                                                        }
-                                                                    }}
-                                                                >
-                                                                    {copiedPayment ===
-                                                                    value ? (
-                                                                        <Check className="size-3" />
-                                                                    ) : (
-                                                                        <Copy className="size-3" />
-                                                                    )}
-                                                                    {copiedPayment ===
-                                                                    value
-                                                                        ? 'Tersalin'
-                                                                        : 'Salin'}
-                                                                </span>
-                                                            )}
-                                                    </>
-                                                )}
-                                            </button>
-                                        ))}
-                                </div>
-                            </div>
+                            <PaymentMethods
+                                availableMethods={paymentMethods}
+                                value={data.payment_method}
+                                details={paymentDetails}
+                                copiedPayment={copiedPayment}
+                                onChange={(value) => {
+                                    setData('payment_method', value);
+                                    setCartNotice('');
+                                }}
+                                onCopy={copyPayment}
+                            />
                         )}
+
                         {processing && (
                             <div
                                 className="h-20 animate-pulse rounded-xl bg-muted"
@@ -649,96 +630,5 @@ export default function OrderForm({
                 </div>
             </form>
         </PublicLayout>
-    );
-}
-
-function OrderSummary({ domain, name }) {
-    const normalPrice = Number(domain.price);
-    const price = Number(domain.promo_price || normalPrice);
-    const tax = Math.round(price * 0.11);
-    const normalTax = Math.round(normalPrice * 0.11);
-    const discounted = price < normalPrice;
-    const [showTaxInfo, setShowTaxInfo] = useState(false);
-    return (
-        <aside className="h-fit rounded-2xl border-2 border-input bg-card p-5 shadow-sm">
-            <h2 className="text-xl font-semibold">Daftar pesanan</h2>
-            <p className="mt-4 font-semibold">
-                {name}
-                {domain.extension}
-            </p>
-            <div className="mt-5 space-y-3 text-sm">
-                <SummaryLine
-                    label="Registrasi domain – 1 tahun"
-                    value={price}
-                />
-                {discounted && (
-                    <div className="flex justify-between gap-3 text-xs text-muted-foreground">
-                        <span>Harga normal</span>
-                        <span className="line-through">
-                            Rp {normalPrice.toLocaleString('id-ID')}
-                        </span>
-                    </div>
-                )}
-                <SummaryLine label="Proteksi Privasi Domain WHOIS" value={0} />
-                <hr />
-                <div className="relative">
-                    <SummaryLine
-                        label={
-                            <span className="inline-flex items-center gap-1">
-                                Pajak
-                                <button
-                                    type="button"
-                                    aria-label="Informasi pajak"
-                                    aria-expanded={showTaxInfo}
-                                    onClick={() =>
-                                        setShowTaxInfo((value) => !value)
-                                    }
-                                    className="rounded-full text-muted-foreground hover:text-foreground"
-                                >
-                                    <HelpCircle className="size-4" />
-                                </button>
-                            </span>
-                        }
-                        value={tax}
-                    />
-                    {showTaxInfo && (
-                        <p className="mt-2 rounded-lg bg-muted px-3 py-2 text-xs text-muted-foreground">
-                            Pajak sebesar 11% dihitung dari harga domain setelah
-                            diskon.
-                        </p>
-                    )}
-                </div>
-                <hr />
-                {discounted && (
-                    <SummaryLine
-                        label="Total sebelum diskon"
-                        value={normalPrice + normalTax}
-                        muted
-                    />
-                )}
-                <SummaryLine label="Total" value={price + tax} strong />
-            </div>
-        </aside>
-    );
-}
-
-function SummaryLine({ label, value, strong = false, muted = false }) {
-    return (
-        <div
-            className={`flex justify-between gap-3 ${strong ? 'text-lg font-bold' : ''} ${muted ? 'text-sm text-muted-foreground line-through' : ''}`}
-        >
-            <span>{label}</span>
-            <span>Rp {Number(value).toLocaleString('id-ID')}</span>
-        </div>
-    );
-}
-
-function Field({ label, error, children }) {
-    return (
-        <div className="grid gap-2 text-sm">
-            <label className="font-medium">{label}</label>
-            {children}
-            <InputError message={error} />
-        </div>
     );
 }
