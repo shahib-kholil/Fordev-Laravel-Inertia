@@ -2,6 +2,7 @@
 
 namespace App\Http\Requests;
 
+use App\Models\Setting;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
@@ -14,6 +15,19 @@ class StoreOrderRequest extends FormRequest
 
     public function rules(): array
     {
+        $enabledPaymentMethods = json_decode(
+            Setting::query()->where('key', 'payment_methods')->value('value')
+                ?? '["qris","dana","bank_transfer"]',
+            true,
+        );
+
+        $enabledPaymentMethods = is_array($enabledPaymentMethods)
+            ? array_values(array_intersect(
+                $enabledPaymentMethods,
+                ['qris', 'dana', 'bank_transfer'],
+            ))
+            : [];
+
         return [
             'client_phone' => ['required', 'string', 'regex:/^[0-9+()\s-]{8,30}$/'],
             'order_type' => ['nullable', Rule::in(['domain'])],
@@ -26,7 +40,10 @@ class StoreOrderRequest extends FormRequest
             'zipcode' => ['required', 'string', 'max:20'],
             'country_code' => ['required', 'string', 'size:2'],
             'notes' => ['nullable', 'string'],
-            'payment_method' => ['nullable', Rule::in(['qris', 'dana', 'bank_transfer'])],
+            'payment_method' => [
+                'required',
+                Rule::in($enabledPaymentMethods),
+            ],
         ];
     }
 }

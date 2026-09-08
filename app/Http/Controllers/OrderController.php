@@ -95,7 +95,7 @@ class OrderController extends Controller
             Notification::route('mail', $email)->notify(new NewOrderNotification($order));
         }
 
-        return to_route('orders.status')->with('order_number', $order->order_number);
+        return to_route('orders.status', ['order' => $order->order_number]);
     }
 
     public function status(Request $request): Response

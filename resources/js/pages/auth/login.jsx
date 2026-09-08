@@ -10,7 +10,7 @@ import { Spinner } from '@/components/ui/spinner';
 import { store } from '@/routes/login';
 import { request } from '@/routes/password';
 import PasskeyVerify from '@/components/passkey-verify';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 
 export default function Login({
     status = null,
@@ -18,6 +18,7 @@ export default function Login({
     turnstileSiteKey = null,
 }) {
     const [notice, setNotice] = useState('');
+    const turnstileContainer = useRef(null);
 
     useEffect(() => {
         const params = new URLSearchParams(window.location.search);
@@ -25,15 +26,38 @@ export default function Login({
             setNotice('Silakan login terlebih dahulu untuk memesan domain.');
         }
 
-        if (
-            !turnstileSiteKey ||
-            document.querySelector('script[src*="turnstile"]')
-        )
+        if (!turnstileSiteKey || !turnstileContainer.current) {
             return;
-        const script = document.createElement('script');
-        script.src = 'https://challenges.cloudflare.com/turnstile/v0/api.js';
-        script.async = true;
-        document.head.appendChild(script);
+        }
+
+        const render = () => {
+            if (!window.turnstile || !turnstileContainer.current) return;
+            const widgetId = window.turnstile.render(
+                turnstileContainer.current,
+                { sitekey: turnstileSiteKey },
+            );
+            turnstileContainer.current.dataset.widgetId = widgetId;
+        };
+        const existingScript = document.querySelector(
+            'script[src*="turnstile"]',
+        );
+
+        if (window.turnstile) {
+            render();
+        } else if (existingScript) {
+            existingScript.addEventListener('load', render, { once: true });
+        } else {
+            const script = document.createElement('script');
+            script.src = 'https://challenges.cloudflare.com/turnstile/v0/api.js';
+            script.async = true;
+            script.addEventListener('load', render, { once: true });
+            document.head.appendChild(script);
+        }
+
+        return () => {
+            const widgetId = turnstileContainer.current?.dataset.widgetId;
+            if (widgetId && window.turnstile) window.turnstile.remove(widgetId);
+        };
     }, [turnstileSiteKey]);
 
     return (
@@ -51,6 +75,18 @@ export default function Login({
             <Form
                 {...store.form()}
                 resetOnSuccess={['password']}
+                onError={(errors) => {
+                    if (errors['cf-turnstile-response']) {
+                        turnstileContainer.current
+                            ?.querySelectorAll(
+                                'input[name="cf-turnstile-response"]',
+                            )
+                            .forEach((input) => input.remove());
+                        window.turnstile?.reset(
+                            turnstileContainer.current?.dataset.widgetId,
+                        );
+                    }
+                }}
                 className="flex flex-col gap-6"
             >
                 {({ processing, errors }) => (
@@ -106,10 +142,7 @@ export default function Login({
 
                             {turnstileSiteKey && (
                                 <div className="flex justify-center">
-                                    <div
-                                        className="cf-turnstile"
-                                        data-sitekey={turnstileSiteKey}
-                                    />
+                                    <div ref={turnstileContainer} />
                                 </div>
                             )}
                             <InputError

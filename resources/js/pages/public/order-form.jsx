@@ -106,17 +106,40 @@ export default function OrderForm({
                 data.zipcode.trim())),
     );
     const canNavigateToStep = (target, current) =>
-        target <= current ||
-        (target === 3 && cartComplete) ||
-        (target === 4 && cartComplete && paymentComplete);
+        target <= current || (target === 3 && cartComplete);
 
     function submit(e) {
         e.preventDefault();
+        if (!paymentComplete) {
+            setCartNotice('Pilih metode pembayaran terlebih dahulu.');
+            setCheckoutStep(3);
+            return;
+        }
         if (!formComplete) {
             setCheckoutStep(2);
             return;
         }
-        post('/order');
+        post('/order', {
+            onError: (validationErrors) => {
+                if (
+                    Object.keys(validationErrors).some((key) =>
+                        [
+                            'client_phone',
+                            'domain_name',
+                            'domain_id',
+                            'company',
+                            'address_line_1',
+                            'city',
+                            'state',
+                            'zipcode',
+                            'country_code',
+                        ].includes(key),
+                    )
+                ) {
+                    setCheckoutStep(2);
+                }
+            },
+        });
     }
 
     function nextStep() {

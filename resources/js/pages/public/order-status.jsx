@@ -26,7 +26,7 @@ export default function OrderStatus({ order, paymentDetails = {} }) {
                     indicatorOnly
                 />
                 {!order ? (
-                    <LoadingCard />
+                    <EmptyCard />
                 ) : (
                     <div className="space-y-6 rounded-3xl border bg-card p-4 shadow-sm sm:p-6">
                         <div className="flex flex-col items-start gap-3 sm:flex-row sm:items-center sm:justify-between">
@@ -133,12 +133,11 @@ function PaymentDetails({ method, details }) {
     );
 }
 
-function LoadingCard() {
+function EmptyCard() {
     return (
-        <div className="space-y-5 rounded-2xl border p-6">
-            <div className="h-6 w-1/3 animate-pulse rounded bg-muted" />
-            <div className="h-20 animate-pulse rounded-xl bg-muted" />
-            <div className="h-32 animate-pulse rounded-xl bg-muted" />
+        <div className="rounded-2xl border p-6 text-sm text-slate-600 dark:text-slate-300">
+            Belum ada pesanan yang dipilih. Gunakan nomor pesanan dan email
+            untuk melihat status pesanan.
         </div>
     );
 }

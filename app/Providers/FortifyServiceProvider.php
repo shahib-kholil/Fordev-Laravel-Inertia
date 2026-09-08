@@ -54,10 +54,21 @@ class FortifyServiceProvider extends ServiceProvider
             $secret = config('services.turnstile.secret_key');
             $token = $request->input('cf-turnstile-response');
 
-            if (filled($secret) && (! filled($token) || Http::asForm()->timeout(5)->post(
-                'https://challenges.cloudflare.com/turnstile/v0/siteverify',
-                ['secret' => $secret, 'response' => $token, 'remoteip' => $request->ip()],
-            )->json('success') !== true)) {
+            $turnstileResponse = filled($secret) && filled($token)
+                ? Http::asForm()->timeout(5)->post(
+                    'https://challenges.cloudflare.com/turnstile/v0/siteverify',
+                    ['secret' => $secret, 'response' => $token],
+                )
+                : null;
+
+            if (filled($secret) && ($turnstileResponse?->json('success') !== true)) {
+                logger()->warning('Turnstile verification failed', [
+                    'errors' => $turnstileResponse?->json('error-codes', []) ?? ['missing-input-response'],
+                    'status' => $turnstileResponse?->status(),
+                    'has_token' => filled($token),
+                    'hostname' => $turnstileResponse?->json('hostname'),
+                ]);
+
                 throw ValidationException::withMessages(['cf-turnstile-response' => 'Verifikasi keamanan gagal. Silakan coba lagi.']);
             }
 
