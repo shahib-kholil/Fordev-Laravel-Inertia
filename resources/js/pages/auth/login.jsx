@@ -48,7 +48,8 @@ export default function Login({
             existingScript.addEventListener('load', render, { once: true });
         } else {
             const script = document.createElement('script');
-            script.src = 'https://challenges.cloudflare.com/turnstile/v0/api.js';
+            script.src =
+                'https://challenges.cloudflare.com/turnstile/v0/api.js';
             script.async = true;
             script.addEventListener('load', render, { once: true });
             document.head.appendChild(script);

@@ -88,6 +88,7 @@ class LiquidDomainClient
     /** @throws RequestException */
     public function signupCustomer(Order $order): string
     {
+        $company = filled($order->company) ? $order->company : $order->client_name;
         $existing = $this->http()->get('/customers', ['email' => $order->client_email])->throw()->json();
         $customerId = $existing[0]['customer_id'] ?? $existing[0]['id'] ?? null;
         if ($customerId) {
@@ -98,7 +99,7 @@ class LiquidDomainClient
             'email' => $order->client_email,
             'name' => $order->client_name,
             'password' => str()->password(15),
-            'company' => $order->company,
+            'company' => $company,
             'address_line_1' => $order->address_line_1,
             'city' => $order->city,
             'state' => $order->state,
@@ -114,9 +115,10 @@ class LiquidDomainClient
     /** @throws RequestException */
     public function createContact(Order $order, string $customerId): string
     {
+        $company = filled($order->company) ? $order->company : $order->client_name;
         $response = $this->http()->asForm()->post("/customers/{$customerId}/contacts", [
             'name' => $order->client_name,
-            'company' => $order->company,
+            'company' => $company,
             'email' => $order->client_email,
             'address_line_1' => $order->address_line_1,
             'city' => $order->city,
