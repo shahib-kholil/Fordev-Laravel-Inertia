@@ -1,9 +1,17 @@
 import { useState } from 'react';
 import { HelpCircle } from 'lucide-react';
 
-export default function OrderSummary({ domain, name }) {
-    const normalPrice = Number(domain.price);
-    const price = Number(domain.promo_price || normalPrice);
+export default function OrderSummary({ domain, name, bundle }) {
+    const bundleDomains = bundle?.domains ?? [];
+    const normalPrice = bundle
+        ? bundleDomains.reduce(
+              (sum, item) => sum + Number(item.promo_price || item.price),
+              0,
+          )
+        : Number(domain.price);
+    const price = bundle
+        ? Number(bundle.price)
+        : Number(domain.promo_price || normalPrice);
     const tax = Math.round(price * 0.11);
     const normalTax = Math.round(normalPrice * 0.11);
     const discounted = price < normalPrice;
@@ -13,8 +21,9 @@ export default function OrderSummary({ domain, name }) {
         <aside className="h-fit rounded-2xl border-2 border-input bg-card p-5 shadow-sm">
             <h2 className="text-xl font-semibold">Daftar pesanan</h2>
             <p className="mt-4 font-semibold">
-                {name}
-                {domain.extension}
+                {bundle
+                    ? `${name} (${bundleDomains.map((item) => item.extension).join(' + ')})`
+                    : `${name}${domain.extension}`}
             </p>
             <div className="mt-5 space-y-3 text-sm">
                 <SummaryLine

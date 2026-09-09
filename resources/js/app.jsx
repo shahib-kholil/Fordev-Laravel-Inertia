@@ -1,11 +1,17 @@
 import { createInertiaApp } from '@inertiajs/react';
 import { Toaster } from '@/components/ui/sonner';
 import { initializeTheme } from '@/hooks/use-appearance';
+import { useFlashToast } from '@/hooks/use-flash-toast';
 import AuthLayout from './layouts/auth-layout';
 import AppLayout from './layouts/app-layout';
 import AdminLayout from './layouts/admin-layout';
 import SettingsLayout from './layouts/settings/layout';
 import { TooltipProvider } from './components/ui/tooltip';
+
+function FlashToastApp({ app }) {
+    useFlashToast();
+    return app;
+}
 
 const appName = import.meta.env.VITE_APP_NAME || 'Laravel';
 
@@ -31,7 +37,7 @@ createInertiaApp({
     withApp(app) {
         return (
             <TooltipProvider delayDuration={0}>
-                {app}
+                <FlashToastApp app={app} />
                 <Toaster />
             </TooltipProvider>
         );

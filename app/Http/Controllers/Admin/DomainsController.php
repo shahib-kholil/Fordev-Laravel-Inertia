@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\Domain;
+use App\Models\Setting;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
@@ -21,6 +22,8 @@ class DomainsController extends Controller
                 ->orderBy('id')
                 ->paginate(10)
                 ->withQueryString(),
+            'bundles' => json_decode(Setting::query()->where('key', 'domain_bundles')->value('value') ?? '[]', true) ?: [],
+            'domainOptions' => Domain::query()->orderBy('order_position')->orderBy('id')->get(['id', 'extension']),
         ]);
     }
 
@@ -67,6 +70,28 @@ class DomainsController extends Controller
         foreach ($data['ids'] as $index => $id) {
             Domain::query()->whereKey($id)->update(['order_position' => $index + 1]);
         }
+
+        return back();
+    }
+
+    public function bundles(Request $request): RedirectResponse
+    {
+        $data = $request->validate([
+            'bundles' => ['nullable', 'array'],
+            'bundles.*.name' => ['required', 'string', 'max:100'],
+            'bundles.*.description' => ['nullable', 'string', 'max:500'],
+            'bundles.*.domain_ids' => ['required', 'array', 'min:2'],
+            'bundles.*.domain_ids.*' => ['integer', 'distinct', 'exists:domains,id'],
+            'bundles.*.price' => ['required', 'integer', 'min:0'],
+            'bundles.*.is_active' => ['boolean'],
+        ]);
+
+        Setting::query()->updateOrCreate(
+            ['key' => 'domain_bundles'],
+            ['value' => json_encode($data['bundles'] ?? [])],
+        );
+
+        Inertia::flash('toast', ['type' => 'success', 'message' => 'Bundling domain berhasil disimpan.']);
 
         return back();
     }

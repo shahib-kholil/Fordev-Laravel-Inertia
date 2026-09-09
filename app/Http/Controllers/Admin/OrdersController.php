@@ -23,7 +23,7 @@ class OrdersController extends Controller
             'filters' => ['q' => $request->query('q'), 'status' => $request->query('status')],
             'statuses' => self::STATUSES,
             'orders' => Order::query()
-                ->with(['webService:id,name', 'domain:id,extension'])
+                ->with(['webService:id,name', 'domain:id,extension', 'items:id,order_id,domain_name,extension,status'])
                 ->when($request->query('q'), fn ($query, $q) => $query->where(fn ($query) => $query
                     ->where('order_number', 'like', "%{$q}%")
                     ->orWhere('client_email', 'like', "%{$q}%")))
@@ -37,7 +37,7 @@ class OrdersController extends Controller
     public function show(Order $order): Response
     {
         return Inertia::render('admin/orders/show', [
-            'order' => $order->load(['webService:id,name', 'domain:id,extension']),
+            'order' => $order->load(['webService:id,name', 'domain:id,extension', 'items:id,order_id,domain_name,extension,status', 'items.domain:id,extension']),
             'statuses' => self::STATUSES,
         ]);
     }

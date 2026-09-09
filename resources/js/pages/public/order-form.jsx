@@ -29,6 +29,7 @@ export default function OrderForm({
     paymentMethods = ['qris', 'dana', 'bank_transfer'],
     paymentDetails = {},
     locations = [],
+    bundle,
 }) {
     const [checkoutStep, setCheckoutStep] = useState(2);
     const [cartNotice, setCartNotice] = useState('');
@@ -52,6 +53,7 @@ export default function OrderForm({
         web_service_id: '',
         domain_id: defaults.domain_id ?? '',
         domain_name: defaults.domain_name ?? '',
+        bundle_id: defaults.bundle_id ?? '',
         company: '',
         address_line_1: '',
         city: '',
@@ -64,6 +66,9 @@ export default function OrderForm({
         confirm_new_order: false,
     });
     const paymentComplete = Boolean(data.payment_method);
+    const bundleDomains = bundle?.domains ?? [];
+    const isBundleCheckout = Boolean(bundle && bundleDomains.length > 1);
+    const selectedBundleDomain = bundleDomains[0];
 
     const states = locations.map((province) => province.name);
     const selectedProvince = locations.find(
@@ -83,9 +88,9 @@ export default function OrderForm({
     }
     const needsWeb = ['website', 'both'].includes(data.order_type);
     const needsDomain = ['domain', 'both'].includes(data.order_type);
-    const selectedDomain = domains.find(
-        (item) => String(item.id) === String(data.domain_id),
-    );
+    const selectedDomain =
+        domains.find((item) => String(item.id) === String(data.domain_id)) ??
+        selectedBundleDomain;
     const isDomainCheckout = data.order_type === 'domain' && selectedDomain;
     const phoneValid = /^[0-9+()\s-]{8,30}$/.test(data.client_phone.trim());
     const cartComplete = Boolean(
@@ -301,7 +306,13 @@ export default function OrderForm({
                             />
                             {needsDomain && (
                                 <div className="grid gap-4">
-                                    <div className="grid grid-cols-[minmax(0,1fr)_5.5rem] gap-4 sm:grid-cols-[1fr_11rem]">
+                                    <div
+                                        className={
+                                            isBundleCheckout
+                                                ? 'grid gap-4'
+                                                : 'grid grid-cols-[minmax(0,1fr)_5.5rem] gap-4 sm:grid-cols-[1fr_11rem]'
+                                        }
+                                    >
                                         <Field
                                             label="Nama domain"
                                             error={errors.domain_name}
@@ -340,50 +351,55 @@ export default function OrderForm({
                                             </div>
                                         </Field>
 
-                                        <Field
-                                            label="Ekstensi"
-                                            error={
-                                                errors.domain_id ||
-                                                (invalidField ===
-                                                'Ekstensi domain'
-                                                    ? cartNotice
-                                                    : '')
-                                            }
-                                        >
-                                            <Select
-                                                value={data.domain_id}
-                                                onValueChange={(value) =>
-                                                    setData('domain_id', value)
+                                        {!isBundleCheckout && (
+                                            <Field
+                                                label="Ekstensi"
+                                                error={
+                                                    errors.domain_id ||
+                                                    (invalidField ===
+                                                    'Ekstensi domain'
+                                                        ? cartNotice
+                                                        : '')
                                                 }
                                             >
-                                                <SelectTrigger
-                                                    ref={domainIdRef}
-                                                    className={
-                                                        invalidField ===
-                                                        'Ekstensi domain'
-                                                            ? 'h-9 w-full border-destructive'
-                                                            : 'h-9 w-full'
+                                                <Select
+                                                    value={data.domain_id}
+                                                    onValueChange={(value) =>
+                                                        setData(
+                                                            'domain_id',
+                                                            value,
+                                                        )
                                                     }
                                                 >
-                                                    <SelectValue placeholder="Pilih ekstensi" />
-                                                </SelectTrigger>
-                                                <SelectContent
-                                                    position="popper"
-                                                    sideOffset={4}
-                                                >
-                                                    {domains.map((item) => (
-                                                        <SelectItem
-                                                            key={item.id}
-                                                            value={String(
-                                                                item.id,
-                                                            )}
-                                                        >
-                                                            {item.extension}
-                                                        </SelectItem>
-                                                    ))}
-                                                </SelectContent>
-                                            </Select>
-                                        </Field>
+                                                    <SelectTrigger
+                                                        ref={domainIdRef}
+                                                        className={
+                                                            invalidField ===
+                                                            'Ekstensi domain'
+                                                                ? 'h-9 w-full border-destructive'
+                                                                : 'h-9 w-full'
+                                                        }
+                                                    >
+                                                        <SelectValue placeholder="Pilih ekstensi" />
+                                                    </SelectTrigger>
+                                                    <SelectContent
+                                                        position="popper"
+                                                        sideOffset={4}
+                                                    >
+                                                        {domains.map((item) => (
+                                                            <SelectItem
+                                                                key={item.id}
+                                                                value={String(
+                                                                    item.id,
+                                                                )}
+                                                            >
+                                                                {item.extension}
+                                                            </SelectItem>
+                                                        ))}
+                                                    </SelectContent>
+                                                </Select>
+                                            </Field>
+                                        )}
                                     </div>
 
                                     <div className="grid gap-4 sm:grid-cols-2">
@@ -612,6 +628,7 @@ export default function OrderForm({
                             <OrderSummary
                                 domain={selectedDomain}
                                 name={data.domain_name}
+                                bundle={isBundleCheckout ? bundle : null}
                             />
                             <div className="flex justify-between gap-3">
                                 <Button

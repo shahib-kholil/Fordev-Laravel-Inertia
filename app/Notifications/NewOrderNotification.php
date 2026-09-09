@@ -26,6 +26,10 @@ class NewOrderNotification extends Notification implements ShouldQueue
             ->line('Ada permintaan penawaran baru dari '.$this->order->client_name.'.')
             ->line('Email: '.$this->order->client_email)
             ->line('Tipe: '.$this->order->order_type)
+            ->when($this->order->items()->exists(), fn (MailMessage $message) => $message->line(
+                'Domain: '.$this->order->items()->get(['domain_name', 'extension'])->map(fn ($item) => $item->domain_name.$item->extension)->join(', ')
+            ))
+            ->line('Total: Rp '.number_format((int) ($this->order->total_snapshot ?? 0), 0, ',', '.'))
             ->action('Lihat Order', url('/admin/orders/'.$this->order->id));
     }
 }

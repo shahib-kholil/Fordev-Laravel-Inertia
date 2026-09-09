@@ -1,4 +1,4 @@
-import { Head, Link, router } from '@inertiajs/react';
+import { Head, Link, router, useForm } from '@inertiajs/react';
 import { GripVertical } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { AdminPageShell } from '@/components/admin/page-shell';
@@ -10,8 +10,14 @@ import {
 import { Button } from '@/components/ui/button';
 import Pagination from '@/components/pagination';
 import AdminSearch from '@/components/admin-search';
+import { Input } from '@/components/ui/input';
 
-export default function DomainsIndex({ domains, filters }) {
+export default function DomainsIndex({
+    domains,
+    filters,
+    bundles = [],
+    domainOptions = [],
+}) {
     const [rows, setRows] = useState(domains.data);
     const [dragId, setDragId] = useState(null);
 
@@ -149,7 +155,139 @@ export default function DomainsIndex({ domains, filters }) {
                     </AdminTable>
                 </AdminTableCard>
             </AdminPageShell>
+            <BundleSettings bundles={bundles} domainOptions={domainOptions} />
         </>
+    );
+}
+
+function BundleSettings({ bundles: initialBundles, domainOptions }) {
+    const { data, setData, put, processing, errors } = useForm({
+        bundles: initialBundles,
+    });
+    const update = (index, changes) =>
+        setData(
+            'bundles',
+            data.bundles.map((item, i) =>
+                i === index ? { ...item, ...changes } : item,
+            ),
+        );
+
+    return (
+        <AdminPageShell
+            title="Bundling domain"
+            description="Atur paket bundling yang tampil di halaman publik."
+        >
+            <form
+                onSubmit={(e) => {
+                    e.preventDefault();
+                    put('/admin/domains/bundles');
+                }}
+                className="space-y-4"
+            >
+                {data.bundles.map((bundle, index) => (
+                    <div
+                        key={index}
+                        className="grid gap-3 rounded-2xl border p-4"
+                    >
+                        <Input
+                            value={bundle.name}
+                            placeholder="Nama paket"
+                            onChange={(e) =>
+                                update(index, { name: e.target.value })
+                            }
+                        />
+                        <textarea
+                            className="min-h-20 w-full rounded-lg border bg-transparent p-2 text-sm"
+                            value={bundle.description ?? ''}
+                            placeholder="Deskripsi"
+                            onChange={(e) =>
+                                update(index, { description: e.target.value })
+                            }
+                        />
+                        <div className="grid gap-2 sm:grid-cols-3">
+                            {domainOptions.map((domain) => (
+                                <label
+                                    key={domain.id}
+                                    className="flex items-center gap-2 text-sm"
+                                >
+                                    <input
+                                        type="checkbox"
+                                        checked={(
+                                            bundle.domain_ids ?? []
+                                        ).includes(domain.id)}
+                                        onChange={(e) =>
+                                            update(index, {
+                                                domain_ids: e.target.checked
+                                                    ? [
+                                                          ...(bundle.domain_ids ??
+                                                              []),
+                                                          domain.id,
+                                                      ]
+                                                    : (
+                                                          bundle.domain_ids ??
+                                                          []
+                                                      ).filter(
+                                                          (id) =>
+                                                              id !== domain.id,
+                                                      ),
+                                            })
+                                        }
+                                    />
+                                    {domain.extension}
+                                </label>
+                            ))}
+                        </div>
+                        <Input
+                            type="number"
+                            min="0"
+                            value={bundle.price}
+                            placeholder="Harga bundling"
+                            onChange={(e) =>
+                                update(index, { price: e.target.value })
+                            }
+                        />
+                        <label className="flex items-center gap-2 text-sm">
+                            <input
+                                type="checkbox"
+                                checked={bundle.is_active}
+                                onChange={(e) =>
+                                    update(index, {
+                                        is_active: e.target.checked,
+                                    })
+                                }
+                            />{' '}
+                            Tampilkan di publik
+                        </label>
+                        {errors[`bundles.${index}.domain_ids`] && (
+                            <p className="text-sm text-destructive">
+                                Pilih minimal dua ekstensi.
+                            </p>
+                        )}
+                    </div>
+                ))}
+                <div className="flex gap-2">
+                    <Button
+                        type="button"
+                        variant="outline"
+                        onClick={() =>
+                            setData('bundles', [
+                                ...data.bundles,
+                                {
+                                    name: '',
+                                    description: '',
+                                    domain_ids: [],
+                                    price: '',
+                                    is_active: true,
+                                },
+                            ])
+                        }
+                    >
+                        Tambah bundling
+                    </Button>
+                    <Button disabled={processing}>Simpan bundling</Button>
+                </div>
+            </form>
+        </AdminPageShell>
     );
 }
 

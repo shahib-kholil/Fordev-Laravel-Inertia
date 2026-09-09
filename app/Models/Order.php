@@ -7,6 +7,7 @@ use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 #[Fillable(['order_number', 'client_name', 'client_email', 'client_phone', 'company', 'address_line_1', 'city', 'state', 'zipcode', 'country_code', 'order_type', 'web_service_id', 'web_service_price_snapshot', 'domain_id', 'domain_name', 'payment_method', 'domain_price_snapshot', 'domain_discount_snapshot', 'icann_fee_snapshot', 'whois_privacy_snapshot', 'tax_snapshot', 'total_snapshot', 'liquid_customer_id', 'liquid_domain_id', 'liquid_error', 'paid_at', 'registered_at', 'status', 'notes', 'admin_notes'])]
 class Order extends Model
@@ -27,5 +28,10 @@ class Order extends Model
     public function domain(): BelongsTo
     {
         return $this->belongsTo(Domain::class);
+    }
+
+    public function items(): HasMany
+    {
+        return $this->hasMany(OrderItem::class);
     }
 }

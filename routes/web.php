@@ -42,6 +42,7 @@ Route::middleware(['auth', 'verified', 'admin'])->group(function () {
     Route::get('dashboard', DashboardController::class)->name('dashboard');
     Route::get('admin/dashboard', DashboardController::class)->name('admin.dashboard');
     Route::put('admin/domains/reorder', [DomainsController::class, 'reorder'])->name('admin.domains.reorder');
+    Route::put('admin/domains/bundles', [DomainsController::class, 'bundles'])->name('admin.domains.bundles');
 
     Route::resource('admin/web-services', WebServicesController::class)->names('admin.web-services')->except('show');
     Route::resource('admin/domains', DomainsController::class)->names('admin.domains')->except('show');

@@ -135,8 +135,18 @@ class LiquidDomainClient
     /** @throws RequestException */
     public function registerDomain(Order $order, string $customerId, string $contactId): array
     {
+        return $this->registerDomainName(
+            strtolower($order->domain_name).$order->domain->extension,
+            $customerId,
+            $contactId,
+        );
+    }
+
+    /** @throws RequestException */
+    public function registerDomainName(string $domainName, string $customerId, string $contactId): array
+    {
         $response = $this->http()->asForm()->post('/domains', [
-            'domain_name' => strtolower($order->domain_name).$order->domain->extension,
+            'domain_name' => strtolower($domainName),
             'customer_id' => $customerId,
             'registrant_contact_id' => $contactId,
             'admin_contact_id' => $contactId,

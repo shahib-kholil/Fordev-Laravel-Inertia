@@ -11,6 +11,7 @@ export default function SettingsEdit({ settings, packageCards }) {
         contact_address: settings.contact_address ?? '',
         social_instagram: settings.social_instagram ?? '',
         package_cards: packageCards,
+
         payment_methods: settings.payment_methods
             ? JSON.parse(settings.payment_methods)
             : ['qris', 'dana', 'bank_transfer'],

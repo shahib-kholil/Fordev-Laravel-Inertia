@@ -51,6 +51,25 @@ export default function OrderShow({ order, statuses }) {
                     </span>
                 </div>
                 <div className="rounded-xl border p-5 text-sm">
+                    {order.items?.length > 0 && (
+                        <div className="mb-4 space-y-2 border-b pb-4">
+                            <p className="font-semibold">Domain dalam paket</p>
+                            {order.items.map((item) => (
+                                <div
+                                    key={item.id}
+                                    className="flex justify-between gap-3 rounded-lg border p-3"
+                                >
+                                    <span>
+                                        {item.domain_name}
+                                        {item.extension}
+                                    </span>
+                                    <span className="capitalize">
+                                        {item.status.replaceAll('_', ' ')}
+                                    </span>
+                                </div>
+                            ))}
+                        </div>
+                    )}
                     <p>Status: {order.status}</p>
                     <p>Tipe: {order.order_type}</p>
                     <p>Paket: {order.web_service?.name ?? '-'}</p>
@@ -58,10 +77,12 @@ export default function OrderShow({ order, statuses }) {
                         Harga paket snapshot:{' '}
                         {order.web_service_price_snapshot ?? '-'}
                     </p>
-                    <p>
-                        Domain: {order.domain_name ?? '-'}{' '}
-                        {order.domain?.extension ?? ''}
-                    </p>
+                    {(!order.items || order.items.length === 0) && (
+                        <p>
+                            Domain: {order.domain_name ?? '-'}{' '}
+                            {order.domain?.extension ?? ''}
+                        </p>
+                    )}
                     <p>
                         Harga domain snapshot:{' '}
                         {order.domain_price_snapshot ?? '-'}

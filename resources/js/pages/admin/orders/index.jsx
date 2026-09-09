@@ -58,12 +58,30 @@ export default function OrdersIndex({ orders, filters, statuses }) {
                             {orders.data.map((order) => (
                                 <tr key={order.id} className="border-t">
                                     <td className="p-3 font-medium">
-                                        {order.order_number}
+                                        <div>{order.order_number}</div>
+                                        {order.items?.length > 0 && (
+                                            <div className="mt-1 text-xs font-normal text-primary">
+                                                Bundle · {order.items.length}{' '}
+                                                domain
+                                            </div>
+                                        )}
                                     </td>
                                     <td className="p-3">
                                         <div>{order.client_name}</div>
                                         <div className="text-muted-foreground">
                                             {order.client_email}
+                                        </div>
+                                        <div className="mt-1 text-xs text-muted-foreground">
+                                            {order.items?.length > 0
+                                                ? order.items
+                                                      .map(
+                                                          (item) =>
+                                                              `${item.domain_name}${item.extension}`,
+                                                      )
+                                                      .join(', ')
+                                                : order.domain_name
+                                                  ? `${order.domain_name}${order.domain?.extension ?? ''}`
+                                                  : '-'}
                                         </div>
                                     </td>
                                     <td className="p-3">{order.status}</td>

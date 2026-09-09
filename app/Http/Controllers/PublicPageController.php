@@ -59,11 +59,27 @@ class PublicPageController extends Controller
         }
 
         $domains = Domain::query()->where('is_available', true)->orderBy('order_position')->orderBy('id')->paginate(20);
+        $bundles = collect(json_decode(Setting::query()->where('key', 'domain_bundles')->value('value') ?? '[]', true))
+            ->filter(fn ($bundle) => ($bundle['is_active'] ?? false) && count($bundle['domain_ids'] ?? []) > 1)
+            ->map(function ($bundle) {
+                $bundle['domains'] = Domain::query()
+                    ->whereIn('id', $bundle['domain_ids'])
+                    ->where('is_available', true)
+                    ->orderBy('order_position')
+                    ->get(['id', 'extension', 'price', 'promo_price', 'badge'])
+                    ->values()
+                    ->all();
+
+                return $bundle;
+            })
+            ->filter(fn ($bundle) => count($bundle['domains']) > 1)
+            ->values();
 
         return Inertia::render('public/domains', [
             'domains' => $domains,
             'filters' => $data,
             'check' => $check,
+            'bundles' => $bundles,
         ]);
     }
 

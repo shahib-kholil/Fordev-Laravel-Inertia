@@ -37,16 +37,39 @@ export default function OrderStatus({ order, paymentDetails = {} }) {
                                 {order.status.replaceAll('_', ' ')}
                             </span>
                         </div>
-                        <div className="grid gap-4 sm:grid-cols-2">
-                            <div>
-                                <p className="text-xs font-medium tracking-wider text-slate-500 uppercase dark:text-slate-400">
-                                    Domain
+                        {order.items?.length > 0 && (
+                            <div className="space-y-2 border-t pt-4">
+                                <p className="text-sm font-semibold">
+                                    Domain dalam paket
                                 </p>
-                                <p className="mt-1 text-lg font-semibold">
-                                    {order.domain_name}
-                                    {order.domain?.extension ?? ''}
-                                </p>
+                                {order.items.map((item) => (
+                                    <div
+                                        key={item.id}
+                                        className="flex justify-between gap-3 rounded-lg border p-3 text-sm"
+                                    >
+                                        <span>
+                                            {item.domain_name}
+                                            {item.extension}
+                                        </span>
+                                        <span className="capitalize">
+                                            {item.status.replaceAll('_', ' ')}
+                                        </span>
+                                    </div>
+                                ))}
                             </div>
+                        )}
+                        <div className="grid gap-4 sm:grid-cols-2">
+                            {(!order.items || order.items.length === 0) && (
+                                <div>
+                                    <p className="text-xs font-medium tracking-wider text-slate-500 uppercase dark:text-slate-400">
+                                        Domain
+                                    </p>
+                                    <p className="mt-1 text-lg font-semibold">
+                                        {order.domain_name}
+                                        {order.domain?.extension ?? ''}
+                                    </p>
+                                </div>
+                            )}
                             <div>
                                 <p className="text-xs font-medium tracking-wider text-slate-500 uppercase dark:text-slate-400">
                                     Total

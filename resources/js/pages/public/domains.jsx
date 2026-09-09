@@ -23,7 +23,12 @@ import PublicLayout from '@/layouts/public-layout';
 
 const cardClass = 'rounded-2xl border bg-card p-5 shadow-sm';
 
-export default function Domains({ domains, filters = {}, check }) {
+export default function Domains({
+    domains,
+    filters = {},
+    check,
+    bundles = [],
+}) {
     const extensions = domains.data;
     const { data, setData, get, errors, processing } = useForm({
         name: filters.name ?? '',
@@ -111,10 +116,66 @@ export default function Domains({ domains, filters = {}, check }) {
                 {check ? (
                     <DomainResults check={check} extensions={extensions} />
                 ) : (
-                    <ExtensionCatalog extensions={extensions} />
+                    <>
+                        <BundleCatalog bundles={bundles} />
+                        <ExtensionCatalog extensions={extensions} />
+                    </>
                 )}
             </div>
         </PublicLayout>
+    );
+}
+
+function BundleCatalog({ bundles }) {
+    if (!bundles.length) return null;
+
+    return (
+        <section className="mt-8 space-y-4">
+            <div>
+                <h2 className="text-xl font-semibold">Paket bundling domain</h2>
+                <p className="mt-1 text-sm text-muted-foreground">
+                    Dapatkan beberapa ekstensi sekaligus dengan harga khusus.
+                </p>
+            </div>
+            <div className="grid gap-4 md:grid-cols-2">
+                {bundles.map((bundle, bundleId) => {
+                    const normal = bundle.domains.reduce(
+                        (sum, domain) => sum + salePrice(domain),
+                        0,
+                    );
+
+                    return (
+                        <article key={bundle.name} className={cardClass}>
+                            <Badge variant="secondary">Bundling</Badge>
+                            <h3 className="mt-3 text-xl font-semibold">
+                                {bundle.name}
+                            </h3>
+                            <p className="mt-2 text-sm text-muted-foreground">
+                                {bundle.description}
+                            </p>
+                            <p className="mt-4 text-sm text-muted-foreground line-through">
+                                {formatRupiah(normal)}
+                            </p>
+                            <p className="text-2xl font-bold">
+                                {formatRupiah(bundle.price)}
+                            </p>
+                            <p className="mt-2 text-sm">
+                                {bundle.domains
+                                    .map((domain) => domain.extension)
+                                    .join(' + ')}
+                            </p>
+                            <Button className="mt-4" asChild>
+                                <Link
+                                    href={`/order?type=domain&bundle_id=${bundleId}`}
+                                >
+                                    Pilih bundling
+                                </Link>
+                            </Button>
+                        </article>
+                    );
+                })}
+            </div>
+        </section>
     );
 }
 
