@@ -103,7 +103,7 @@ function Section({ title, description, children }) {
     return (
         <section className="mx-auto flex max-w-6xl flex-col gap-8 px-4 py-12 sm:py-16">
             <div className="mx-auto flex max-w-2xl flex-col gap-3 text-center">
-                <h2 className="font-heading text-4xl font-semibold tracking-tight sm:text-5xl">
+                <h2 className="font-heading text-3xl font-semibold tracking-tight sm:text-5xl">
                     {title}
                 </h2>
                 {description && (

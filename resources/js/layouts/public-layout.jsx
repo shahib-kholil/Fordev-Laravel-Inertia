@@ -38,8 +38,7 @@ export default function PublicLayout({ title, description, children }) {
                 <meta property="og:type" content="website" />
                 <meta name="twitter:card" content="summary" />
             </Head>
-            <div className="min-h-screen bg-white text-foreground dark:bg-background">
-                <ShaderBackdrop />
+            <div className="min-h-screen overflow-x-hidden bg-transparent text-foreground dark:bg-background/80">
                 <header className="fixed inset-x-0 top-3 z-30 px-4">
                     <nav className="mx-auto flex max-w-2xl items-center justify-between rounded-full border border-foreground/20 bg-white/85 p-1.5 shadow-sm backdrop-blur dark:bg-background/80">
                         <Link
@@ -123,7 +122,7 @@ export default function PublicLayout({ title, description, children }) {
                         </div>
                     </nav>
                 </header>
-                <main className="pt-12 lg:pt-14">{children}</main>
+                <main className="relative z-10 pt-12 lg:pt-14">{children}</main>
                 <ContactFooter email={publicSettings.contact_email} />
             </div>
         </>

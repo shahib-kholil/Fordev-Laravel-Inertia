@@ -1,7 +1,7 @@
 import { Children, useState } from 'react';
 import { motion } from 'motion/react';
 
-const labels = ['Login / Register', 'Cart', 'Payment', 'Thank You'];
+const labels = ['Login / Register', 'Isi Form', 'Pembayaran & Status'];
 
 export default function Stepper({
     children,

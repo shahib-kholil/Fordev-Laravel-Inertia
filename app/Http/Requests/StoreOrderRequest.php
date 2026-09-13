@@ -38,7 +38,7 @@ class StoreOrderRequest extends FormRequest
             'address_line_1' => ['required', 'string', 'max:255'],
             'city' => ['required', 'string', 'max:100'],
             'state' => ['required', 'string', 'max:100'],
-            'zipcode' => ['required', 'string', 'max:20'],
+            'zipcode' => ['required', 'string', 'regex:/^\d{5}$/'],
             'country_code' => ['required', 'string', 'size:2'],
             'notes' => ['nullable', 'string'],
             'payment_method' => [

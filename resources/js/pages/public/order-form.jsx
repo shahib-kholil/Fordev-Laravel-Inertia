@@ -93,6 +93,7 @@ export default function OrderForm({
         selectedBundleDomain;
     const isDomainCheckout = data.order_type === 'domain' && selectedDomain;
     const phoneValid = /^[0-9+()\s-]{8,30}$/.test(data.client_phone.trim());
+    const zipcodeValid = /^\d{5}$/.test(data.zipcode.trim());
     const cartComplete = Boolean(
         phoneValid &&
         data.client_phone.trim() &&
@@ -108,7 +109,7 @@ export default function OrderForm({
                 data.address_line_1.trim() &&
                 data.city.trim() &&
                 data.state.trim() &&
-                data.zipcode.trim())),
+                zipcodeValid)),
     );
     const canNavigateToStep = (target, current) =>
         target <= current || (target === 3 && cartComplete);
@@ -166,7 +167,7 @@ export default function OrderForm({
                             ? ['Provinsi', stateRef]
                             : !data.city.trim()
                               ? ['Kota', cityRef]
-                              : !data.zipcode.trim()
+                              : !zipcodeValid
                                 ? ['Kode pos', zipcodeRef]
                                 : ['Alamat lengkap', addressRef];
             setCartNotice(
@@ -528,6 +529,10 @@ export default function OrderForm({
                                                         ? 'border-destructive pr-10'
                                                         : ''
                                                 }
+                                                inputMode="numeric"
+                                                pattern="[0-9]{5}"
+                                                maxLength={5}
+                                                placeholder="12345"
                                                 value={data.zipcode}
                                                 onChange={(e) =>
                                                     setData(

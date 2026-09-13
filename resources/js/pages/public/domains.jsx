@@ -20,6 +20,7 @@ import {
     TableRow,
 } from '@/components/ui/table';
 import PublicLayout from '@/layouts/public-layout';
+import ShaderBackdrop from '@/components/public/shader-backdrop';
 
 const cardClass = 'rounded-2xl border bg-card p-5 shadow-sm';
 
@@ -42,77 +43,15 @@ export default function Domains({
 
     return (
         <PublicLayout title="Cek Domain">
-            <div className="mx-auto max-w-6xl px-4 py-12">
-                <section className="rounded-3xl border bg-card p-5 shadow-sm sm:p-8">
-                    <h1 className="mt-2 text-3xl font-semibold sm:text-4xl">
-                        Cari nama domain impianmu
-                    </h1>
-                    <p className="mt-3 max-w-2xl text-sm text-muted-foreground">
-                        Mulai dari nama brand. Sebelum cari, Anda bisa
-                        membandingkan ekstensi dan harga dulu lewat tabel.
-                    </p>
-                    <form
-                        onSubmit={submit}
-                        className="mt-6 grid grid-cols-[minmax(0,1fr)_5.5rem] gap-2 rounded-2xl border bg-background p-4 sm:grid-cols-[1fr_9rem_auto]"
-                    >
-                        <Input
-                            aria-label="Nama domain"
-                            className="border shadow-none placeholder:text-muted-foreground/50 focus-visible:ring-0 dark:placeholder:text-muted-foreground/50"
-                            placeholder="namadomain"
-                            value={data.name}
-                            onChange={(e) =>
-                                setData(
-                                    'name',
-                                    e.target.value
-                                        .toLowerCase()
-                                        .replace(/[^a-z0-9-]/g, ''),
-                                )
-                            }
-                            required
-                        />
-
-                        {/* Select Ekstensi Domain */}
-                        <Select
-                            value={data.extension}
-                            onValueChange={(value) =>
-                                setData('extension', value)
-                            }
-                        >
-                            <SelectTrigger
-                                aria-label="Ekstensi domain"
-                                className="h-9 w-full"
-                            >
-                                <SelectValue placeholder="Ekstensi" />
-                            </SelectTrigger>
-                            <SelectContent
-                                position="popper"
-                                sideOffset={4}
-                                className="border border-input bg-background p-1 text-popover-foreground shadow-xl"
-                            >
-                                {extensions.map((item) => (
-                                    <SelectItem
-                                        key={item.id}
-                                        value={item.extension}
-                                    >
-                                        {item.extension}
-                                    </SelectItem>
-                                ))}
-                            </SelectContent>
-                        </Select>
-
-                        <Button
-                            className="col-span-2 sm:col-span-1"
-                            disabled={processing || !extensions.length}
-                        >
-                            Cek domain
-                        </Button>
-                    </form>
-                    {errors.name && (
-                        <p className="mt-2 text-sm text-destructive">
-                            Nama domain hanya boleh huruf, angka, dan strip.
-                        </p>
-                    )}
-                </section>
+            <div className="mx-auto -mt-8 max-w-6xl px-4 py-4 sm:py-8">
+                <DomainHero
+                    data={data}
+                    setData={setData}
+                    submit={submit}
+                    extensions={extensions}
+                    errors={errors}
+                    processing={processing}
+                />
                 {check ? (
                     <DomainResults check={check} extensions={extensions} />
                 ) : (
@@ -126,14 +65,93 @@ export default function Domains({
     );
 }
 
+function DomainHero({ data, setData, submit, extensions, errors, processing }) {
+    return (
+        <section className="relative left-1/2 isolate flex min-h-[30rem] w-[100vw] max-w-[100vw] -translate-x-1/2 items-center justify-center overflow-hidden px-4 py-8 text-center sm:min-h-[36rem] sm:py-12">
+            <ShaderBackdrop />
+            <div className="relative z-10 mx-auto max-w-4xl">
+                <h1 className="mt-6 block inline-block font-heading text-5xl font-semibold tracking-tight sm:text-6xl lg:text-7xl">
+                    Cari nama <br />
+                    <span className="bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">
+                        domain kamu
+                    </span>
+                </h1>
+                <p className="mx-auto mt-6 max-w-xl text-muted-foreground">
+                    Mulai dari nama brand. Temukan domain yang singkat, mudah
+                    diingat, dan siap membawa brand-mu melangkah lebih jauh.
+                </p>
+                <form
+                    id="cek-domain"
+                    onSubmit={submit}
+                    className="mx-auto mt-8 grid max-w-3xl grid-cols-[minmax(0,1fr)_5.5rem] gap-2 p-2 p-4 text-left shadow-lg shadow-xl sm:grid-cols-[1fr_9rem_auto] sm:rounded-full sm:border sm:bg-background/80 sm:shadow-none"
+                >
+                    <Input
+                        aria-label="Nama domain"
+                        className="h-9 rounded-full border border-input bg-background px-5 shadow-none focus-visible:ring-2 focus-visible:ring-primary"
+                        placeholder="namadomain"
+                        value={data.name}
+                        onChange={(e) =>
+                            setData(
+                                'name',
+                                e.target.value
+                                    .toLowerCase()
+                                    .replace(/[^a-z0-9-]/g, ''),
+                            )
+                        }
+                        required
+                    />
+                    <Select
+                        value={data.extension}
+                        onValueChange={(value) => setData('extension', value)}
+                    >
+                        <SelectTrigger
+                            aria-label="Ekstensi domain"
+                            className="h-10 w-full rounded-full border border-input bg-background px-2"
+                        >
+                            <SelectValue placeholder="Ekstensi" />
+                        </SelectTrigger>
+                        <SelectContent
+                            className="p-2"
+                            position="popper"
+                            sideOffset={4}
+                        >
+                            {extensions.map((item) => (
+                                <SelectItem
+                                    key={item.id}
+                                    value={item.extension}
+                                >
+                                    {item.extension}
+                                </SelectItem>
+                            ))}
+                        </SelectContent>
+                    </Select>
+                    <Button
+                        className="col-span-2 h-9 w-full rounded-full px-2 sm:col-span-1"
+                        disabled={processing || !extensions.length}
+                    >
+                        Cek domain
+                    </Button>
+                </form>
+                {errors.name && (
+                    <p className="mt-2 text-sm text-destructive">
+                        Nama domain hanya boleh huruf, angka, dan strip.
+                    </p>
+                )}
+            </div>
+        </section>
+    );
+}
+
 function BundleCatalog({ bundles }) {
     if (!bundles.length) return null;
 
     return (
         <section className="mt-8 space-y-4">
-            <div>
-                <h2 className="text-xl font-semibold">Paket bundling domain</h2>
-                <p className="mt-1 text-sm text-muted-foreground">
+            <div className="py-4 text-center sm:py-8">
+                <h2 className="font-heading text-2xl font-semibold tracking-tight sm:text-5xl">
+                    Paket bundling domain
+                </h2>
+                <p className="mt-1 text-center text-sm text-muted-foreground">
                     Dapatkan beberapa ekstensi sekaligus dengan harga khusus.
                 </p>
             </div>
@@ -258,16 +276,16 @@ function ExtensionCatalog({ extensions }) {
     if (!extensions.length) return <EmptyExtensions />;
 
     return (
-        <section className="mt-8">
+        <section className="mt-8 py-4 text-center sm:py-8">
+            <div className="py-4 sm:py-8">
+                <h2 className="font-heading text-2xl font-semibold tracking-tight sm:text-5xl">
+                    Daftar ekstensi domain
+                </h2>
+                <p className="mt-1 text-center text-sm text-muted-foreground">
+                    Filter ekstensi sebelum mencari nama domain.
+                </p>
+            </div>
             <div className="flex flex-col justify-between gap-3 sm:flex-row sm:items-end">
-                <div>
-                    <h2 className="text-xl font-semibold">
-                        Daftar ekstensi domain
-                    </h2>
-                    <p className="mt-1 text-sm text-muted-foreground">
-                        Filter ekstensi sebelum mencari nama domain.
-                    </p>
-                </div>
                 <div className="flex gap-2">
                     <Select value={sort} onValueChange={setSort}>
                         <SelectTrigger

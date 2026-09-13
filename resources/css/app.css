@@ -3,6 +3,35 @@
 @import 'shadcn/tailwind.css';
 @import '@fontsource-variable/geist';
 
+@keyframes hero-orbit {
+    from {
+        transform: translate(-50%, -50%) rotate(0deg) scaleY(0.55);
+    }
+    to {
+        transform: translate(-50%, -50%) rotate(360deg) scaleY(0.55);
+    }
+}
+@keyframes hero-orbit-reverse {
+    from {
+        transform: translate(-50%, -50%) rotate(360deg) scaleY(0.45);
+    }
+    to {
+        transform: translate(-50%, -50%) rotate(0deg) scaleY(0.45);
+    }
+}
+.hero-orbit {
+    animation: hero-orbit 18s linear infinite;
+}
+.hero-orbit-reverse {
+    animation: hero-orbit-reverse 12s linear infinite;
+}
+@media (prefers-reduced-motion: reduce) {
+    .hero-orbit,
+    .hero-orbit-reverse {
+        animation: none;
+    }
+}
+
 @custom-variant dark (&:is(.dark *));
 
 @source '../../vendor/laravel/framework/src/Illuminate/Pagination/resources/views/*.blade.php';

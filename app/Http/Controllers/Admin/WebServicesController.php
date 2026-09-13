@@ -69,7 +69,17 @@ class WebServicesController extends Controller
             'is_active' => ['nullable', 'boolean'],
         ]);
 
-        $data['slug'] = $data['slug'] ?: Str::slug($data['name']);
+        if (! $data['slug']) {
+            $baseSlug = Str::slug($data['name']);
+            $data['slug'] = $baseSlug;
+            $suffix = 2;
+
+            while (WebService::query()->where('slug', $data['slug'])->exists()) {
+                $data['slug'] = "{$baseSlug}-{$suffix}";
+                $suffix++;
+            }
+        }
+
         $data['features'] = array_values(array_filter(array_map('trim', explode("\n", $data['features'] ?? ''))));
         $data['is_active'] = $request->boolean('is_active');
 
