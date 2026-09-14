@@ -9,6 +9,7 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Inertia\Response;
+use Illuminate\Support\Carbon;
 
 class DomainsController extends Controller
 {
@@ -34,7 +35,18 @@ class DomainsController extends Controller
 
     public function store(Request $request): RedirectResponse
     {
-        Domain::query()->create($this->validated($request));
+        $data = $this->validated($request);
+        $coupons = $data['coupons'] ?? [];
+        unset($data['coupons']);
+        $domain = Domain::query()->create($data);
+        foreach ($coupons as $coupon) {
+            foreach (['starts_at', 'ends_at'] as $field) {
+                if (! empty($coupon[$field])) {
+                    $coupon[$field] = Carbon::parse($coupon[$field], 'Asia/Jakarta')->utc();
+                }
+            }
+            $domain->coupons()->create($coupon);
+        }
 
         return to_route('admin.domains.index');
     }
@@ -42,7 +54,7 @@ class DomainsController extends Controller
     public function edit(Domain $domain): Response
     {
         return Inertia::render('admin/domains/form', [
-            'domain' => $domain,
+            'domain' => $domain->load('coupons'),
         ]);
     }
 
@@ -106,9 +118,47 @@ class DomainsController extends Controller
             'transfer_price' => ['nullable', 'integer', 'min:0'],
             'badge' => ['nullable', 'string', 'max:50'],
             'is_available' => ['nullable', 'boolean'],
+            'coupons' => ['nullable', 'array'],
+            'coupons.*.id' => ['nullable', 'integer'],
+            'coupons.*.code' => ['required', 'string', 'max:40', 'regex:/^[A-Z0-9_-]+$/'],
+            'coupons.*.type' => ['required', 'in:fixed'],
+            'coupons.*.value' => ['required', 'integer', 'min:1', 'max:100000000'],
+            'coupons.*.starts_at' => ['nullable', 'date'],
+            'coupons.*.ends_at' => ['nullable', 'date', 'after_or_equal:coupons.*.starts_at'],
+            'coupons.*.max_uses' => ['nullable', 'integer', 'min:1'],
+            'coupons.*.is_active' => ['boolean'],
         ]);
 
         $data['is_available'] = $request->boolean('is_available');
+
+        foreach ($data['coupons'] ?? [] as $coupon) {
+            $basePrice = (int) ($domain?->promo_price ?: $domain?->price ?? $data['price']);
+            abort_if((int) $coupon['value'] > $basePrice, 422, 'Harga akhir kupon tidak boleh melebihi harga domain.');
+        }
+
+        $coupons = $data['coupons'] ?? [];
+
+        if ($domain) {
+            unset($data['coupons']);
+            $keep = collect($coupons)->pluck('id')->filter(
+                fn ($id) => $domain->coupons()->whereKey($id)->exists(),
+            );
+            $domain->coupons()->whereNotIn('id', $keep)->delete();
+            foreach ($coupons as $coupon) {
+                foreach (['starts_at', 'ends_at'] as $field) {
+                    if (! empty($coupon[$field])) {
+                        $coupon[$field] = Carbon::parse($coupon[$field], 'Asia/Jakarta')->utc();
+                    }
+                }
+                $existing = ! empty($coupon['id'])
+                    ? $domain->coupons()->whereKey($coupon['id'])->first()
+                    : null;
+                $domain->coupons()->updateOrCreate(
+                    ['id' => $existing?->id],
+                    [...$coupon, 'code' => strtoupper(trim($coupon['code'])), 'is_active' => (bool) ($coupon['is_active'] ?? false)],
+                );
+            }
+        }
 
         return $data;
     }

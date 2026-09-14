@@ -1,7 +1,12 @@
 import { useState } from 'react';
 import { HelpCircle } from 'lucide-react';
 
-export default function OrderSummary({ domain, name, bundle }) {
+export default function OrderSummary({
+    domain,
+    name,
+    bundle,
+    couponDiscount = 0,
+}) {
     const bundleDomains = bundle?.domains ?? [];
     const normalPrice = bundle
         ? bundleDomains.reduce(
@@ -9,12 +14,14 @@ export default function OrderSummary({ domain, name, bundle }) {
               0,
           )
         : Number(domain.price);
-    const price = bundle
+    const basePrice = bundle
         ? Number(bundle.price)
         : Number(domain.promo_price || normalPrice);
+    const price = Math.max(0, basePrice - Number(couponDiscount));
     const tax = Math.round(price * 0.11);
     const normalTax = Math.round(normalPrice * 0.11);
     const discounted = price < normalPrice;
+    const couponApplied = Number(couponDiscount) > 0;
     const [showTaxInfo, setShowTaxInfo] = useState(false);
 
     return (
@@ -28,8 +35,14 @@ export default function OrderSummary({ domain, name, bundle }) {
             <div className="mt-5 space-y-3 text-sm">
                 <SummaryLine
                     label="Registrasi domain – 1 tahun"
-                    value={price}
+                    value={basePrice}
                 />
+                {couponApplied && (
+                    <SummaryLine
+                        label="Diskon kupon"
+                        value={-Number(couponDiscount)}
+                    />
+                )}
                 {discounted && (
                     <div className="flex justify-between gap-3 text-xs text-muted-foreground">
                         <span>Harga normal</span>

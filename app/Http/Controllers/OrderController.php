@@ -22,6 +22,29 @@ use Inertia\Response;
 
 class OrderController extends Controller
 {
+    public function checkCoupon(Request $request)
+    {
+        $data = $request->validate([
+            'domain_id' => ['required', 'integer', 'exists:domains,id'],
+            'coupon_code' => ['required', 'string', 'max:40', 'regex:/^[A-Za-z0-9_-]+$/'],
+        ]);
+
+        $domain = Domain::findOrFail($data['domain_id']);
+        $coupon = $domain->coupons()
+            ->where('code', strtoupper($data['coupon_code']))
+            ->first();
+
+        abort_unless($coupon && $coupon->usable(), 422, 'Kode promo tidak berlaku.');
+
+        $price = (int) ($domain->promo_price ?: $domain->price);
+        $discount = $coupon->discount($price);
+
+        return response()->json([
+            'message' => 'Kode promo berhasil diterapkan.',
+            'discount' => $discount,
+        ]);
+    }
+
     public function create(Request $request, IndonesianLocationService $locations): Response
     {
         $bundles = json_decode(Setting::query()->where('key', 'domain_bundles')->value('value') ?? '[]', true) ?: [];
@@ -74,6 +97,7 @@ class OrderController extends Controller
             'paymentMethods' => json_decode(Setting::query()->where('key', 'payment_methods')->value('value') ?? '["qris","dana","bank_transfer"]', true),
             'paymentDetails' => json_decode(Setting::query()->where('key', 'payment_details')->value('value') ?? '{}', true),
             'bundle' => $bundle,
+            'coupons' => $bundle ? [] : Domain::find($request->query('domain_id'))?->coupons()->where('is_active', true)->get(['code', 'type', 'value', 'ends_at']),
         ]);
     }
 
@@ -104,8 +128,16 @@ class OrderController extends Controller
         abort_unless($domain, 422, 'Domain tidak tersedia.');
         $data['order_type'] = 'domain';
         $domainPrice = $bundle ? (int) $bundle['price'] : ($domain?->promo_price ?: $domain?->price);
+        $coupon = ! empty($data['coupon_code']) && ! $bundle
+            ? $domain->coupons()->where('code', strtoupper($data['coupon_code']))->first()
+            : null;
+        abort_unless(! $data['coupon_code'] || ($coupon && $coupon->usable()), 422, 'Kupon tidak berlaku untuk domain ini.');
+        abort_unless(! $coupon || $coupon->value <= $domainPrice, 422, 'Harga akhir kupon tidak valid.');
+        $couponDiscount = $coupon?->discount($domainPrice) ?? 0;
+        $domainPrice -= $couponDiscount;
+        $couponCode = $coupon?->code;
         $data['domain_id'] = $domain?->id;
-        unset($data['bundle_id'], $data['order_number'], $data['payment_method']);
+        unset($data['bundle_id'], $data['order_number'], $data['payment_method'], $data['coupon_code']);
 
         if ($domain) {
             $existing = Order::query()
@@ -134,9 +166,14 @@ class OrderController extends Controller
             }
         }
 
-        $order = DB::transaction(function () use ($data, $request, $domainPrice, $domain, $bundle, $bundleDomains, $editing) {
+        $order = DB::transaction(function () use ($data, $request, $domainPrice, $domain, $bundle, $bundleDomains, $editing, $coupon, $couponDiscount, $couponCode) {
+            if ($coupon) {
+                $coupon = $domain->coupons()->lockForUpdate()->find($coupon->id);
+                abort_unless($coupon && $coupon->usable(), 422, 'Kupon sudah tidak tersedia.');
+                abort_if(DB::table('domain_coupon_usages')->where('domain_coupon_id', $coupon->id)->where('user_id', $request->user()->id)->exists(), 422, 'Kupon ini sudah pernah digunakan akun Anda.');
+            }
             if ($editing) {
-                $editing->update([...$data, 'domain_id' => $domain?->id, 'domain_price_snapshot' => $domainPrice, 'tax_snapshot' => (int) round($domainPrice * 0.11), 'total_snapshot' => (int) round($domainPrice * 1.11)]);
+                $editing->update([...$data, 'domain_id' => $domain?->id, 'domain_price_snapshot' => $domainPrice, 'domain_discount_snapshot' => $couponDiscount, 'coupon_code_snapshot' => $couponCode, 'tax_snapshot' => (int) round($domainPrice * 0.11), 'total_snapshot' => (int) round($domainPrice * 1.11)]);
                 return $editing;
             }
             $order = Order::query()->create([
@@ -146,7 +183,8 @@ class OrderController extends Controller
                 'order_number' => 'FRD-'.now()->format('Ymd').'-'.Str::upper(Str::random(4)),
                 'web_service_price_snapshot' => null,
                 'domain_price_snapshot' => $domainPrice,
-                'domain_discount_snapshot' => $domain ? max(0, $domain->price - $domainPrice) : null,
+                'domain_discount_snapshot' => $couponDiscount,
+                'coupon_code_snapshot' => $couponCode,
                 'icann_fee_snapshot' => 0,
                 'whois_privacy_snapshot' => 0,
                 'tax_snapshot' => $domainPrice ? (int) round($domainPrice * 0.11) : 0,
@@ -166,6 +204,17 @@ class OrderController extends Controller
                         'tax_snapshot' => (int) round($itemPrice * 0.11),
                     ]);
                 }
+            }
+
+            if ($coupon) {
+                DB::table('domain_coupon_usages')->insert([
+                    'domain_coupon_id' => $coupon->id,
+                    'user_id' => $request->user()->id,
+                    'order_id' => $order->id,
+                    'created_at' => now(),
+                    'updated_at' => now(),
+                ]);
+                $coupon->increment('used_count');
             }
 
             return $order;

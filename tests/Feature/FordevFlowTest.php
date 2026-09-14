@@ -96,7 +96,7 @@ class FordevFlowTest extends TestCase
             'state' => 'DKI Jakarta',
             'zipcode' => '10110',
             'country_code' => 'ID',
-        ])->assertRedirect('/cek-status-pesanan');
+        ])->assertRedirectContains('/cek-status-pesanan?order=');
 
         $this->assertDatabaseHas(Order::class, [
             'client_email' => 'budi@example.com',
@@ -157,7 +157,7 @@ class FordevFlowTest extends TestCase
             'state' => 'DKI Jakarta',
             'zipcode' => '10110',
             'country_code' => 'ID',
-        ])->assertRedirect('/cek-status-pesanan');
+        ])->assertRedirectContains('/cek-status-pesanan?order=');
 
         $this->assertDatabaseHas(Order::class, [
             'client_email' => 'siti@example.com',

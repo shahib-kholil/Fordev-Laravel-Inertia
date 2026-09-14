@@ -9,6 +9,7 @@ use App\Services\LiquidDomainRegistrar;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Notification;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -63,6 +64,16 @@ class OrdersController extends Controller
             'admin_notes' => $data['admin_notes'] ?? null,
             'paid_at' => $data['status'] === 'paid' ? ($order->paid_at ?? now()) : $order->paid_at,
         ]);
+
+        if (in_array($data['status'], ['cancelled', 'failed'], true) && $oldStatus !== $data['status']) {
+            $usage = DB::table('domain_coupon_usages')->where('order_id', $order->id)->first();
+            if ($usage) {
+                DB::transaction(function () use ($usage) {
+                    DB::table('domain_coupon_usages')->where('id', $usage->id)->delete();
+                    DB::table('domain_coupons')->whereKey($usage->domain_coupon_id)->where('used_count', '>', 0)->decrement('used_count');
+                });
+            }
+        }
 
         if ($oldStatus !== 'pending_payment' && $data['status'] === 'pending_payment') {
             Notification::route('mail', $order->client_email)->notify(new OrderPendingPaymentNotification($order));

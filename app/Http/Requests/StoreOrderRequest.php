@@ -23,6 +23,7 @@ class StoreOrderRequest extends FormRequest
         }
         $clean['domain_name'] = strtolower($clean['domain_name'] ?? '');
         $clean['country_code'] = strtoupper($clean['country_code'] ?? '');
+        $clean['coupon_code'] = strtoupper(trim((string) $this->input('coupon_code', '')));
         $this->merge($clean);
     }
 
@@ -55,7 +56,8 @@ class StoreOrderRequest extends FormRequest
             'country_code' => ['required', 'string', 'size:2'],
             'notes' => ['nullable', 'string'],
             'payment_method' => ['nullable', Rule::in($enabledPaymentMethods)],
-            'order_number' => ['nullable', 'regex:/^FRD-[0-9]{8}-[A-Z0-9]{4}$/']
+            'order_number' => ['nullable', 'regex:/^FRD-[0-9]{8}-[A-Z0-9]{4}$/'],
+            'coupon_code' => ['nullable', 'string', 'max:40', 'regex:/^[A-Z0-9_-]+$/'],
         ];
     }
 }

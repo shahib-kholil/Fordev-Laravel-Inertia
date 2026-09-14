@@ -28,6 +28,9 @@ export default function OrderForm({
     bundle,
 }) {
     const [cartNotice, setCartNotice] = useState(defaults.edit_error ?? '');
+    const [couponNotice, setCouponNotice] = useState('');
+    const [couponChecking, setCouponChecking] = useState(false);
+    const [couponDiscount, setCouponDiscount] = useState(0);
     const [invalidField, setInvalidField] = useState('');
 
     const [countrySearch, setCountrySearch] = useState('');
@@ -58,6 +61,7 @@ export default function OrderForm({
         website_url: '',
         confirm_new_order: defaults.confirm_new_order ?? false,
         order_number: defaults.order_number ?? '',
+        coupon_code: defaults.coupon_code ?? '',
     });
 
     const bundleDomains = bundle?.domains ?? [];
@@ -542,6 +546,95 @@ export default function OrderForm({
                                     )}
                                 </div>
                             )}
+                            <div className="space-y-3 rounded-2xl border bg-card p-4 sm:p-5">
+                                <div>
+                                    <h2 className="font-semibold">
+                                        Gunakan Kode Promo
+                                    </h2>
+                                    <p className="text-sm text-muted-foreground">
+                                        Masukkan kode promo jika Anda
+                                        memilikinya.
+                                    </p>
+                                </div>
+                                <div className="flex flex-col gap-2 sm:flex-row">
+                                    <Input
+                                        value={data.coupon_code}
+                                        maxLength={40}
+                                        placeholder="Masukkan Kode Promo"
+                                        onChange={(e) => {
+                                            setCouponNotice('');
+                                            setData(
+                                                'coupon_code',
+                                                e.target.value.toUpperCase(),
+                                            );
+                                        }}
+                                    />
+                                    <Button
+                                        type="button"
+                                        variant="secondary"
+                                        className="sm:min-w-32"
+                                        onClick={async () => {
+                                            if (!data.coupon_code) {
+                                                setCouponNotice(
+                                                    'Masukkan kode promo terlebih dahulu.',
+                                                );
+                                                return;
+                                            }
+                                            setCouponChecking(true);
+                                            setCouponNotice(
+                                                'Memeriksa kode promo...',
+                                            );
+                                            const response = await fetch(
+                                                '/order/coupon',
+                                                {
+                                                    method: 'POST',
+                                                    headers: {
+                                                        'Content-Type':
+                                                            'application/json',
+                                                        Accept: 'application/json',
+                                                        'X-CSRF-TOKEN':
+                                                            document.querySelector(
+                                                                'meta[name="csrf-token"]',
+                                                            )?.content ?? '',
+                                                    },
+                                                    body: JSON.stringify({
+                                                        domain_id:
+                                                            data.domain_id,
+                                                        coupon_code:
+                                                            data.coupon_code,
+                                                    }),
+                                                },
+                                            );
+                                            setCouponChecking(false);
+                                            if (response.ok) {
+                                                const result =
+                                                    await response.json();
+                                                setCouponDiscount(
+                                                    result.discount ?? 0,
+                                                );
+                                            } else {
+                                                setCouponDiscount(0);
+                                            }
+                                            setCouponNotice(
+                                                response.ok
+                                                    ? 'Kode promo berhasil diterapkan.'
+                                                    : response.status === 419
+                                                      ? 'Sesi halaman sudah kedaluwarsa. Muat ulang halaman.'
+                                                      : 'Kode promo tidak berlaku.',
+                                            );
+                                        }}
+                                        disabled={couponChecking}
+                                    >
+                                        Pakai Promo
+                                    </Button>
+                                </div>
+                                {couponNotice && (
+                                    <p className="text-sm text-muted-foreground">
+                                        {couponNotice}
+                                    </p>
+                                )}
+                                <InputError message={errors.coupon_code} />
+                            </div>
                             <Field
                                 label="Catatan tambahan"
                                 error={errors.notes}
@@ -587,6 +680,7 @@ export default function OrderForm({
                                 domain={selectedDomain}
                                 name={data.domain_name}
                                 bundle={isBundleCheckout ? bundle : null}
+                                couponDiscount={couponDiscount}
                             />
                             <div className="flex justify-end gap-3">
                                 <Button
