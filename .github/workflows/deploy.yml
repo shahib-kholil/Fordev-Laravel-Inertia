@@ -18,9 +18,9 @@ jobs:
           php-version: '8.4'
           extensions: mbstring, xml, ctype, iconv, mysql
 
-      - name: 3. Install Composer Dependebancies (Penting untuk Wayfinder)
+      - name: 3. Install Composer Dependencies
         run: |
-          composer install --no-interaction --prefer-dist --optimize-autoloader
+          composer install --no-dev --no-interaction --prefer-dist --optimize-autoloader
 
       - name: 4. Setup Node.js Environment
         uses: actions/setup-node@v4
