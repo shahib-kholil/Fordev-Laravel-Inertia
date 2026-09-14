@@ -182,7 +182,13 @@ class OrderController extends Controller
             if ($coupon) {
                 $coupon = $domain->coupons()->lockForUpdate()->find($coupon->id);
                 abort_unless($coupon && $coupon->usable(), 422, 'Kupon sudah tidak tersedia.');
-                abort_if(! $editing && DB::table('domain_coupon_usages')->where('domain_coupon_id', $coupon->id)->where('user_id', $request->user()->id)->exists(), 422, 'Kupon ini sudah pernah digunakan akun Anda.');
+                $couponAlreadyUsed = DB::table('domain_coupon_usages')
+                    ->join('orders', 'orders.id', '=', 'domain_coupon_usages.order_id')
+                    ->where('domain_coupon_usages.domain_coupon_id', $coupon->id)
+                    ->where('domain_coupon_usages.user_id', $request->user()->id)
+                    ->where('orders.status', '!=', 'pending_confirmation')
+                    ->exists();
+                abort_if(! $editing && $couponAlreadyUsed, 422, 'Kupon ini sudah pernah digunakan akun Anda.');
             }
             if ($editing) {
                 $editing->update([...$data, 'domain_id' => $domain?->id, 'domain_price_snapshot' => $domainPrice, 'domain_discount_snapshot' => $couponDiscount, 'coupon_code_snapshot' => $couponCode, 'tax_snapshot' => (int) round($domainPrice * 0.11), 'total_snapshot' => (int) round($domainPrice * 1.11)]);
@@ -219,14 +225,29 @@ class OrderController extends Controller
             }
 
             if ($coupon) {
-                DB::table('domain_coupon_usages')->insert([
-                    'domain_coupon_id' => $coupon->id,
-                    'user_id' => $request->user()->id,
-                    'order_id' => $order->id,
-                    'created_at' => now(),
-                    'updated_at' => now(),
-                ]);
-                $coupon->increment('used_count');
+                $usage = DB::table('domain_coupon_usages')
+                    ->join('orders', 'orders.id', '=', 'domain_coupon_usages.order_id')
+                    ->where('domain_coupon_usages.domain_coupon_id', $coupon->id)
+                    ->where('domain_coupon_usages.user_id', $request->user()->id)
+                    ->where('orders.status', 'pending_confirmation')
+                    ->select('domain_coupon_usages.id')
+                    ->first();
+
+                if ($usage) {
+                    DB::table('domain_coupon_usages')->where('id', $usage->id)->update([
+                        'order_id' => $order->id,
+                        'updated_at' => now(),
+                    ]);
+                } else {
+                    DB::table('domain_coupon_usages')->insert([
+                        'domain_coupon_id' => $coupon->id,
+                        'user_id' => $request->user()->id,
+                        'order_id' => $order->id,
+                        'created_at' => now(),
+                        'updated_at' => now(),
+                    ]);
+                    $coupon->increment('used_count');
+                }
             }
 
             return $order;

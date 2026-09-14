@@ -48,7 +48,7 @@ export default function OrderForm({
     const zipcodeRef = useRef(null);
     const countryRef = useRef(null);
 
-    const { data, setData, post, processing, errors } = useForm({
+    const { data, setData, post, put, processing, errors } = useForm({
         client_phone: defaults.client_phone ?? '',
         order_type: 'domain',
         domain_id: defaults.domain_id ?? '',
@@ -105,7 +105,11 @@ export default function OrderForm({
         if (!formComplete) {
             return;
         }
-        post('/order', { preserveState: true, preserveScroll: true });
+        const submit = isEditing ? put : post;
+        const url = isEditing
+            ? `/order/${encodeURIComponent(data.order_number)}`
+            : '/order';
+        submit(url, { preserveState: true, preserveScroll: true });
     }
 
     function validateForm() {

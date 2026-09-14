@@ -1,6 +1,6 @@
 import { Link, useForm } from '@inertiajs/react';
 import { CheckCircle2, Sparkles } from 'lucide-react';
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -31,10 +31,24 @@ export default function Domains({
     bundles = [],
 }) {
     const extensions = domains.data;
+    const resultsRef = useRef(null);
     const { data, setData, get, errors, processing } = useForm({
         name: filters.name ?? '',
         extension: filters.extension ?? extensions[0]?.extension ?? '.id',
     });
+
+    useEffect(() => {
+        if (!check?.domain) return;
+
+        const frame = requestAnimationFrame(() => {
+            resultsRef.current?.scrollIntoView({
+                behavior: 'smooth',
+                block: 'start',
+            });
+        });
+
+        return () => cancelAnimationFrame(frame);
+    }, [check?.domain, check?.available, check?.status]);
 
     function submit(e) {
         e.preventDefault();
@@ -53,7 +67,9 @@ export default function Domains({
                     processing={processing}
                 />
                 {check ? (
-                    <DomainResults check={check} extensions={extensions} />
+                    <div ref={resultsRef}>
+                        <DomainResults check={check} extensions={extensions} />
+                    </div>
                 ) : (
                     <>
                         <BundleCatalog bundles={bundles} />

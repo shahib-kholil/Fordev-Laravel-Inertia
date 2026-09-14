@@ -32,6 +32,7 @@ Route::middleware('auth')->group(function () {
     })->name('logout');
     Route::get('order', [OrderController::class, 'create'])->name('orders.create')->middleware('throttle:20,1');
     Route::post('order', [OrderController::class, 'store'])->name('orders.store')->middleware('throttle:5,1');
+    Route::put('order/{order_number}', [OrderController::class, 'store'])->name('orders.update')->middleware('throttle:10,1');
     Route::post('order/coupon', [OrderController::class, 'checkCoupon'])->name('orders.coupon')->middleware('throttle:10,1');
 
 });
