@@ -330,6 +330,7 @@ export default function OrderForm({
                                             >
                                                 <Select
                                                     value={data.domain_id}
+                                                    disabled={isEditing}
                                                     onValueChange={(value) =>
                                                         setData(
                                                             'domain_id',

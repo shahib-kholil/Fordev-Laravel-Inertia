@@ -129,6 +129,7 @@ class OrderController extends Controller
             ->where('is_available', true)
             ->first();
         abort_unless($domain, 422, 'Domain tidak tersedia.');
+        abort_unless(! $editing || (int) $editing->domain_id === (int) $domain->id, 422, 'Ekstensi domain tidak dapat diubah saat mengedit pesanan.');
         $data['order_type'] = 'domain';
         $domainPrice = $editing
             ? (int) $editing->domain_price_snapshot
