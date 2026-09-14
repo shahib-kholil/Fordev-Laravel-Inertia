@@ -83,6 +83,8 @@ class OrderController extends Controller
                 'notes' => old('notes', $editOrder?->notes ?? ''),
                 'confirm_new_order' => old('confirm_new_order', false),
                 'order_number' => old('order_number', $editOrder?->order_number ?? ''),
+                'coupon_code' => old('coupon_code', $editOrder?->coupon_code_snapshot ?? ''),
+                'coupon_discount' => old('coupon_discount', $editOrder?->domain_discount_snapshot ?? 0),
                 'edit_error' => $editRequested && ! $editOrder
                     ? 'Pesanan sudah diproses atau tidak ditemukan, jadi tidak dapat diedit.'
                     : null,
@@ -91,6 +93,7 @@ class OrderController extends Controller
             'pendingOrder' => Order::query()
                 ->where('client_email', $request->user()->email)
                 ->where('status', 'pending_confirmation')
+                ->when($editOrder, fn ($query) => $query->where('id', '!=', $editOrder->id))
                 ->when(request('domain_id'), fn ($query, $domainId) => $query->where('domain_id', $domainId))
                 ->latest()
                 ->first(['order_number', 'domain_id']),
@@ -127,15 +130,22 @@ class OrderController extends Controller
             ->first();
         abort_unless($domain, 422, 'Domain tidak tersedia.');
         $data['order_type'] = 'domain';
-        $domainPrice = $bundle ? (int) $bundle['price'] : ($domain?->promo_price ?: $domain?->price);
-        $coupon = ! empty($data['coupon_code']) && ! $bundle
+        $domainPrice = $editing
+            ? (int) $editing->domain_price_snapshot
+            : ($bundle ? (int) $bundle['price'] : ($domain?->promo_price ?: $domain?->price));
+        $coupon = ! $editing && ! empty($data['coupon_code']) && ! $bundle
             ? $domain->coupons()->where('code', strtoupper($data['coupon_code']))->first()
             : null;
-        abort_unless(! $data['coupon_code'] || ($coupon && $coupon->usable()), 422, 'Kupon tidak berlaku untuk domain ini.');
-        abort_unless(! $coupon || $coupon->value <= $domainPrice, 422, 'Harga akhir kupon tidak valid.');
-        $couponDiscount = $coupon?->discount($domainPrice) ?? 0;
-        $domainPrice -= $couponDiscount;
-        $couponCode = $coupon?->code;
+        if ($editing) {
+            $couponDiscount = (int) $editing->domain_discount_snapshot;
+            $couponCode = $editing->coupon_code_snapshot;
+        } else {
+            abort_unless(! $data['coupon_code'] || ($coupon && $coupon->usable()), 422, 'Kupon tidak berlaku untuk domain ini.');
+            abort_unless(! $coupon || $coupon->value <= $domainPrice, 422, 'Harga akhir kupon tidak valid.');
+            $couponDiscount = $coupon?->discount($domainPrice) ?? 0;
+            $domainPrice -= $couponDiscount;
+            $couponCode = $coupon?->code;
+        }
         $data['domain_id'] = $domain?->id;
         unset($data['bundle_id'], $data['order_number'], $data['payment_method'], $data['coupon_code']);
 
@@ -144,10 +154,11 @@ class OrderController extends Controller
                 ->where('client_email', $request->user()->email)
                 ->where('domain_id', $domain->id)
                 ->where('status', 'pending_confirmation')
+                ->when($editing, fn ($query) => $query->where('id', '!=', $editing->id))
                 ->latest()
                 ->first();
 
-            if ($existing && ! $request->boolean('confirm_new_order')) {
+            if (! $editing && $existing && ! $request->boolean('confirm_new_order')) {
                 return back()
                     ->withErrors(['pending_order' => "Kamu masih memiliki pesanan {$existing->order_number} yang belum selesai."])
                     ->with('pending_order_number', $existing->order_number)
@@ -170,7 +181,7 @@ class OrderController extends Controller
             if ($coupon) {
                 $coupon = $domain->coupons()->lockForUpdate()->find($coupon->id);
                 abort_unless($coupon && $coupon->usable(), 422, 'Kupon sudah tidak tersedia.');
-                abort_if(DB::table('domain_coupon_usages')->where('domain_coupon_id', $coupon->id)->where('user_id', $request->user()->id)->exists(), 422, 'Kupon ini sudah pernah digunakan akun Anda.');
+                abort_if(! $editing && DB::table('domain_coupon_usages')->where('domain_coupon_id', $coupon->id)->where('user_id', $request->user()->id)->exists(), 422, 'Kupon ini sudah pernah digunakan akun Anda.');
             }
             if ($editing) {
                 $editing->update([...$data, 'domain_id' => $domain?->id, 'domain_price_snapshot' => $domainPrice, 'domain_discount_snapshot' => $couponDiscount, 'coupon_code_snapshot' => $couponCode, 'tax_snapshot' => (int) round($domainPrice * 0.11), 'total_snapshot' => (int) round($domainPrice * 1.11)]);

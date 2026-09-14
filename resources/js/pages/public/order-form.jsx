@@ -30,8 +30,11 @@ export default function OrderForm({
     const [cartNotice, setCartNotice] = useState(defaults.edit_error ?? '');
     const [couponNotice, setCouponNotice] = useState('');
     const [couponChecking, setCouponChecking] = useState(false);
-    const [couponDiscount, setCouponDiscount] = useState(0);
+    const [couponDiscount, setCouponDiscount] = useState(
+        Number(defaults.coupon_discount ?? 0),
+    );
     const [invalidField, setInvalidField] = useState('');
+    const isEditing = Boolean(defaults.order_number);
 
     const [countrySearch, setCountrySearch] = useState('');
     const [stateSearch, setStateSearch] = useState('');
@@ -559,6 +562,7 @@ export default function OrderForm({
                                 <div className="flex flex-col gap-2 sm:flex-row">
                                     <Input
                                         value={data.coupon_code}
+                                        disabled={isEditing}
                                         maxLength={40}
                                         placeholder="Masukkan Kode Promo"
                                         onChange={(e) => {
@@ -569,64 +573,68 @@ export default function OrderForm({
                                             );
                                         }}
                                     />
-                                    <Button
-                                        type="button"
-                                        variant="secondary"
-                                        className="sm:min-w-32"
-                                        onClick={async () => {
-                                            if (!data.coupon_code) {
+                                    {!isEditing && (
+                                        <Button
+                                            type="button"
+                                            variant="secondary"
+                                            className="sm:min-w-32"
+                                            onClick={async () => {
+                                                if (!data.coupon_code) {
+                                                    setCouponNotice(
+                                                        'Masukkan kode promo terlebih dahulu.',
+                                                    );
+                                                    return;
+                                                }
+                                                setCouponChecking(true);
                                                 setCouponNotice(
-                                                    'Masukkan kode promo terlebih dahulu.',
+                                                    'Memeriksa kode promo...',
                                                 );
-                                                return;
-                                            }
-                                            setCouponChecking(true);
-                                            setCouponNotice(
-                                                'Memeriksa kode promo...',
-                                            );
-                                            const response = await fetch(
-                                                '/order/coupon',
-                                                {
-                                                    method: 'POST',
-                                                    headers: {
-                                                        'Content-Type':
-                                                            'application/json',
-                                                        Accept: 'application/json',
-                                                        'X-CSRF-TOKEN':
-                                                            document.querySelector(
-                                                                'meta[name="csrf-token"]',
-                                                            )?.content ?? '',
+                                                const response = await fetch(
+                                                    '/order/coupon',
+                                                    {
+                                                        method: 'POST',
+                                                        headers: {
+                                                            'Content-Type':
+                                                                'application/json',
+                                                            Accept: 'application/json',
+                                                            'X-CSRF-TOKEN':
+                                                                document.querySelector(
+                                                                    'meta[name="csrf-token"]',
+                                                                )?.content ??
+                                                                '',
+                                                        },
+                                                        body: JSON.stringify({
+                                                            domain_id:
+                                                                data.domain_id,
+                                                            coupon_code:
+                                                                data.coupon_code,
+                                                        }),
                                                     },
-                                                    body: JSON.stringify({
-                                                        domain_id:
-                                                            data.domain_id,
-                                                        coupon_code:
-                                                            data.coupon_code,
-                                                    }),
-                                                },
-                                            );
-                                            setCouponChecking(false);
-                                            if (response.ok) {
-                                                const result =
-                                                    await response.json();
-                                                setCouponDiscount(
-                                                    result.discount ?? 0,
                                                 );
-                                            } else {
-                                                setCouponDiscount(0);
-                                            }
-                                            setCouponNotice(
-                                                response.ok
-                                                    ? 'Kode promo berhasil diterapkan.'
-                                                    : response.status === 419
-                                                      ? 'Sesi halaman sudah kedaluwarsa. Muat ulang halaman.'
-                                                      : 'Kode promo tidak berlaku.',
-                                            );
-                                        }}
-                                        disabled={couponChecking}
-                                    >
-                                        Pakai Promo
-                                    </Button>
+                                                setCouponChecking(false);
+                                                if (response.ok) {
+                                                    const result =
+                                                        await response.json();
+                                                    setCouponDiscount(
+                                                        result.discount ?? 0,
+                                                    );
+                                                } else {
+                                                    setCouponDiscount(0);
+                                                }
+                                                setCouponNotice(
+                                                    response.ok
+                                                        ? 'Kode promo berhasil diterapkan.'
+                                                        : response.status ===
+                                                            419
+                                                          ? 'Sesi halaman sudah kedaluwarsa. Muat ulang halaman.'
+                                                          : 'Kode promo tidak berlaku.',
+                                                );
+                                            }}
+                                            disabled={couponChecking}
+                                        >
+                                            Pakai Promo
+                                        </Button>
+                                    )}
                                 </div>
                                 {couponNotice && (
                                     <p className="text-sm text-muted-foreground">
