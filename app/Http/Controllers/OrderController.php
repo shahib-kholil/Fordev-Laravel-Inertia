@@ -16,6 +16,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Str;
+
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -35,15 +36,33 @@ class OrderController extends Controller
                 ->all();
         }
 
+        $editRequested = $request->filled('edit');
+        $editOrder = $editRequested
+            ? Order::query()->where('order_number', $request->query('edit'))->where('client_email', $request->user()->email)->where('status', 'pending_confirmation')->first()
+            : null;
+
         return Inertia::render('public/order-form', [
             'webServices' => WebService::query()->where('is_active', true)->get(),
             'domains' => Domain::query()->where('is_available', true)->get(),
             'locations' => $locations->all(),
             'defaults' => [
-                'order_type' => request('type', 'website'),
-                'domain_id' => request('domain_id', $bundle['domains'][0]['id'] ?? ''),
-                'domain_name' => request('domain_name', ''),
-                'bundle_id' => $bundleId,
+                'order_type' => old('order_type', request('type', 'website')),
+                'domain_id' => old('domain_id', $editOrder?->domain_id ?? request('domain_id', $bundle['domains'][0]['id'] ?? '')),
+                'domain_name' => old('domain_name', $editOrder?->domain_name ?? request('domain_name', '')),
+                'bundle_id' => old('bundle_id', $bundleId),
+                'client_phone' => old('client_phone', $editOrder?->client_phone ?? ''),
+                'company' => old('company', $editOrder?->company ?? ''),
+                'address_line_1' => old('address_line_1', $editOrder?->address_line_1 ?? ''),
+                'city' => old('city', $editOrder?->city ?? ''),
+                'state' => old('state', $editOrder?->state ?? ''),
+                'zipcode' => old('zipcode', $editOrder?->zipcode ?? ''),
+                'country_code' => old('country_code', $editOrder?->country_code ?? 'ID'),
+                'notes' => old('notes', $editOrder?->notes ?? ''),
+                'confirm_new_order' => old('confirm_new_order', false),
+                'order_number' => old('order_number', $editOrder?->order_number ?? ''),
+                'edit_error' => $editRequested && ! $editOrder
+                    ? 'Pesanan sudah diproses atau tidak ditemukan, jadi tidak dapat diedit.'
+                    : null,
             ],
             'buyer' => $request->user()->only(['name', 'email']),
             'pendingOrder' => Order::query()
@@ -64,6 +83,9 @@ class OrderController extends Controller
         abort_if($request->filled('website_url'), 422);
 
         $data = $request->validated();
+        $editing = $request->filled('order_number')
+            ? Order::query()->where('order_number', $request->input('order_number'))->where('client_email', $request->user()->email)->where('status', 'pending_confirmation')->firstOrFail()
+            : null;
 
         $bundles = json_decode(Setting::query()->where('key', 'domain_bundles')->value('value') ?? '[]', true) ?: [];
         $bundle = array_key_exists($data['bundle_id'] ?? null, $bundles) ? $bundles[$data['bundle_id']] : null;
@@ -75,11 +97,15 @@ class OrderController extends Controller
         }
 
         abort_unless($bundle || ! empty($data['domain_id']), 422, 'Domain atau paket domain wajib dipilih.');
-        $domain = $bundle ? $bundleDomains->first() : Domain::find($data['domain_id']);
+        $domain = $bundle ? $bundleDomains->first() : Domain::query()
+            ->whereKey($data['domain_id'])
+            ->where('is_available', true)
+            ->first();
+        abort_unless($domain, 422, 'Domain tidak tersedia.');
         $data['order_type'] = 'domain';
         $domainPrice = $bundle ? (int) $bundle['price'] : ($domain?->promo_price ?: $domain?->price);
         $data['domain_id'] = $domain?->id;
-        unset($data['bundle_id']);
+        unset($data['bundle_id'], $data['order_number'], $data['payment_method']);
 
         if ($domain) {
             $existing = Order::query()
@@ -108,7 +134,11 @@ class OrderController extends Controller
             }
         }
 
-        $order = DB::transaction(function () use ($data, $request, $domainPrice, $domain, $bundle, $bundleDomains) {
+        $order = DB::transaction(function () use ($data, $request, $domainPrice, $domain, $bundle, $bundleDomains, $editing) {
+            if ($editing) {
+                $editing->update([...$data, 'domain_id' => $domain?->id, 'domain_price_snapshot' => $domainPrice, 'tax_snapshot' => (int) round($domainPrice * 0.11), 'total_snapshot' => (int) round($domainPrice * 1.11)]);
+                return $editing;
+            }
             $order = Order::query()->create([
                 ...$data,
                 'client_name' => $request->user()->name,
@@ -152,35 +182,54 @@ class OrderController extends Controller
 
     public function status(Request $request): Response
     {
+        $orders = $request->user()
+            ? Order::query()
+                ->where('client_email', $request->user()->email)
+                ->with(['domain:id,extension', 'items.domain:id,extension'])
+                ->latest()
+                ->get()
+            : collect();
+        $orderNumber = $request->query('order') ?? $request->session()->get('order_number');
+
         return Inertia::render('public/order-status', [
+            'paymentMethods' => $this->paymentMethods(),
             'paymentDetails' => json_decode(Setting::query()->where('key', 'payment_details')->value('value') ?? '{}', true),
-            'order' => $request->user()
-                ? Order::query()
-                    ->where('client_email', $request->user()->email)
-                    ->when(
-                        $request->query('order') ?? $request->session()->get('order_number'),
-                        fn ($query, $number) => $query->where('order_number', $number),
-                        fn ($query) => $query->whereRaw('1 = 0'),
-                    )
-                    ->with(['domain:id,extension', 'items.domain:id,extension'])
-                    ->first()
-                : null,
+            'orders' => $orders,
+            'order' => $orders->firstWhere('order_number', $orderNumber) ?? $orders->first(),
         ]);
     }
 
-    public function lookup(Request $request): Response
+    public function lookup(Request $request): Response|RedirectResponse
     {
         $data = $request->validate([
             'order_number' => ['required', 'string'],
             'client_email' => ['required', 'email'],
         ]);
 
+        $order = Order::query()
+            ->where('order_number', $data['order_number'])
+            ->where('client_email', $data['client_email'])
+            ->with(['domain:id,extension', 'items.domain:id,extension'])
+            ->first();
+
+        if (! $order) {
+            return back()->withErrors([
+                'order_number' => 'Pesanan tidak ditemukan. Periksa nomor pesanan dan email Anda.',
+            ])->withInput();
+        }
+
         return Inertia::render('public/order-status', [
+            'paymentMethods' => $this->paymentMethods(),
             'paymentDetails' => json_decode(Setting::query()->where('key', 'payment_details')->value('value') ?? '{}', true),
-            'order' => Order::query()
-                ->where('order_number', $data['order_number'])
-                ->where('client_email', $data['client_email'])
-                ->first(),
+            'order' => $order,
         ]);
+    }
+
+
+    private function paymentMethods(): array
+    {
+        $methods = json_decode(Setting::query()->where('key', 'payment_methods')->value('value') ?? '["qris","dana","bank_transfer"]', true);
+
+        return is_array($methods) ? array_values(array_intersect($methods, ['qris', 'dana', 'bank_transfer'])) : [];
     }
 }

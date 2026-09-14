@@ -32,6 +32,7 @@ Route::middleware('auth')->group(function () {
     })->name('logout');
     Route::get('order', [OrderController::class, 'create'])->name('orders.create')->middleware('throttle:20,1');
     Route::post('order', [OrderController::class, 'store'])->name('orders.store')->middleware('throttle:5,1');
+
 });
 Route::get('cek-status-pesanan', [OrderController::class, 'status'])->name('orders.status');
 Route::post('cek-status-pesanan', [OrderController::class, 'lookup'])->name('orders.lookup')->middleware('throttle:10,1');

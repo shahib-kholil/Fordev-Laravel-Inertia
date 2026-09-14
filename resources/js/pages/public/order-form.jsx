@@ -9,7 +9,6 @@ import SearchSelect from '@/components/ui/search-select';
 import { countries } from '@/data/countries';
 import Field from '@/components/order/field';
 import OrderSummary from '@/components/order/order-summary';
-import PaymentMethods from '@/components/order/payment-methods';
 import {
     Select,
     SelectContent,
@@ -18,23 +17,19 @@ import {
     SelectValue,
 } from '@/components/ui/select';
 import PublicLayout from '@/layouts/public-layout';
-import Stepper from '@/components/stepper';
 
 export default function OrderForm({
-    webServices,
     domains,
     defaults = {},
     buyer,
     pendingOrder,
-    paymentMethods = ['qris', 'dana', 'bank_transfer'],
-    paymentDetails = {},
+
     locations = [],
     bundle,
 }) {
-    const [checkoutStep, setCheckoutStep] = useState(2);
-    const [cartNotice, setCartNotice] = useState('');
+    const [cartNotice, setCartNotice] = useState(defaults.edit_error ?? '');
     const [invalidField, setInvalidField] = useState('');
-    const [copiedPayment, setCopiedPayment] = useState('');
+
     const [countrySearch, setCountrySearch] = useState('');
     const [stateSearch, setStateSearch] = useState('');
     const [citySearch, setCitySearch] = useState('');
@@ -48,24 +43,23 @@ export default function OrderForm({
     const countryRef = useRef(null);
 
     const { data, setData, post, processing, errors } = useForm({
-        client_phone: '',
+        client_phone: defaults.client_phone ?? '',
         order_type: 'domain',
-        web_service_id: '',
         domain_id: defaults.domain_id ?? '',
         domain_name: defaults.domain_name ?? '',
         bundle_id: defaults.bundle_id ?? '',
-        company: '',
-        address_line_1: '',
-        city: '',
-        state: '',
-        zipcode: '',
-        country_code: 'ID',
-        notes: '',
+        company: defaults.company ?? '',
+        address_line_1: defaults.address_line_1 ?? '',
+        city: defaults.city ?? '',
+        state: defaults.state ?? '',
+        zipcode: defaults.zipcode ?? '',
+        country_code: defaults.country_code ?? 'ID',
+        notes: defaults.notes ?? '',
         website_url: '',
-        payment_method: '',
-        confirm_new_order: false,
+        confirm_new_order: defaults.confirm_new_order ?? false,
+        order_number: defaults.order_number ?? '',
     });
-    const paymentComplete = Boolean(data.payment_method);
+
     const bundleDomains = bundle?.domains ?? [];
     const isBundleCheckout = Boolean(bundle && bundleDomains.length > 1);
     const selectedBundleDomain = bundleDomains[0];
@@ -76,22 +70,11 @@ export default function OrderForm({
     );
     const cities = selectedProvince?.cities?.map((city) => city.name) ?? [];
 
-    async function copyPayment(value, method) {
-        if (!value) return;
-        const copiedValue =
-            method === 'bank_transfer'
-                ? (value.match(/\d{6,}/)?.[0] ?? value)
-                : value;
-        await navigator.clipboard.writeText(copiedValue);
-        setCopiedPayment(method);
-        setTimeout(() => setCopiedPayment(''), 1500);
-    }
-    const needsWeb = ['website', 'both'].includes(data.order_type);
-    const needsDomain = ['domain', 'both'].includes(data.order_type);
     const selectedDomain =
         domains.find((item) => String(item.id) === String(data.domain_id)) ??
         selectedBundleDomain;
-    const isDomainCheckout = data.order_type === 'domain' && selectedDomain;
+    const isDomainCheckout = Boolean(selectedDomain);
+    const needsDomain = true;
     const phoneValid = /^[0-9+()\s-]{8,30}$/.test(data.client_phone.trim());
     const zipcodeValid = /^\d{5}$/.test(data.zipcode.trim());
     const cartComplete = Boolean(
@@ -103,57 +86,23 @@ export default function OrderForm({
     const formComplete = Boolean(
         phoneValid &&
         data.client_phone.trim() &&
-        (!needsWeb || data.web_service_id) &&
-        (!needsDomain ||
-            (cartComplete &&
-                data.address_line_1.trim() &&
-                data.city.trim() &&
-                data.state.trim() &&
-                zipcodeValid)),
+        cartComplete &&
+        data.address_line_1.trim() &&
+        data.city.trim() &&
+        data.state.trim() &&
+        zipcodeValid,
     );
-    const canNavigateToStep = (target, current) =>
-        target <= current || (target === 3 && cartComplete);
 
     function submit(e) {
         e.preventDefault();
-        if (!paymentComplete) {
-            setCartNotice('Pilih metode pembayaran terlebih dahulu.');
-            setCheckoutStep(3);
-            return;
-        }
         if (!formComplete) {
-            setCheckoutStep(2);
             return;
         }
-        post('/order', {
-            onError: (validationErrors) => {
-                if (
-                    Object.keys(validationErrors).some((key) =>
-                        [
-                            'client_phone',
-                            'domain_name',
-                            'domain_id',
-                            'company',
-                            'address_line_1',
-                            'city',
-                            'state',
-                            'zipcode',
-                            'country_code',
-                        ].includes(key),
-                    )
-                ) {
-                    setCheckoutStep(2);
-                }
-            },
-        });
+        post('/order', { preserveState: true, preserveScroll: true });
     }
 
-    function nextStep() {
-        if (checkoutStep === 3 && !paymentComplete) {
-            setCartNotice('Pilih metode pembayaran terlebih dahulu.');
-            return;
-        }
-        if (checkoutStep === 2 && !formComplete) {
+    function validateForm() {
+        if (!formComplete) {
             const missing =
                 !data.client_phone.trim() || !phoneValid
                     ? ['Nomor WhatsApp', phoneRef]
@@ -187,7 +136,25 @@ export default function OrderForm({
         }
         setCartNotice('');
         setInvalidField('');
-        setCheckoutStep(Math.min(checkoutStep + 1, 4));
+    }
+
+    if (defaults.edit_error) {
+        return (
+            <PublicLayout title="Edit Pesanan">
+                <div className="mx-auto max-w-2xl space-y-4 px-4 py-12">
+                    <h1 className="text-3xl font-semibold">Edit Pesanan</h1>
+                    <div className="rounded-xl border border-amber-500/40 bg-amber-500/10 px-4 py-3 text-sm text-amber-700 dark:text-amber-300">
+                        {defaults.edit_error}
+                    </div>
+                    <a
+                        href="/cek-status-pesanan"
+                        className="inline-flex rounded-lg border border-primary/40 px-4 py-2 text-sm font-semibold text-primary"
+                    >
+                        Kembali ke status pesanan
+                    </a>
+                </div>
+            </PublicLayout>
+        );
     }
 
     return (
@@ -197,16 +164,6 @@ export default function OrderForm({
                 noValidate
                 className="mx-auto max-w-6xl space-y-6 px-4 py-12"
             >
-                {isDomainCheckout && (
-                    <Stepper
-                        currentStep={checkoutStep}
-                        onStepChange={setCheckoutStep}
-                        canNavigateToStep={(target, current) =>
-                            target !== 1 && canNavigateToStep(target, current)
-                        }
-                        indicatorOnly
-                    />
-                )}
                 <div className="flex flex-wrap items-end justify-between gap-3">
                     <div>
                         <h1 className="text-3xl font-semibold">
@@ -228,6 +185,11 @@ export default function OrderForm({
                             Pesanan dibuat sebagai{' '}
                             <strong>{buyer?.name}</strong> ({buyer?.email}).
                         </p>
+                        {defaults.edit_error && (
+                            <p className="rounded-xl border border-amber-500/40 bg-amber-500/10 px-4 py-3 text-sm text-amber-700 dark:text-amber-300">
+                                {defaults.edit_error}
+                            </p>
+                        )}
                         {errors.pending_order && !data.confirm_new_order && (
                             <div className="rounded-xl border border-amber-500/40 bg-amber-500/10 p-4 text-sm text-amber-700 dark:text-amber-300">
                                 <p>{errors.pending_order}</p>
@@ -256,13 +218,7 @@ export default function OrderForm({
                                 {errors.form}
                             </p>
                         )}
-                        <div
-                            className={
-                                !isDomainCheckout || checkoutStep <= 2
-                                    ? 'space-y-4'
-                                    : 'hidden'
-                            }
-                        >
+                        <div className={'space-y-4'}>
                             <Field
                                 label="Nomor WhatsApp"
                                 error={errors.client_phone}
@@ -328,6 +284,8 @@ export default function OrderForm({
                                                             : ''
                                                     }
                                                     placeholder="tokoku"
+                                                    maxLength={63}
+                                                    pattern="[a-z0-9](?:[a-z0-9-]*[a-z0-9])?"
                                                     value={data.domain_name}
                                                     onChange={(e) =>
                                                         setData(
@@ -591,35 +549,30 @@ export default function OrderForm({
                                 <Textarea
                                     className="min-h-28 font-normal placeholder:font-normal placeholder:text-slate-500 dark:placeholder:text-slate-400"
                                     placeholder="Ceritakan kebutuhan website/domain Anda"
+                                    maxLength={2000}
                                     value={data.notes}
                                     onChange={(e) =>
                                         setData('notes', e.target.value)
                                     }
                                 />
                             </Field>
-                            <input
-                                className="hidden"
-                                tabIndex="-1"
-                                autoComplete="off"
-                                value={data.website_url}
-                                onChange={(e) =>
-                                    setData('website_url', e.target.value)
-                                }
-                            />
+                            <div
+                                className="absolute -left-[9999px] h-px w-px overflow-hidden"
+                                aria-hidden="true"
+                            >
+                                <label htmlFor="website_url">Website</label>
+                                <input
+                                    id="website_url"
+                                    name="website_url"
+                                    tabIndex={-1}
+                                    autoComplete="off"
+                                    value={data.website_url}
+                                    onChange={(e) =>
+                                        setData('website_url', e.target.value)
+                                    }
+                                />
+                            </div>
                         </div>
-                        {isDomainCheckout && checkoutStep === 3 && (
-                            <PaymentMethods
-                                availableMethods={paymentMethods}
-                                value={data.payment_method}
-                                details={paymentDetails}
-                                copiedPayment={copiedPayment}
-                                onChange={(value) => {
-                                    setData('payment_method', value);
-                                    setCartNotice('');
-                                }}
-                                onCopy={copyPayment}
-                            />
-                        )}
 
                         {processing && (
                             <div
@@ -635,33 +588,17 @@ export default function OrderForm({
                                 name={data.domain_name}
                                 bundle={isBundleCheckout ? bundle : null}
                             />
-                            <div className="flex justify-between gap-3">
+                            <div className="flex justify-end gap-3">
                                 <Button
-                                    type="button"
-                                    variant="outline"
-                                    disabled={checkoutStep <= 2}
-                                    onClick={() =>
-                                        setCheckoutStep(
-                                            Math.max(checkoutStep - 1, 2),
-                                        )
-                                    }
+                                    type="submit"
+                                    disabled={processing || !formComplete}
                                 >
-                                    Sebelumnya
+                                    {processing
+                                        ? 'Memproses...'
+                                        : defaults.order_number
+                                          ? 'Edit Pesanan'
+                                          : 'Kirim Pesanan'}
                                 </Button>
-                                {checkoutStep < 3 ? (
-                                    <Button type="button" onClick={nextStep}>
-                                        Lanjutkan
-                                    </Button>
-                                ) : (
-                                    <Button
-                                        type="submit"
-                                        disabled={processing || !cartComplete}
-                                    >
-                                        {processing
-                                            ? 'Memproses...'
-                                            : 'Kirim Pesanan'}
-                                    </Button>
-                                )}
                             </div>
                         </div>
                     ) : (
@@ -669,7 +606,11 @@ export default function OrderForm({
                             type="submit"
                             disabled={processing || !formComplete}
                         >
-                            {processing ? 'Memproses...' : 'Kirim Pesanan'}
+                            {processing
+                                ? 'Memproses...'
+                                : defaults.order_number
+                                  ? 'Edit Pesanan'
+                                  : 'Kirim Pesanan'}
                         </Button>
                     )}
                 </div>

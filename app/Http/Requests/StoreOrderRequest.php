@@ -13,6 +13,19 @@ class StoreOrderRequest extends FormRequest
         return $this->user() !== null;
     }
 
+    protected function prepareForValidation(): void
+    {
+        $fields = ['client_phone', 'domain_name', 'company', 'address_line_1', 'city', 'state', 'zipcode', 'country_code', 'notes', 'order_number'];
+        $clean = [];
+        foreach ($fields as $field) {
+            $value = $this->input($field);
+            $clean[$field] = is_string($value) ? trim(strip_tags($value)) : $value;
+        }
+        $clean['domain_name'] = strtolower($clean['domain_name'] ?? '');
+        $clean['country_code'] = strtoupper($clean['country_code'] ?? '');
+        $this->merge($clean);
+    }
+
     public function rules(): array
     {
         $enabledPaymentMethods = json_decode(
@@ -33,7 +46,7 @@ class StoreOrderRequest extends FormRequest
             'order_type' => ['nullable', Rule::in(['domain'])],
             'domain_id' => ['nullable', 'exists:domains,id'],
             'bundle_id' => ['nullable', 'integer', 'min:0'],
-            'domain_name' => ['required', 'string', 'max:255'],
+            'domain_name' => ['required', 'string', 'max:63', 'regex:/^[a-z0-9](?:[a-z0-9-]*[a-z0-9])?$/'],
             'company' => ['nullable', 'string', 'max:255'],
             'address_line_1' => ['required', 'string', 'max:255'],
             'city' => ['required', 'string', 'max:100'],
@@ -41,10 +54,8 @@ class StoreOrderRequest extends FormRequest
             'zipcode' => ['required', 'string', 'regex:/^\d{5}$/'],
             'country_code' => ['required', 'string', 'size:2'],
             'notes' => ['nullable', 'string'],
-            'payment_method' => [
-                'required',
-                Rule::in($enabledPaymentMethods),
-            ],
+            'payment_method' => ['nullable', Rule::in($enabledPaymentMethods)],
+            'order_number' => ['nullable', 'regex:/^FRD-[0-9]{8}-[A-Z0-9]{4}$/']
         ];
     }
 }
