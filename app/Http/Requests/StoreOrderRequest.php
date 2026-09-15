@@ -49,7 +49,7 @@ class StoreOrderRequest extends FormRequest
             'bundle_id' => ['nullable', 'string', 'max:80'],
             'domain_name' => ['required', 'string', 'max:63', 'regex:/^[a-z0-9](?:[a-z0-9-]*[a-z0-9])?$/'],
             'company' => ['nullable', 'string', 'max:255'],
-            'address_line_1' => ['required', 'string', 'max:255'],
+            'address_line_1' => ['required', 'string', 'max:62'],
             'city' => ['required', 'string', 'max:100'],
             'state' => ['required', 'string', 'max:100'],
             'zipcode' => ['required', 'string', 'regex:/^\d{5}$/'],

@@ -13,6 +13,7 @@ use App\Services\IndonesianLocationService;
 use App\Services\LiquidDomainClient;
 use App\Services\TelegramNotifier;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Client\RequestException;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Notification;
@@ -189,7 +190,13 @@ class OrderController extends Controller
 
             $availabilityDomains = $bundle ? $bundleDomains : collect([$domain]);
             foreach ($availabilityDomains as $availabilityDomain) {
-                $available = $liquid->available($data['domain_name'], $availabilityDomain->extension);
+                try {
+                    $available = $liquid->available($data['domain_name'], $availabilityDomain->extension);
+                } catch (RequestException $e) {
+                    return back()->withErrors([
+                        'domain_name' => $e->response?->json('message') ?? 'Ekstensi domain tidak dapat diperiksa di Liqu.id.',
+                    ])->withInput();
+                }
 
                 if ($available === false) {
                     return back()->withErrors([

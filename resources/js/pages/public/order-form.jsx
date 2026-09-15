@@ -95,6 +95,7 @@ export default function OrderForm({
         data.client_phone.trim() &&
         cartComplete &&
         data.address_line_1.trim() &&
+        data.address_line_1.length <= 62 &&
         data.city.trim() &&
         data.state.trim() &&
         zipcodeValid,
@@ -532,6 +533,7 @@ export default function OrderForm({
                                                         : ''
                                                 }
                                                 value={data.address_line_1}
+                                                maxLength={62}
                                                 onChange={(e) =>
                                                     setData(
                                                         'address_line_1',
