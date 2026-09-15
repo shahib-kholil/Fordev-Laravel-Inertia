@@ -74,6 +74,9 @@ class OrderController extends Controller
         $editOrder = $editRequested
             ? Order::query()->where('order_number', $request->query('edit'))->where('client_email', $request->user()->email)->where('status', 'pending_confirmation')->first()
             : null;
+        if ($editOrder?->bundle_id) {
+            $editOrder = null;
+        }
 
         return Inertia::render('public/order-form', [
             'webServices' => WebService::query()->where('is_active', true)->get(),
@@ -129,6 +132,7 @@ class OrderController extends Controller
 
         $bundles = json_decode(Setting::query()->where('key', 'domain_bundles')->value('value') ?? '[]', true) ?: [];
         $bundle = collect($bundles)->first(fn ($item, $key) => ($item['id'] ?? (string) $key) === (string) ($data['bundle_id'] ?? ''));
+        abort_if($editing?->bundle_id, 422, 'Pesanan bundling tidak dapat diedit.');
         $bundleDomains = $bundle
             ? Domain::query()->whereIn('id', $bundle['domain_ids'] ?? [])->where('is_available', true)->get()->keyBy('id')
             : collect();

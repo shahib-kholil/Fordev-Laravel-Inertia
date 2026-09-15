@@ -46,25 +46,27 @@ export default function OrderStatus({
                             <span className="rounded-full border border-primary/30 bg-primary/10 px-3 py-1 text-sm font-medium text-primary capitalize">
                                 {order.status.replaceAll('_', ' ')}
                             </span>
-                            <button
-                                type="button"
-                                onClick={() =>
-                                    order.status === 'pending_confirmation'
-                                        ? window.location.assign(
-                                              `/order?edit=${encodeURIComponent(order.order_number)}`,
-                                          )
-                                        : setEditNotice(
-                                              'Pesanan ini sudah diproses dan tidak dapat diedit lagi.',
-                                          )
-                                }
-                                className={
-                                    order.status === 'pending_confirmation'
-                                        ? 'rounded-lg border border-primary/40 px-3 py-1.5 text-xs font-semibold text-primary transition hover:bg-primary/10'
-                                        : 'cursor-not-allowed rounded-lg border px-3 py-1.5 text-xs font-semibold text-muted-foreground opacity-60'
-                                }
-                            >
-                                Edit Pesanan
-                            </button>
+                            {!order.items?.length && (
+                                <button
+                                    type="button"
+                                    onClick={() =>
+                                        order.status === 'pending_confirmation'
+                                            ? window.location.assign(
+                                                  `/order?edit=${encodeURIComponent(order.order_number)}`,
+                                              )
+                                            : setEditNotice(
+                                                  'Pesanan ini sudah diproses dan tidak dapat diedit lagi.',
+                                              )
+                                    }
+                                    className={
+                                        order.status === 'pending_confirmation'
+                                            ? 'rounded-lg border border-primary/40 px-3 py-1.5 text-xs font-semibold text-primary transition hover:bg-primary/10'
+                                            : 'cursor-not-allowed rounded-lg border px-3 py-1.5 text-xs font-semibold text-muted-foreground opacity-60'
+                                    }
+                                >
+                                    Edit Pesanan
+                                </button>
+                            )}
                         </div>
                         {editNotice && (
                             <p className="rounded-xl border border-amber-500/40 bg-amber-500/10 px-4 py-3 text-sm text-amber-700 dark:text-amber-300">
