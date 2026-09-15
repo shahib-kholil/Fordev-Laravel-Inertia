@@ -4,9 +4,9 @@ namespace App\Http\Controllers;
 
 use App\Http\Requests\StoreOrderRequest;
 use App\Models\Domain;
+use App\Models\DomainCoupon;
 use App\Models\Order;
 use App\Models\Setting;
-use App\Models\DomainCoupon;
 use App\Models\WebService;
 use App\Notifications\NewOrderNotification;
 use App\Services\IndonesianLocationService;
@@ -17,7 +17,6 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Str;
-
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -42,7 +41,7 @@ class OrderController extends Controller
         if ($data['bundle_id'] ?? null) {
             $bundle = collect(json_decode(Setting::query()->where('key', 'domain_bundles')->value('value') ?? '[]', true))
                 ->first(fn ($item) => ($item['id'] ?? null) === $data['bundle_id']);
-            abort_unless($bundle, 422, 'Paket bundling tidak ditemukan.');
+            abort_unless($bundle && ($bundle['is_active'] ?? true), 422, 'Paket bundling tidak tersedia.');
             $price = (int) $bundle['price'];
         } else {
             $domain = Domain::findOrFail($data['domain_id']);
@@ -74,6 +73,7 @@ class OrderController extends Controller
         $editOrder = $editRequested
             ? Order::query()->where('order_number', $request->query('edit'))->where('client_email', $request->user()->email)->where('status', 'pending_confirmation')->first()
             : null;
+        $bundleEditRequested = $editOrder?->bundle_id;
         if ($editOrder?->bundle_id) {
             $editOrder = null;
         }
@@ -99,9 +99,11 @@ class OrderController extends Controller
                 'order_number' => old('order_number', $editOrder?->order_number ?? ''),
                 'coupon_code' => old('coupon_code', $editOrder?->coupon_code_snapshot ?? ''),
                 'coupon_discount' => old('coupon_discount', $editOrder?->domain_discount_snapshot ?? 0),
-                'edit_error' => $editRequested && ! $editOrder
-                    ? 'Pesanan sudah diproses atau tidak ditemukan, jadi tidak dapat diedit.'
-                    : null,
+                'edit_error' => $bundleEditRequested
+                    ? 'Pesanan bundling tidak dapat diedit. Buat pesanan baru jika ingin mengubah pilihannya.'
+                    : ($editRequested && ! $editOrder
+                        ? 'Pesanan sudah diproses atau tidak ditemukan, jadi tidak dapat diedit.'
+                        : null),
             ],
             'buyer' => $request->user()->only(['name', 'email']),
             'pendingOrder' => Order::query()
@@ -114,9 +116,7 @@ class OrderController extends Controller
             'paymentMethods' => json_decode(Setting::query()->where('key', 'payment_methods')->value('value') ?? '["qris","dana","bank_transfer"]', true),
             'paymentDetails' => json_decode(Setting::query()->where('key', 'payment_details')->value('value') ?? '{}', true),
             'bundle' => $bundle,
-            'coupons' => $bundle
-                ? DomainCoupon::query()->where('bundle_id', $bundleId)->where('is_active', true)->get(['code', 'type', 'value', 'ends_at'])
-                : Domain::find($request->query('domain_id'))?->coupons()->where('is_active', true)->get(['code', 'type', 'value', 'ends_at']),
+
         ]);
     }
 
@@ -213,6 +213,7 @@ class OrderController extends Controller
             }
             if ($editing) {
                 $editing->update([...$data, 'domain_id' => $domain?->id, 'domain_price_snapshot' => $domainPrice, 'domain_discount_snapshot' => $couponDiscount, 'coupon_code_snapshot' => $couponCode, 'tax_snapshot' => (int) round($domainPrice * 0.11), 'total_snapshot' => (int) round($domainPrice * 1.11)]);
+
                 return $editing;
             }
             $order = Order::query()->create([
@@ -331,7 +332,6 @@ class OrderController extends Controller
             'order' => $order,
         ]);
     }
-
 
     private function paymentMethods(): array
     {

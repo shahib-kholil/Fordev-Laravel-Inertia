@@ -26,6 +26,7 @@ class LiquidDomainRegistrar
             // Bundle tambahan diklaim lewat admin; hanya domain utama yang diregistrasikan otomatis.
             if ($index > 0) {
                 $item->update(['status' => 'pending_confirmation', 'liquid_error' => 'Menunggu klaim manual melalui admin.']);
+
                 continue;
             }
             if ($item->status === 'active') {

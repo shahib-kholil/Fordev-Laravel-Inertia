@@ -5,6 +5,7 @@ namespace Tests\Feature;
 use App\Models\Domain;
 use App\Models\DomainCoupon;
 use App\Models\Order;
+use App\Models\Setting;
 use App\Models\User;
 use App\Notifications\OrderActiveNotification;
 use App\Notifications\OrderPendingPaymentNotification;
@@ -314,6 +315,109 @@ class FordevFlowTest extends TestCase
         $this->actingAs($user)->post('/order', [...$payload, 'client_phone' => '08123456780', 'coupon_code' => '', 'order_number' => $order->order_number])->assertRedirectContains($order->order_number);
         $this->assertDatabaseCount('orders', 1);
         $this->assertDatabaseHas('orders', ['id' => $order->id, 'client_phone' => '08123456780', 'domain_price_snapshot' => 50000, 'domain_discount_snapshot' => 135000, 'coupon_code_snapshot' => $coupon->code]);
+    }
+
+    public function test_bundle_coupon_creates_primary_order_and_bundle_items(): void
+    {
+        Http::fake(['*domains/availability*' => Http::response([['tokoku.com' => ['status' => 'available']]])]);
+        Notification::fake();
+        $domains = Domain::factory()->count(2)->sequence(['extension' => '.com'], ['extension' => '.id'])->create();
+        $bundleId = 'bundle-test';
+        Setting::create(['key' => 'domain_bundles', 'value' => json_encode([['id' => $bundleId, 'name' => 'Starter', 'domain_ids' => $domains->pluck('id')->all(), 'price' => 150000, 'is_active' => true]])]);
+        $coupon = DomainCoupon::create(['bundle_id' => $bundleId, 'code' => 'BUNDLE100', 'type' => 'fixed', 'value' => 100000, 'is_active' => true]);
+        $user = User::factory()->create(['email' => 'bundle@example.com']);
+
+        $this->actingAs($user)->post('/order', [
+            'client_phone' => '08123456789', 'order_type' => 'domain', 'domain_id' => $domains[0]->id,
+            'bundle_id' => $bundleId, 'domain_name' => 'tokoku', 'coupon_code' => $coupon->code,
+            'address_line_1' => 'Jl. Merdeka No. 1', 'city' => 'Jakarta', 'state' => 'DKI Jakarta', 'zipcode' => '10110', 'country_code' => 'ID',
+        ])->assertRedirectContains('/cek-status-pesanan?order=');
+
+        $order = Order::query()->where('client_email', $user->email)->firstOrFail();
+        $this->assertSame(100000, $order->domain_price_snapshot);
+        $this->assertSame($bundleId, $order->bundle_id);
+        $this->assertSame(50000, $order->bundle_discount_snapshot);
+        $this->assertCount(2, $order->items);
+    }
+
+    public function test_bundle_order_edit_is_rejected(): void
+    {
+        $user = User::factory()->create(['email' => 'bundle-edit@example.com']);
+        $order = Order::factory()->create(['client_email' => $user->email, 'bundle_id' => 'bundle-test', 'status' => 'pending_confirmation']);
+
+        $this->actingAs($user)->get('/order?edit='.$order->order_number)
+            ->assertInertia(fn ($page) => $page->where('defaults.edit_error', 'Pesanan bundling tidak dapat diedit. Buat pesanan baru jika ingin mengubah pilihannya.'));
+    }
+
+    public function test_bundle_registration_only_sends_primary_domain_to_liquid(): void
+    {
+        config(['services.liquid.reseller_id' => 'demo', 'services.liquid.api_key' => 'secret']);
+        Http::fake(function ($request) {
+            return match (true) {
+                str_ends_with($request->url(), '/domains/availability') => Http::response([['tokoku.com' => ['status' => 'available']]]),
+                str_ends_with($request->url(), '/customers') && $request->method() === 'GET' => Http::response([]),
+                str_ends_with($request->url(), '/customers') => Http::response(['customer_id' => 'CUST-BUNDLE']),
+                str_contains($request->url(), '/contacts') => Http::response(['contact_id' => 'CONT-BUNDLE']),
+                str_ends_with($request->url(), '/domains') => Http::response(['domain_id' => 'DOM-MAIN']),
+                str_contains($request->url(), '/domains/details-by-name') => Http::response(['domain_id' => 'DOM-MAIN', 'order_status' => 'pending']),
+                default => Http::response([]),
+            };
+        });
+        Notification::fake();
+        $user = User::factory()->create(['email' => 'bundle-register@example.com']);
+        $order = Order::factory()->create([
+            'client_email' => $user->email,
+            'order_type' => 'domain',
+            'bundle_id' => 'bundle-test',
+            'status' => 'paid',
+        ]);
+        $order->items()->createMany([
+            ['domain_name' => 'tokoku', 'extension' => '.com', 'price_snapshot' => 150000, 'status' => 'pending_confirmation'],
+            ['domain_name' => 'tokoku', 'extension' => '.id', 'price_snapshot' => 0, 'status' => 'pending_confirmation'],
+        ]);
+
+        $this->actingAs(User::factory()->create(['role' => 'super_admin']))
+            ->put("/admin/orders/{$order->id}", ['status' => 'paid', 'action' => 'approve_register'])
+            ->assertRedirect();
+
+        Http::assertSentCount(6);
+        $this->assertDatabaseHas('order_items', ['order_id' => $order->id, 'extension' => '.com', 'status' => 'active']);
+        $this->assertDatabaseHas('order_items', ['order_id' => $order->id, 'extension' => '.id', 'status' => 'pending_confirmation']);
+    }
+
+    public function test_bundle_coupon_is_rejected_for_another_bundle_and_not_exposed_to_inertia(): void
+    {
+        $domains = Domain::factory()->count(4)->create();
+        Setting::create(['key' => 'domain_bundles', 'value' => json_encode([
+            ['id' => 'bundle-a', 'domain_ids' => [$domains[0]->id, $domains[1]->id], 'price' => 150000, 'is_active' => true],
+            ['id' => 'bundle-b', 'domain_ids' => [$domains[2]->id, $domains[3]->id], 'price' => 180000, 'is_active' => true],
+        ])]);
+        DomainCoupon::create(['bundle_id' => 'bundle-a', 'code' => 'RAHASIA', 'type' => 'fixed', 'value' => 100000, 'is_active' => true]);
+        $user = User::factory()->create();
+
+        $this->actingAs($user)->postJson('/order/coupon', [
+            'domain_id' => $domains[2]->id,
+            'bundle_id' => 'bundle-b',
+            'coupon_code' => 'RAHASIA',
+        ])->assertUnprocessable();
+
+        $this->actingAs($user)->get('/order?type=domain&bundle_id=bundle-a')
+            ->assertInertia(fn ($page) => $page->missing('coupons'));
+    }
+
+    public function test_inactive_bundle_coupon_is_rejected(): void
+    {
+        $domains = Domain::factory()->count(2)->create();
+        Setting::create(['key' => 'domain_bundles', 'value' => json_encode([
+            ['id' => 'bundle-off', 'domain_ids' => $domains->pluck('id')->all(), 'price' => 150000, 'is_active' => false],
+        ])]);
+        DomainCoupon::create(['bundle_id' => 'bundle-off', 'code' => 'OFF', 'type' => 'fixed', 'value' => 100000, 'is_active' => true]);
+
+        $this->actingAs(User::factory()->create())->postJson('/order/coupon', [
+            'domain_id' => $domains[0]->id,
+            'bundle_id' => 'bundle-off',
+            'coupon_code' => 'OFF',
+        ])->assertUnprocessable();
     }
 
     public function test_registration_route_is_disabled(): void

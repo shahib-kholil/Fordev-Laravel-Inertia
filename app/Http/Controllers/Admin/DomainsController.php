@@ -4,14 +4,14 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\Domain;
-use App\Models\Setting;
 use App\Models\DomainCoupon;
+use App\Models\Setting;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Inertia\Inertia;
-use Inertia\Response;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Str;
+use Inertia\Inertia;
+use Inertia\Response;
 
 class DomainsController extends Controller
 {
@@ -122,6 +122,7 @@ class DomainsController extends Controller
                 );
             }
             unset($bundle['coupons']);
+
             return [...$bundle, 'id' => $id];
         });
 
