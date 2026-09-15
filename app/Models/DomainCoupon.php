@@ -6,7 +6,7 @@ use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
-#[Fillable(['domain_id', 'code', 'type', 'value', 'starts_at', 'ends_at', 'max_uses', 'used_count', 'is_active'])]
+#[Fillable(['domain_id', 'bundle_id', 'code', 'type', 'value', 'starts_at', 'ends_at', 'max_uses', 'used_count', 'is_active'])]
 class DomainCoupon extends Model
 {
     protected function casts(): array

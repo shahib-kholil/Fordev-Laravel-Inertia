@@ -29,6 +29,7 @@ export default function Domains({
     filters = {},
     check,
     bundles = [],
+    contactWhatsapp,
 }) {
     const extensions = domains.data;
     const resultsRef = useRef(null);
@@ -68,11 +69,18 @@ export default function Domains({
                 />
                 {check ? (
                     <div ref={resultsRef}>
-                        <DomainResults check={check} extensions={extensions} />
+                        <DomainResults
+                            check={check}
+                            extensions={extensions}
+                            contactWhatsapp={contactWhatsapp}
+                        />
                     </div>
                 ) : (
                     <>
-                        <BundleCatalog bundles={bundles} />
+                        <BundleCatalog
+                            bundles={bundles}
+                            contactWhatsapp={contactWhatsapp}
+                        />
                         <ExtensionCatalog extensions={extensions} />
                     </>
                 )}
@@ -158,7 +166,7 @@ function DomainHero({ data, setData, submit, extensions, errors, processing }) {
     );
 }
 
-function BundleCatalog({ bundles }) {
+function BundleCatalog({ bundles, contactWhatsapp }) {
     if (!bundles.length) return null;
 
     return (
@@ -172,7 +180,7 @@ function BundleCatalog({ bundles }) {
                 </p>
             </div>
             <div className="grid gap-4 md:grid-cols-2">
-                {bundles.map((bundle, bundleId) => {
+                {bundles.map((bundle) => {
                     const normal = bundle.domains.reduce(
                         (sum, domain) => sum + salePrice(domain),
                         0,
@@ -200,9 +208,9 @@ function BundleCatalog({ bundles }) {
                             </p>
                             <Button className="mt-4" asChild>
                                 <Link
-                                    href={`/order?type=domain&bundle_id=${bundleId}`}
+                                    href={`/order?type=domain&bundle_id=${encodeURIComponent(bundle.id ?? bundle.name)}`}
                                 >
-                                    Pilih bundling
+                                    Beli domain bundling
                                 </Link>
                             </Button>
                         </article>
@@ -213,7 +221,7 @@ function BundleCatalog({ bundles }) {
     );
 }
 
-function DomainResults({ check, extensions }) {
+function DomainResults({ check, extensions, contactWhatsapp }) {
     if (!extensions.length) return <EmptyExtensions />;
 
     const name = check.domain.slice(
@@ -252,7 +260,11 @@ function DomainResults({ check, extensions }) {
                 <div className="grid gap-4 lg:grid-cols-2">
                     <HeroDomain option={requested} title="Sesuai Permintaan" />
                     {bundle.length > 1 && (
-                        <BundleCard name={name} options={bundle} />
+                        <BundleCard
+                            name={name}
+                            options={bundle}
+                            contactWhatsapp={contactWhatsapp}
+                        />
                     )}
                 </div>
             )}
@@ -400,7 +412,7 @@ function HeroDomain({ option, title }) {
     );
 }
 
-function BundleCard({ name, options }) {
+function BundleCard({ name, options, contactWhatsapp }) {
     const total = options.reduce((sum, item) => sum + item.salePrice, 0);
     return (
         <article className={cardClass}>
@@ -425,9 +437,7 @@ function BundleCard({ name, options }) {
                 semua domain dalam satu akun.
             </p>
             <Button className="mt-5" asChild>
-                <Link href={orderUrl({ domain: `${name}.id` })}>
-                    Daftarkan domain
-                </Link>
+                <Link href={orderUrl(options[0])}>Beli domain bundling</Link>
             </Button>
         </article>
     );

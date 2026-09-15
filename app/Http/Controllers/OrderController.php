@@ -6,6 +6,7 @@ use App\Http\Requests\StoreOrderRequest;
 use App\Models\Domain;
 use App\Models\Order;
 use App\Models\Setting;
+use App\Models\DomainCoupon;
 use App\Models\WebService;
 use App\Notifications\NewOrderNotification;
 use App\Services\IndonesianLocationService;
@@ -26,17 +27,27 @@ class OrderController extends Controller
     {
         $data = $request->validate([
             'domain_id' => ['required', 'integer', 'exists:domains,id'],
+            'bundle_id' => ['nullable', 'string', 'max:80'],
             'coupon_code' => ['required', 'string', 'max:40', 'regex:/^[A-Za-z0-9_-]+$/'],
         ]);
 
-        $domain = Domain::findOrFail($data['domain_id']);
-        $coupon = $domain->coupons()
+        $coupon = DomainCoupon::query()
+            ->when($data['bundle_id'] ?? null, fn ($query, $id) => $query->where('bundle_id', $id))
+            ->when(! ($data['bundle_id'] ?? null), fn ($query) => $query->where('domain_id', $data['domain_id']))
             ->where('code', strtoupper($data['coupon_code']))
             ->first();
 
         abort_unless($coupon && $coupon->usable(), 422, 'Kode promo tidak berlaku.');
 
-        $price = (int) ($domain->promo_price ?: $domain->price);
+        if ($data['bundle_id'] ?? null) {
+            $bundle = collect(json_decode(Setting::query()->where('key', 'domain_bundles')->value('value') ?? '[]', true))
+                ->first(fn ($item) => ($item['id'] ?? null) === $data['bundle_id']);
+            abort_unless($bundle, 422, 'Paket bundling tidak ditemukan.');
+            $price = (int) $bundle['price'];
+        } else {
+            $domain = Domain::findOrFail($data['domain_id']);
+            $price = (int) ($domain->promo_price ?: $domain->price);
+        }
         $discount = $coupon->discount($price);
 
         return response()->json([
@@ -49,7 +60,7 @@ class OrderController extends Controller
     {
         $bundles = json_decode(Setting::query()->where('key', 'domain_bundles')->value('value') ?? '[]', true) ?: [];
         $bundleId = $request->query('bundle_id');
-        $bundle = $bundleId !== null ? ($bundles[$bundleId] ?? null) : null;
+        $bundle = $bundleId !== null ? collect($bundles)->first(fn ($item, $key) => ($item['id'] ?? (string) $key) === (string) $bundleId) : null;
         if ($bundle) {
             $bundle['domains'] = Domain::query()
                 ->whereIn('id', $bundle['domain_ids'] ?? [])
@@ -100,7 +111,9 @@ class OrderController extends Controller
             'paymentMethods' => json_decode(Setting::query()->where('key', 'payment_methods')->value('value') ?? '["qris","dana","bank_transfer"]', true),
             'paymentDetails' => json_decode(Setting::query()->where('key', 'payment_details')->value('value') ?? '{}', true),
             'bundle' => $bundle,
-            'coupons' => $bundle ? [] : Domain::find($request->query('domain_id'))?->coupons()->where('is_active', true)->get(['code', 'type', 'value', 'ends_at']),
+            'coupons' => $bundle
+                ? DomainCoupon::query()->where('bundle_id', $bundleId)->where('is_active', true)->get(['code', 'type', 'value', 'ends_at'])
+                : Domain::find($request->query('domain_id'))?->coupons()->where('is_active', true)->get(['code', 'type', 'value', 'ends_at']),
         ]);
     }
 
@@ -115,7 +128,7 @@ class OrderController extends Controller
             : null;
 
         $bundles = json_decode(Setting::query()->where('key', 'domain_bundles')->value('value') ?? '[]', true) ?: [];
-        $bundle = array_key_exists($data['bundle_id'] ?? null, $bundles) ? $bundles[$data['bundle_id']] : null;
+        $bundle = collect($bundles)->first(fn ($item, $key) => ($item['id'] ?? (string) $key) === (string) ($data['bundle_id'] ?? ''));
         $bundleDomains = $bundle
             ? Domain::query()->whereIn('id', $bundle['domain_ids'] ?? [])->where('is_available', true)->get()->keyBy('id')
             : collect();
@@ -134,8 +147,11 @@ class OrderController extends Controller
         $domainPrice = $editing
             ? (int) $editing->domain_price_snapshot
             : ($bundle ? (int) $bundle['price'] : ($domain?->promo_price ?: $domain?->price));
-        $coupon = ! $editing && ! empty($data['coupon_code']) && ! $bundle
-            ? $domain->coupons()->where('code', strtoupper($data['coupon_code']))->first()
+        $coupon = ! $editing && ! empty($data['coupon_code'])
+            ? DomainCoupon::query()->where('code', strtoupper($data['coupon_code']))
+                ->when($bundle, fn ($query) => $query->where('bundle_id', $data['bundle_id']))
+                ->when(! $bundle, fn ($query) => $query->where('domain_id', $domain->id))
+                ->first()
             : null;
         if ($editing) {
             $couponDiscount = (int) $editing->domain_discount_snapshot;
@@ -148,6 +164,7 @@ class OrderController extends Controller
             $couponCode = $coupon?->code;
         }
         $data['domain_id'] = $domain?->id;
+        $bundleId = $data['bundle_id'] ?? null;
         unset($data['bundle_id'], $data['order_number'], $data['payment_method'], $data['coupon_code']);
 
         if ($domain) {
@@ -178,9 +195,9 @@ class OrderController extends Controller
             }
         }
 
-        $order = DB::transaction(function () use ($data, $request, $domainPrice, $domain, $bundle, $bundleDomains, $editing, $coupon, $couponDiscount, $couponCode) {
+        $order = DB::transaction(function () use ($data, $request, $domainPrice, $domain, $bundle, $bundleId, $bundleDomains, $editing, $coupon, $couponDiscount, $couponCode) {
             if ($coupon) {
-                $coupon = $domain->coupons()->lockForUpdate()->find($coupon->id);
+                $coupon = DomainCoupon::query()->lockForUpdate()->find($coupon->id);
                 abort_unless($coupon && $coupon->usable(), 422, 'Kupon sudah tidak tersedia.');
                 $couponAlreadyUsed = DB::table('domain_coupon_usages')
                     ->join('orders', 'orders.id', '=', 'domain_coupon_usages.order_id')
@@ -201,6 +218,10 @@ class OrderController extends Controller
                 'order_number' => 'FRD-'.now()->format('Ymd').'-'.Str::upper(Str::random(4)),
                 'web_service_price_snapshot' => null,
                 'domain_price_snapshot' => $domainPrice,
+                'bundle_id' => $bundleId,
+                'bundle_price_snapshot' => $bundle ? (int) $bundle['price'] : null,
+                'bundle_discount_snapshot' => $bundle ? $couponDiscount : 0,
+                'bundle_coupon_code_snapshot' => $bundle ? $couponCode : null,
                 'domain_discount_snapshot' => $couponDiscount,
                 'coupon_code_snapshot' => $couponCode,
                 'icann_fee_snapshot' => 0,

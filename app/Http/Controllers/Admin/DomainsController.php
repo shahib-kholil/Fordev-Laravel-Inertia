@@ -5,16 +5,22 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\Domain;
 use App\Models\Setting;
+use App\Models\DomainCoupon;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Inertia\Response;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Str;
 
 class DomainsController extends Controller
 {
     public function index(Request $request): Response
     {
+        $bundles = collect(json_decode(Setting::query()->where('key', 'domain_bundles')->value('value') ?? '[]', true) ?: [])
+            ->map(fn ($bundle) => [...$bundle, 'id' => $bundle['id'] ?? (string) Str::uuid()])
+            ->values();
+
         return Inertia::render('admin/domains/index', [
             'filters' => ['q' => $request->query('q')],
             'domains' => Domain::query()
@@ -23,7 +29,7 @@ class DomainsController extends Controller
                 ->orderBy('id')
                 ->paginate(10)
                 ->withQueryString(),
-            'bundles' => json_decode(Setting::query()->where('key', 'domain_bundles')->value('value') ?? '[]', true) ?: [],
+            'bundles' => $bundles->map(fn ($bundle) => [...$bundle, 'coupons' => DomainCoupon::query()->where('bundle_id', $bundle['id'])->get(['id', 'code', 'value', 'starts_at', 'ends_at', 'max_uses', 'used_count', 'is_active'])])->all(),
             'domainOptions' => Domain::query()->orderBy('order_position')->orderBy('id')->get(['id', 'extension']),
         ]);
     }
@@ -96,11 +102,32 @@ class DomainsController extends Controller
             'bundles.*.domain_ids.*' => ['integer', 'distinct', 'exists:domains,id'],
             'bundles.*.price' => ['required', 'integer', 'min:0'],
             'bundles.*.is_active' => ['boolean'],
+            'bundles.*.id' => ['nullable', 'string', 'max:80'],
+            'bundles.*.coupons' => ['nullable', 'array'],
+            'bundles.*.coupons.*.id' => ['nullable', 'integer'],
+            'bundles.*.coupons.*.code' => ['required', 'string', 'max:40', 'regex:/^[A-Z0-9_-]+$/'],
+            'bundles.*.coupons.*.value' => ['required', 'integer', 'min:1'],
+            'bundles.*.coupons.*.starts_at' => ['nullable', 'date'],
+            'bundles.*.coupons.*.ends_at' => ['nullable', 'date'],
+            'bundles.*.coupons.*.max_uses' => ['nullable', 'integer', 'min:1'],
+            'bundles.*.coupons.*.is_active' => ['boolean'],
         ]);
+
+        $bundles = collect($data['bundles'] ?? [])->map(function ($bundle) {
+            $id = $bundle['id'] ?? (string) Str::uuid();
+            foreach ($bundle['coupons'] ?? [] as $coupon) {
+                DomainCoupon::query()->updateOrCreate(
+                    ['id' => $coupon['id'] ?? null, 'bundle_id' => $id],
+                    [...$coupon, 'bundle_id' => $id, 'domain_id' => null, 'code' => strtoupper($coupon['code']), 'type' => 'fixed'],
+                );
+            }
+            unset($bundle['coupons']);
+            return [...$bundle, 'id' => $id];
+        });
 
         Setting::query()->updateOrCreate(
             ['key' => 'domain_bundles'],
-            ['value' => json_encode($data['bundles'] ?? [])],
+            ['value' => json_encode($bundles->all())],
         );
 
         Inertia::flash('toast', ['type' => 'success', 'message' => 'Bundling domain berhasil disimpan.']);

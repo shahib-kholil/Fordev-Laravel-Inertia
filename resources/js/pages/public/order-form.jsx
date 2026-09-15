@@ -611,6 +611,9 @@ export default function OrderForm({
                                                         body: JSON.stringify({
                                                             domain_id:
                                                                 data.domain_id,
+                                                            bundle_id:
+                                                                data.bundle_id ||
+                                                                undefined,
                                                             coupon_code:
                                                                 data.coupon_code,
                                                         }),

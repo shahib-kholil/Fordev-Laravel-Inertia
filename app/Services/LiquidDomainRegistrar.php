@@ -22,7 +22,12 @@ class LiquidDomainRegistrar
         $user?->update(['liquid_customer_id' => $customerId]);
         $order->update(['liquid_customer_id' => $customerId]);
 
-        foreach ($order->items as $item) {
+        foreach ($order->items->values() as $index => $item) {
+            // Bundle tambahan diklaim lewat admin; hanya domain utama yang diregistrasikan otomatis.
+            if ($index > 0) {
+                $item->update(['status' => 'pending_confirmation', 'liquid_error' => 'Menunggu klaim manual melalui admin.']);
+                continue;
+            }
             if ($item->status === 'active') {
                 continue;
             }
@@ -49,14 +54,14 @@ class LiquidDomainRegistrar
         }
 
         $hasErrors = $order->items()->whereIn('status', ['api_error', 'refund_needed', 'failed'])->exists();
-        $allActive = ! $order->items()->where('status', '!=', 'active')->exists();
+        $mainActive = $order->items()->orderBy('id')->first()?->status === 'active';
         $order->update([
-            'status' => $allActive ? 'active' : ($hasErrors ? 'api_error' : 'registering'),
-            'registered_at' => $allActive ? now() : null,
-            'admin_notes' => $allActive ? 'Seluruh domain bundle berhasil didaftarkan.' : 'Sebagian domain bundle perlu pemeriksaan.',
+            'status' => $mainActive ? 'active' : ($hasErrors ? 'api_error' : 'registering'),
+            'registered_at' => $mainActive ? now() : null,
+            'admin_notes' => $mainActive ? 'Domain utama berhasil didaftarkan. Domain bundling lainnya menunggu klaim manual melalui admin.' : 'Domain utama perlu pemeriksaan.',
         ]);
 
-        if ($allActive) {
+        if ($mainActive) {
             Notification::route('mail', $order->client_email)->notify(new OrderActiveNotification($order->refresh()));
         } elseif ($hasErrors) {
             Notification::route('mail', $order->client_email)->notify(new DomainRegistrationFailedNotification($order->refresh()));

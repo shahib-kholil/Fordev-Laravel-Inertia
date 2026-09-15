@@ -246,6 +246,78 @@ function BundleSettings({ bundles: initialBundles, domainOptions }) {
                                 update(index, { price: e.target.value })
                             }
                         />
+                        <div className="space-y-2 rounded-xl bg-muted/40 p-3">
+                            <p className="text-sm font-semibold">
+                                Voucher bundling
+                            </p>
+                            {(bundle.coupons ?? []).map(
+                                (coupon, couponIndex) => (
+                                    <div
+                                        key={coupon.id ?? couponIndex}
+                                        className="grid gap-2 sm:grid-cols-2"
+                                    >
+                                        <Input
+                                            placeholder="Kode voucher"
+                                            value={coupon.code ?? ''}
+                                            onChange={(e) =>
+                                                update(index, {
+                                                    coupons: bundle.coupons.map(
+                                                        (item, i) =>
+                                                            i === couponIndex
+                                                                ? {
+                                                                      ...item,
+                                                                      code: e.target.value.toUpperCase(),
+                                                                  }
+                                                                : item,
+                                                    ),
+                                                })
+                                            }
+                                        />
+                                        <Input
+                                            type="number"
+                                            min="1"
+                                            placeholder="Harga akhir bundling"
+                                            value={coupon.value ?? ''}
+                                            onChange={(e) =>
+                                                update(index, {
+                                                    coupons: bundle.coupons.map(
+                                                        (item, i) =>
+                                                            i === couponIndex
+                                                                ? {
+                                                                      ...item,
+                                                                      value: e
+                                                                          .target
+                                                                          .value,
+                                                                  }
+                                                                : item,
+                                                    ),
+                                                })
+                                            }
+                                        />
+                                    </div>
+                                ),
+                            )}
+                            <Button
+                                type="button"
+                                variant="outline"
+                                size="sm"
+                                onClick={() =>
+                                    update(index, {
+                                        coupons: [
+                                            ...(bundle.coupons ?? []),
+                                            {
+                                                code: '',
+                                                value: '',
+                                                type: 'fixed',
+                                                is_active: true,
+                                            },
+                                        ],
+                                    })
+                                }
+                            >
+                                Tambah voucher
+                            </Button>
+                        </div>
                         <label className="flex items-center gap-2 text-sm">
                             <input
                                 type="checkbox"
@@ -278,6 +350,7 @@ function BundleSettings({ bundles: initialBundles, domainOptions }) {
                                     domain_ids: [],
                                     price: '',
                                     is_active: true,
+                                    coupons: [],
                                 },
                             ])
                         }

@@ -12,6 +12,7 @@ use App\Services\DomainAvailabilityChecker;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Inertia\Response;
+use Illuminate\Support\Str;
 
 class PublicPageController extends Controller
 {
@@ -60,6 +61,7 @@ class PublicPageController extends Controller
 
         $domains = Domain::query()->where('is_available', true)->orderBy('order_position')->orderBy('id')->paginate(20);
         $bundles = collect(json_decode(Setting::query()->where('key', 'domain_bundles')->value('value') ?? '[]', true))
+            ->map(fn ($bundle) => [...$bundle, 'id' => $bundle['id'] ?? (string) Str::uuid()])
             ->filter(fn ($bundle) => ($bundle['is_active'] ?? false) && count($bundle['domain_ids'] ?? []) > 1)
             ->map(function ($bundle) {
                 $bundle['domains'] = Domain::query()
@@ -80,6 +82,7 @@ class PublicPageController extends Controller
             'filters' => $data,
             'check' => $check,
             'bundles' => $bundles,
+            'contactWhatsapp' => Setting::query()->where('key', 'contact_whatsapp')->value('value'),
         ]);
     }
 

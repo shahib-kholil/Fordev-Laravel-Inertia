@@ -46,7 +46,7 @@ class StoreOrderRequest extends FormRequest
             'client_phone' => ['required', 'string', 'regex:/^[0-9+()\s-]{8,30}$/'],
             'order_type' => ['nullable', Rule::in(['domain'])],
             'domain_id' => ['nullable', 'exists:domains,id'],
-            'bundle_id' => ['nullable', 'integer', 'min:0'],
+            'bundle_id' => ['nullable', 'string', 'max:80'],
             'domain_name' => ['required', 'string', 'max:63', 'regex:/^[a-z0-9](?:[a-z0-9-]*[a-z0-9])?$/'],
             'company' => ['nullable', 'string', 'max:255'],
             'address_line_1' => ['required', 'string', 'max:255'],
