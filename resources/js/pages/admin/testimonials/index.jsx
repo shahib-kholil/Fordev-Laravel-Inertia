@@ -1,13 +1,9 @@
 import { Head, Link, router } from '@inertiajs/react';
 import { AdminPageShell } from '@/components/admin/page-shell';
-import {
-    AdminActions,
-    AdminTable,
-    AdminTableCard,
-} from '@/components/admin/table-card';
-import { Button } from '@/components/ui/button';
-import Pagination from '@/components/pagination';
+import { AdminTable, AdminTableCard } from '@/components/admin/table-card';
 import AdminSearch from '@/components/admin-search';
+import Pagination from '@/components/pagination';
+import { Button } from '@/components/ui/button';
 
 export default function TestimonialsIndex({ testimonials, filters }) {
     return (

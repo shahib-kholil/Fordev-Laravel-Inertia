@@ -1,6 +1,7 @@
 import { Link, useForm } from '@inertiajs/react';
 import { CheckCircle2, Sparkles } from 'lucide-react';
 import { useEffect, useMemo, useRef, useState } from 'react';
+import ShaderBackdrop from '@/components/public/shader-backdrop';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -20,7 +21,6 @@ import {
     TableRow,
 } from '@/components/ui/table';
 import PublicLayout from '@/layouts/public-layout';
-import ShaderBackdrop from '@/components/public/shader-backdrop';
 
 const cardClass = 'rounded-2xl border bg-card p-5 shadow-sm';
 
@@ -29,7 +29,6 @@ export default function Domains({
     filters = {},
     check,
     bundles = [],
-    contactWhatsapp,
 }) {
     const extensions = domains.data;
     const resultsRef = useRef(null);
@@ -39,7 +38,9 @@ export default function Domains({
     });
 
     useEffect(() => {
-        if (!check?.domain) return;
+        if (!check?.domain) {
+            return;
+        }
 
         const frame = requestAnimationFrame(() => {
             resultsRef.current?.scrollIntoView({
@@ -69,18 +70,11 @@ export default function Domains({
                 />
                 {check ? (
                     <div ref={resultsRef}>
-                        <DomainResults
-                            check={check}
-                            extensions={extensions}
-                            contactWhatsapp={contactWhatsapp}
-                        />
+                        <DomainResults check={check} extensions={extensions} />
                     </div>
                 ) : (
                     <>
-                        <BundleCatalog
-                            bundles={bundles}
-                            contactWhatsapp={contactWhatsapp}
-                        />
+                        <BundleCatalog bundles={bundles} />
                         <ExtensionCatalog extensions={extensions} />
                     </>
                 )}
@@ -166,8 +160,10 @@ function DomainHero({ data, setData, submit, extensions, errors, processing }) {
     );
 }
 
-function BundleCatalog({ bundles, contactWhatsapp }) {
-    if (!bundles.length) return null;
+function BundleCatalog({ bundles }) {
+    if (!bundles.length) {
+        return null;
+    }
 
     return (
         <section className="mt-8 space-y-4">
@@ -221,8 +217,10 @@ function BundleCatalog({ bundles, contactWhatsapp }) {
     );
 }
 
-function DomainResults({ check, extensions, contactWhatsapp }) {
-    if (!extensions.length) return <EmptyExtensions />;
+function DomainResults({ check, extensions }) {
+    if (!extensions.length) {
+        return <EmptyExtensions />;
+    }
 
     const name = check.domain.slice(
         0,
@@ -259,13 +257,7 @@ function DomainResults({ check, extensions, contactWhatsapp }) {
             {isAvailable && (
                 <div className="grid gap-4 lg:grid-cols-2">
                     <HeroDomain option={requested} title="Sesuai Permintaan" />
-                    {bundle.length > 1 && (
-                        <BundleCard
-                            name={name}
-                            options={bundle}
-                            contactWhatsapp={contactWhatsapp}
-                        />
-                    )}
+                    {bundle.length > 1 && <BundleCard options={bundle} />}
                 </div>
             )}
             <PromoNote />
@@ -301,7 +293,9 @@ function ExtensionCatalog({ extensions }) {
         [extensions, sort],
     );
 
-    if (!extensions.length) return <EmptyExtensions />;
+    if (!extensions.length) {
+        return <EmptyExtensions />;
+    }
 
     return (
         <section className="mt-8 py-4 text-center sm:py-8">
@@ -412,8 +406,9 @@ function HeroDomain({ option, title }) {
     );
 }
 
-function BundleCard({ name, options, contactWhatsapp }) {
+function BundleCard({ options }) {
     const total = options.reduce((sum, item) => sum + item.salePrice, 0);
+
     return (
         <article className={cardClass}>
             <Badge variant="secondary">Praktis & hemat</Badge>

@@ -30,6 +30,7 @@ export default function SettingsEdit({ settings, packageCards }) {
         e.preventDefault();
         post('/admin/settings', { forceFormData: true });
     }
+
     return (
         <>
             <Head title="Settings" />

@@ -1,14 +1,12 @@
 import { useForm } from '@inertiajs/react';
-import { AlertCircle, Check, Copy } from 'lucide-react';
+import { AlertCircle } from 'lucide-react';
 import { useRef, useState } from 'react';
 import InputError from '@/components/input-error';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
-import SearchSelect from '@/components/ui/search-select';
-import { countries } from '@/data/countries';
 import Field from '@/components/order/field';
 import OrderSummary from '@/components/order/order-summary';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import SearchSelect from '@/components/ui/search-select';
 import {
     Select,
     SelectContent,
@@ -16,6 +14,8 @@ import {
     SelectTrigger,
     SelectValue,
 } from '@/components/ui/select';
+import { Textarea } from '@/components/ui/textarea';
+import { countries } from '@/data/countries';
 import PublicLayout from '@/layouts/public-layout';
 
 export default function OrderForm({
@@ -27,13 +27,13 @@ export default function OrderForm({
     locations = [],
     bundle,
 }) {
-    const [cartNotice, setCartNotice] = useState(defaults.edit_error ?? '');
+    const [cartNotice] = useState(defaults.edit_error ?? '');
     const [couponNotice, setCouponNotice] = useState('');
     const [couponChecking, setCouponChecking] = useState(false);
     const [couponDiscount, setCouponDiscount] = useState(
         Number(defaults.coupon_discount ?? 0),
     );
-    const [invalidField, setInvalidField] = useState('');
+    const [invalidField] = useState('');
     const isEditing = Boolean(defaults.order_number);
 
     const [countrySearch, setCountrySearch] = useState('');
@@ -103,51 +103,16 @@ export default function OrderForm({
 
     function submit(e) {
         e.preventDefault();
+
         if (!formComplete) {
             return;
         }
+
         const submit = isEditing ? put : post;
         const url = isEditing
             ? `/order/${encodeURIComponent(data.order_number)}`
             : '/order';
         submit(url, { preserveState: true, preserveScroll: true });
-    }
-
-    function validateForm() {
-        if (!formComplete) {
-            const missing =
-                !data.client_phone.trim() || !phoneValid
-                    ? ['Nomor WhatsApp', phoneRef]
-                    : !data.domain_name.trim()
-                      ? ['Nama domain', domainNameRef]
-                      : !data.domain_id
-                        ? ['Ekstensi domain', domainIdRef]
-                        : !data.country_code.trim()
-                          ? ['Negara', countryRef]
-                          : !data.state.trim()
-                            ? ['Provinsi', stateRef]
-                            : !data.city.trim()
-                              ? ['Kota', cityRef]
-                              : !zipcodeValid
-                                ? ['Kode pos', zipcodeRef]
-                                : ['Alamat lengkap', addressRef];
-            setCartNotice(
-                !data.client_phone.trim()
-                    ? 'Lengkapi Nomor WhatsApp terlebih dahulu.'
-                    : !phoneValid
-                      ? 'Format Nomor WhatsApp tidak valid.'
-                      : `Lengkapi ${missing[0]} terlebih dahulu.`,
-            );
-            setInvalidField(missing[0]);
-            missing[1].current?.scrollIntoView({
-                behavior: 'smooth',
-                block: 'center',
-            });
-            missing[1].current?.focus?.();
-            return;
-        }
-        setCartNotice('');
-        setInvalidField('');
     }
 
     if (defaults.edit_error) {
@@ -590,8 +555,10 @@ export default function OrderForm({
                                                     setCouponNotice(
                                                         'Masukkan kode promo terlebih dahulu.',
                                                     );
+
                                                     return;
                                                 }
+
                                                 setCouponChecking(true);
                                                 setCouponNotice(
                                                     'Memeriksa kode promo...',
@@ -622,6 +589,7 @@ export default function OrderForm({
                                                     },
                                                 );
                                                 setCouponChecking(false);
+
                                                 if (response.ok) {
                                                     const result =
                                                         await response.json();
@@ -631,6 +599,7 @@ export default function OrderForm({
                                                 } else {
                                                     setCouponDiscount(0);
                                                 }
+
                                                 setCouponNotice(
                                                     response.ok
                                                         ? 'Kode promo berhasil diterapkan.'

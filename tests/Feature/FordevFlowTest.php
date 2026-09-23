@@ -5,6 +5,7 @@ namespace Tests\Feature;
 use App\Models\Domain;
 use App\Models\DomainCoupon;
 use App\Models\Order;
+use App\Models\Payment;
 use App\Models\Setting;
 use App\Models\User;
 use App\Notifications\OrderActiveNotification;
@@ -19,6 +20,21 @@ use Tests\TestCase;
 class FordevFlowTest extends TestCase
 {
     use RefreshDatabase;
+
+    private function verifyPayment(Order $order): void
+    {
+        Payment::create([
+            'order_id' => $order->id,
+            'provider' => 'manual',
+            'reference_id' => $order->order_number,
+            'status' => 'paid',
+            'method' => 'manual_transfer',
+            'amount' => 1,
+            'customer_pays' => 1,
+            'merchant_receives' => 1,
+            'paid_at' => now(),
+        ]);
+    }
 
     protected function setUp(): void
     {
@@ -195,6 +211,7 @@ class FordevFlowTest extends TestCase
         $this->actingAs(User::factory()->create(['role' => 'super_admin']));
         $domain = Domain::factory()->create(['extension' => '.com']);
         $order = Order::factory()->create(['order_type' => 'domain', 'domain_id' => $domain->id, 'domain_name' => 'tokoku', 'status' => 'paid']);
+        $this->verifyPayment($order);
 
         $this->put("/admin/orders/{$order->id}", ['status' => 'paid', 'admin_notes' => null, 'action' => 'approve_register'])->assertRedirect();
 
@@ -217,6 +234,7 @@ class FordevFlowTest extends TestCase
         $this->actingAs($user);
         $domain = Domain::factory()->create(['extension' => '.com']);
         $order = Order::factory()->create(['client_email' => 'siti@example.com', 'order_type' => 'domain', 'domain_id' => $domain->id, 'domain_name' => 'tokoku', 'status' => 'paid']);
+        $this->verifyPayment($order);
 
         $this->put("/admin/orders/{$order->id}", ['status' => 'paid', 'admin_notes' => null, 'action' => 'approve_register'])->assertRedirect();
 
@@ -259,6 +277,7 @@ class FordevFlowTest extends TestCase
         $this->actingAs(User::factory()->create(['role' => 'super_admin']));
         $domain = Domain::factory()->create(['extension' => '.com']);
         $order = Order::factory()->create(['order_type' => 'domain', 'domain_id' => $domain->id, 'domain_name' => 'tokoku', 'status' => 'paid']);
+        $this->verifyPayment($order);
 
         $this->put("/admin/orders/{$order->id}", ['status' => 'paid', 'admin_notes' => null, 'action' => 'approve_register'])->assertRedirect();
 
@@ -276,6 +295,7 @@ class FordevFlowTest extends TestCase
         $this->actingAs(User::factory()->create(['role' => 'super_admin']));
         $domain = Domain::factory()->create(['extension' => '.com']);
         $order = Order::factory()->create(['order_type' => 'domain', 'domain_id' => $domain->id, 'domain_name' => 'tokoku', 'status' => 'paid']);
+        $this->verifyPayment($order);
 
         $this->put("/admin/orders/{$order->id}", ['status' => 'paid', 'admin_notes' => null, 'action' => 'approve_register'])->assertRedirect();
 
@@ -371,6 +391,7 @@ class FordevFlowTest extends TestCase
             'bundle_id' => 'bundle-test',
             'status' => 'paid',
         ]);
+        $this->verifyPayment($order);
         $order->items()->createMany([
             ['domain_name' => 'tokoku', 'extension' => '.com', 'price_snapshot' => 150000, 'status' => 'pending_confirmation'],
             ['domain_name' => 'tokoku', 'extension' => '.id', 'price_snapshot' => 0, 'status' => 'pending_confirmation'],

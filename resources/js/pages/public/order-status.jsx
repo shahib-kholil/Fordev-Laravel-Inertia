@@ -1,39 +1,48 @@
-import PublicLayout from '@/layouts/public-layout';
-import { Check, Copy, Landmark, QrCode, WalletCards } from 'lucide-react';
+import { Check, Copy } from 'lucide-react';
 import { useState } from 'react';
+import PublicLayout from '@/layouts/public-layout';
+
+const statusLabels = {
+    pending_confirmation: 'Menunggu pembayaran / verifikasi',
+    paid: 'Pembayaran terverifikasi',
+    processing: 'Sedang diproses',
+    active: 'Aktif',
+    failed: 'Gagal diproses',
+    api_error: 'Kendala pemrosesan',
+    refund_needed: 'Perlu pengembalian dana',
+    cancelled: 'Dibatalkan',
+    expired: 'Kedaluwarsa',
+};
 
 export default function OrderStatus({
     order,
     orders = [],
     paymentMethods = [],
     paymentDetails = {},
+    errors = {},
 }) {
     const [editNotice, setEditNotice] = useState('');
+
     return (
         <PublicLayout title="Status Pesanan">
             <div className="mx-auto max-w-3xl space-y-5 px-4 py-8 sm:space-y-6 sm:py-12">
                 <div>
-                    <h1 className="text-2xl font-semibold tracking-tight sm:text-3xl">
-                        Pembelian Domain
-                    </h1>
-                    <div className="mt-2 flex items-center gap-2">
-                        <p className="text-lg font-semibold break-words text-primary sm:text-xl">
-                            {order?.order_number ?? 'Memuat pesanan...'}
-                        </p>
+                    <p className="text-sm font-medium text-muted-foreground">
+                        Status pesanan
+                    </p>
+                    <div className="mt-1 flex items-center gap-2">
+                        <h1 className="text-2xl font-semibold tracking-tight break-words text-primary sm:text-3xl">
+                            {order?.order_number ?? 'Pesanan Anda'}
+                        </h1>
                         {order?.order_number && (
                             <CopyOrderNumber value={order.order_number} />
                         )}
                     </div>
                     <p className="mt-2 max-w-xl text-sm leading-6 text-slate-600 dark:text-slate-300">
-                        Pesanan berhasil dibuat. Silakan lakukan pembayaran
-                        menggunakan salah satu metode pembayaran yang tersedia.
+                        Pantau pembayaran dan pemrosesan pesanan di sini.
+                        Pembayaran terverifikasi tidak berarti domain langsung
+                        aktif.
                     </p>
-                    {order && (
-                        <PaymentDetails
-                            methods={paymentMethods}
-                            details={paymentDetails}
-                        />
-                    )}
                 </div>
                 {!order ? (
                     <PreviousOrders orders={orders} />
@@ -44,7 +53,8 @@ export default function OrderStatus({
                                 Status saat ini
                             </span>
                             <span className="rounded-full border border-primary/30 bg-primary/10 px-3 py-1 text-sm font-medium text-primary capitalize">
-                                {order.status.replaceAll('_', ' ')}
+                                {statusLabels[order.status] ??
+                                    'Status belum tersedia'}
                             </span>
                             {!order.items?.length && (
                                 <button
@@ -73,6 +83,7 @@ export default function OrderStatus({
                                 {editNotice}
                             </p>
                         )}
+                        <OrderProgress status={order.status} />
                         {order.items?.length > 0 && (
                             <div className="space-y-2 border-t pt-4">
                                 <p className="text-sm font-semibold">
@@ -88,7 +99,8 @@ export default function OrderStatus({
                                             {item.extension}
                                         </span>
                                         <span className="capitalize">
-                                            {item.status.replaceAll('_', ' ')}
+                                            {statusLabels[item.status] ??
+                                                'Status belum tersedia'}
                                         </span>
                                     </div>
                                 ))}
@@ -106,18 +118,59 @@ export default function OrderStatus({
                                     </p>
                                 </div>
                             )}
-                            <div>
-                                <p className="text-xs font-medium tracking-wider text-slate-500 uppercase dark:text-slate-400">
-                                    Total
-                                </p>
-                                <p className="mt-1 text-lg font-semibold">
-                                    Rp{' '}
-                                    {Number(
-                                        order.total_snapshot ?? 0,
-                                    ).toLocaleString('id-ID')}
-                                </p>
-                            </div>
                         </div>
+                        <PriceBreakdown order={order} />
+                        {errors.payment && (
+                            <p
+                                role="alert"
+                                className="rounded-xl border border-red-500/40 bg-red-500/10 px-4 py-3 text-sm text-red-700 dark:text-red-300"
+                            >
+                                {errors.payment}
+                            </p>
+                        )}
+                        {order.status === 'pending_confirmation' && (
+                            <PaymentSelector
+                                orderNumber={order.order_number}
+                                total={order.total_snapshot}
+                                paymentDetails={paymentDetails}
+                                paymentMethods={paymentMethods}
+                                selectedMethod={
+                                    order.payments?.find(
+                                        (payment) =>
+                                            payment.status === 'pending',
+                                    )?.provider === 'manual'
+                                        ? 'manual'
+                                        : 'borderpay'
+                                }
+                            />
+                        )}
+                        {order.status === 'pending_confirmation' &&
+                            order.payments?.some(
+                                (payment) =>
+                                    payment.provider === 'borderpay' &&
+                                    payment.status === 'pending',
+                            ) && (
+                                <form
+                                    method="post"
+                                    action={`/order/${encodeURIComponent(order.order_number)}/payment/sync`}
+                                >
+                                    <input
+                                        type="hidden"
+                                        name="_token"
+                                        value={
+                                            document.querySelector(
+                                                'meta[name="csrf-token"]',
+                                            )?.content ?? ''
+                                        }
+                                    />
+                                    <button
+                                        type="submit"
+                                        className="w-full rounded-xl border border-primary/40 px-4 py-3 text-sm font-semibold text-primary transition hover:bg-primary/10"
+                                    >
+                                        Cek status pembayaran
+                                    </button>
+                                </form>
+                            )}
                         {['failed', 'api_error', 'refund_needed'].includes(
                             order.status,
                         ) && (
@@ -139,8 +192,265 @@ export default function OrderStatus({
     );
 }
 
+function OrderProgress({ status }) {
+    const active =
+        status === 'active'
+            ? 3
+            : ['paid', 'processing'].includes(status)
+              ? 2
+              : status === 'pending_confirmation'
+                ? 1
+                : 0;
+    const steps = [
+        ['Dibuat', 'Pesanan diterima'],
+        ['Pembayaran', 'Pembayaran dan verifikasi'],
+        ['Pemrosesan', 'Pendaftaran / pengerjaan pesanan'],
+        ['Aktif', 'Setelah pemrosesan berhasil'],
+    ];
+
+    return (
+        <div className="grid grid-cols-1 gap-3 border-y py-4 sm:grid-cols-4 sm:gap-2">
+            {steps.map(([label, description], index) => (
+                <div
+                    key={label}
+                    className="flex min-w-0 items-start gap-2 text-xs font-semibold sm:flex-col sm:items-center sm:text-center"
+                >
+                    <span
+                        className={`flex size-6 items-center justify-center rounded-full ${index <= active ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground'}`}
+                    >
+                        {index < active ? '✓' : index + 1}
+                    </span>
+                    <span
+                        className={
+                            index <= active
+                                ? 'text-foreground'
+                                : 'text-muted-foreground'
+                        }
+                    >
+                        <span className="block">{label}</span>
+                        <span className="mt-0.5 block leading-4 font-normal text-muted-foreground">
+                            {description}
+                        </span>
+                    </span>
+                </div>
+            ))}
+        </div>
+    );
+}
+
+function PriceBreakdown({ order }) {
+    const rows = [
+        ['Harga domain', order.domain_price_snapshot],
+        [
+            'Diskon',
+            order.domain_discount_snapshot
+                ? -order.domain_discount_snapshot
+                : null,
+        ],
+        ['Pajak', order.tax_snapshot],
+    ].filter(
+        ([, value]) =>
+            value !== null && value !== undefined && Number(value) !== 0,
+    );
+
+    return (
+        <div className="space-y-2 border-t pt-4 text-sm">
+            {rows.map(([label, value]) => (
+                <div
+                    key={label}
+                    className="flex justify-between gap-4 text-muted-foreground"
+                >
+                    <span>{label}</span>
+                    <span>Rp {Number(value).toLocaleString('id-ID')}</span>
+                </div>
+            ))}
+            <div className="flex justify-between gap-4 border-t pt-2 font-semibold">
+                <span>Total pembayaran</span>
+                <span>
+                    Rp{' '}
+                    {Number(order.total_snapshot ?? 0).toLocaleString('id-ID')}
+                </span>
+            </div>
+        </div>
+    );
+}
+
+function PaymentSelector({
+    orderNumber,
+    total,
+    paymentDetails,
+    paymentMethods,
+    selectedMethod,
+}) {
+    const [method, setMethod] = useState(selectedMethod ?? 'manual');
+    const [error, setError] = useState('');
+    const [saving, setSaving] = useState(false);
+
+    async function selectMethod(value) {
+        if (method === value) {
+            setMethod(null);
+
+            return;
+        }
+
+        setMethod(value);
+        setError('');
+
+        if (value !== 'manual') {
+            return;
+        }
+
+        setSaving(true);
+
+        try {
+            const response = await fetch(
+                `/order/${encodeURIComponent(orderNumber)}/payment`,
+                {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded',
+                        'X-CSRF-TOKEN':
+                            document.querySelector('meta[name="csrf-token"]')
+                                ?.content ?? '',
+                    },
+                    body: new URLSearchParams({ payment_method: value }),
+                },
+            );
+
+            if (!response.ok) {
+                throw new Error('Payment request failed');
+            }
+        } catch {
+            setError(
+                'Pilihan manual belum tersimpan. Periksa koneksi, lalu pilih Manual lagi sebelum transfer.',
+            );
+        } finally {
+            setSaving(false);
+        }
+    }
+
+    return (
+        <div className="space-y-4 border-t pt-5">
+            <div>
+                <p className="text-base font-semibold">Metode Pembayaran</p>
+                <p className="mt-1 text-sm text-muted-foreground">
+                    Pilih metode pembayaran yang ingin digunakan.
+                </p>
+            </div>
+            <div className="divide-y overflow-hidden rounded-xl border">
+                {[
+                    ['manual', 'Transfer Manual', 'Tanpa biaya layanan'],
+                    [
+                        'borderpay',
+                        'Pembayaran otomatis',
+                        'QRIS, virtual account, e-wallet',
+                    ],
+                ].map(([value, label, caption]) => (
+                    <div key={value}>
+                        <button
+                            type="button"
+                            onClick={() => selectMethod(value)}
+                            aria-expanded={method === value}
+                            aria-controls={`payment-detail-${value}`}
+                            disabled={saving}
+                            className="flex w-full items-center gap-3 p-4 text-left transition hover:bg-muted/40 focus-visible:outline-2 focus-visible:outline-primary disabled:opacity-60"
+                        >
+                            <span
+                                aria-hidden="true"
+                                className={`flex size-5 shrink-0 items-center justify-center rounded-full border ${method === value ? 'border-primary bg-primary text-primary-foreground' : 'border-muted-foreground/50'}`}
+                            >
+                                {method === value && (
+                                    <Check className="size-3" />
+                                )}
+                            </span>
+                            <span className="flex-1">
+                                <span className="block text-sm font-semibold">
+                                    {label}
+                                </span>
+                                <span className="mt-1 block text-xs text-muted-foreground">
+                                    {caption}
+                                </span>
+                            </span>
+                            <span
+                                aria-hidden="true"
+                                className="text-muted-foreground"
+                            >
+                                {method === value ? '−' : '+'}
+                            </span>
+                        </button>
+                        <div
+                            id={`payment-detail-${value}`}
+                            hidden={method !== value}
+                            className="px-4 pb-4 sm:pl-12"
+                        >
+                            {value === 'manual' ? (
+                                <ManualInstructions
+                                    details={paymentDetails}
+                                    methods={paymentMethods}
+                                    total={total}
+                                />
+                            ) : (
+                                <div className="space-y-3">
+                                    <p className="text-sm leading-6 text-muted-foreground">
+                                        Pilih channel pembayaran di BorderPay.
+                                        Biaya akan terlihat sebelum membayar dan
+                                        status diperbarui otomatis.
+                                    </p>
+                                    <PaymentChannel
+                                        orderNumber={orderNumber}
+                                        label="Lanjut ke BorderPay"
+                                    />
+                                </div>
+                            )}
+                        </div>
+                    </div>
+                ))}
+            </div>
+            {error && (
+                <p
+                    role="alert"
+                    className="text-sm text-red-700 dark:text-red-300"
+                >
+                    {error}
+                </p>
+            )}
+            {saving && (
+                <p role="status" className="text-sm text-muted-foreground">
+                    Menyimpan pilihan manual…
+                </p>
+            )}
+        </div>
+    );
+}
+
+function PaymentChannel({ orderNumber, label }) {
+    return (
+        <form
+            method="post"
+            action={`/order/${encodeURIComponent(orderNumber)}/payment`}
+        >
+            <input
+                type="hidden"
+                name="_token"
+                value={
+                    document.querySelector('meta[name="csrf-token"]')
+                        ?.content ?? ''
+                }
+            />
+            <input type="hidden" name="payment_method" value="borderpay" />
+            <button
+                type="submit"
+                className="w-full rounded-lg bg-primary px-4 py-3 text-center text-sm font-semibold text-primary-foreground transition hover:bg-primary/90 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+            >
+                {label}
+            </button>
+        </form>
+    );
+}
+
 function CopyOrderNumber({ value }) {
     const [copied, setCopied] = useState(false);
+
     return (
         <button
             type="button"
@@ -154,7 +464,10 @@ function CopyOrderNumber({ value }) {
             title="Salin nomor pesanan"
         >
             {copied ? (
-                <Check className="size-4" />
+                <>
+                    <Check className="size-4" />
+                    <span>Disalin</span>
+                </>
             ) : (
                 <Copy className="size-4" />
             )}
@@ -162,123 +475,118 @@ function CopyOrderNumber({ value }) {
     );
 }
 
-function PaymentDetails({ methods, details }) {
-    const [selectedMethod, setSelectedMethod] = useState('');
-    const [copiedPayment, setCopiedPayment] = useState('');
-
-    function copyPayment(method, value) {
-        const number = value
-            ?.match(/[0-9][0-9 .-]{5,}[0-9]/)?.[0]
-            ?.replace(/[ .-]/g, '');
-        if (!number) return;
-        navigator.clipboard.writeText(number);
-        setCopiedPayment(method);
-        setTimeout(() => setCopiedPayment(''), 1500);
-    }
-    if (!methods.length) return null;
+function ManualInstructions({ methods = [], details = {}, total }) {
+    const [copiedMethod, setCopiedMethod] = useState('');
     const labels = {
-        qris: 'QRIS',
+        bank_transfer: 'Transfer rekening',
         dana: 'DANA',
-        bank_transfer: 'Transfer Rekening',
+        qris: 'QRIS',
     };
 
+    const [copyError, setCopyError] = useState('');
+
+    async function copyDetail(method, value) {
+        setCopyError('');
+
+        try {
+            await navigator.clipboard.writeText(value);
+            setCopiedMethod(method);
+            window.setTimeout(() => setCopiedMethod(''), 1500);
+        } catch {
+            setCopyError(
+                'Gagal menyalin. Silakan salin detail pembayaran secara manual.',
+            );
+        }
+    }
+    const enabled = methods.filter((method) => Object.hasOwn(labels, method));
+
     return (
-        <div className="border-t pt-5">
-            <p className="font-semibold">Pilih metode pembayaran</p>
-            <div className="mt-3 grid gap-3 sm:grid-cols-3">
-                {methods.map((method) => {
-                    const value = details[method];
-                    const selected = selectedMethod === method;
-                    const url =
-                        method === 'qris' && value
-                            ? value.startsWith('http')
-                                ? value
-                                : `/storage/${value}`
-                            : null;
-                    return (
-                        <button
-                            key={method}
-                            type="button"
-                            onClick={() =>
-                                setSelectedMethod(selected ? '' : method)
-                            }
-                            className={`w-full rounded-2xl border p-4 text-left transition-[background-color,box-shadow] duration-300 ${selected ? 'border-primary bg-primary/5 shadow-sm' : 'hover:bg-muted/40'}`}
-                        >
-                            <div className="flex items-center gap-3">
-                                {method === 'qris' ? (
-                                    <QrCode className="size-5 text-primary" />
-                                ) : method === 'dana' ? (
-                                    <WalletCards className="size-5 text-primary" />
-                                ) : (
-                                    <Landmark className="size-5 text-primary" />
-                                )}
-                                <span className="font-semibold">
-                                    {labels[method] ?? method}
-                                </span>
-                                <span className="ml-auto rounded-full border p-1">
-                                    {selected && (
-                                        <Check className="size-3 text-primary" />
-                                    )}
-                                </span>
-                            </div>
-                            <span
-                                className={`grid transition-[grid-template-rows,opacity] duration-300 ${selected ? 'mt-3 grid-rows-[1fr] opacity-100' : 'grid-rows-[0fr] opacity-0'}`}
-                            >
-                                <span className="min-h-0 overflow-hidden">
-                                    {url ? (
-                                        <img
-                                            src={url}
-                                            alt="QRIS"
-                                            className="max-h-48 rounded-lg bg-white p-2"
-                                        />
+        <div className="space-y-4 text-sm">
+            {enabled.length === 0 && (
+                <p className="text-muted-foreground">
+                    Metode pembayaran manual belum tersedia.
+                </p>
+            )}
+            {enabled.map((method) => {
+                const value = details?.[method];
+                const image =
+                    method === 'qris' && value
+                        ? /^https?:\/\//i.test(value)
+                            ? value
+                            : `/storage/${value.replace(/^\/+/, '')}`
+                        : null;
+
+                return (
+                    <div key={method} className="rounded-lg bg-muted/40 p-4">
+                        <div className="mb-2 flex items-center justify-between gap-3">
+                            <p className="font-semibold">{labels[method]}</p>
+                            {method !== 'qris' && value && (
+                                <button
+                                    type="button"
+                                    onClick={() => copyDetail(method, value)}
+                                    aria-label={`Salin detail ${labels[method]}`}
+                                    className="inline-flex min-h-11 items-center gap-2 rounded-lg px-3 text-xs font-medium text-primary hover:bg-primary/10 focus-visible:outline-2 focus-visible:outline-primary"
+                                >
+                                    {copiedMethod === method ? (
+                                        <Check className="size-4" />
                                     ) : (
-                                        <span className="block text-sm whitespace-pre-line text-slate-600 dark:text-slate-300">
-                                            {value ||
-                                                'Detail pembayaran belum tersedia.'}
-                                        </span>
+                                        <Copy className="size-4" />
                                     )}
-                                    {!url &&
-                                        value &&
-                                        (method === 'dana' ||
-                                            method === 'bank_transfer') && (
-                                            <button
-                                                type="button"
-                                                onClick={(event) => {
-                                                    event.stopPropagation();
-                                                    copyPayment(method, value);
-                                                }}
-                                                className="mt-3 inline-flex items-center gap-2 rounded-lg bg-primary px-3 py-2 text-xs font-semibold text-primary-foreground"
-                                            >
-                                                {copiedPayment === method ? (
-                                                    <Check className="size-3" />
-                                                ) : (
-                                                    <Copy className="size-3" />
-                                                )}
-                                                {copiedPayment === method
-                                                    ? 'Nomor tersalin'
-                                                    : 'Salin nomor'}
-                                            </button>
-                                        )}
-                                    {url && (
-                                        <a
-                                            href={url}
-                                            download
-                                            target="_blank"
-                                            rel="noreferrer"
-                                            onClick={(event) =>
-                                                event.stopPropagation()
-                                            }
-                                            className="mt-3 inline-flex rounded-lg bg-primary px-3 py-2 text-xs font-semibold text-primary-foreground"
-                                        >
-                                            Download QRIS
-                                        </a>
-                                    )}
+                                    <span aria-live="polite">
+                                        {copiedMethod === method
+                                            ? 'Tersalin'
+                                            : 'Salin'}
+                                    </span>
+                                </button>
+                            )}
+                        </div>
+                        {image ? (
+                            <a
+                                href={image}
+                                target="_blank"
+                                rel="noreferrer"
+                                className="inline-block"
+                            >
+                                <img
+                                    src={image}
+                                    alt="QRIS pembayaran manual ForDev"
+                                    className="max-h-56 max-w-full rounded-lg bg-white p-2"
+                                />
+                                <span className="mt-2 block text-xs text-primary">
+                                    Buka gambar QRIS
                                 </span>
-                            </span>
-                        </button>
-                    );
-                })}
-            </div>
+                            </a>
+                        ) : (
+                            <p className="break-words whitespace-pre-line">
+                                {value ||
+                                    'Detail pembayaran belum diatur oleh admin.'}
+                            </p>
+                        )}
+                    </div>
+                );
+            })}
+            {copyError && (
+                <p
+                    role="alert"
+                    className="text-xs text-red-600 dark:text-red-300"
+                >
+                    {copyError}
+                </p>
+            )}
+            {enabled.length > 0 && (
+                <div className="border-t pt-3">
+                    <p className="text-xs text-muted-foreground">
+                        Nominal pembayaran
+                    </p>
+                    <p className="mt-1 text-xl font-semibold tabular-nums">
+                        Rp {Number(total ?? 0).toLocaleString('id-ID')}
+                    </p>
+                    <p className="mt-2 text-xs leading-5 text-muted-foreground">
+                        Gunakan salah satu metode di atas. Pembayaran
+                        diverifikasi admin sebelum pesanan diproses.
+                    </p>
+                </div>
+            )}
         </div>
     );
 }
@@ -308,7 +616,8 @@ function PreviousOrders({ orders }) {
                                 {previousOrder.order_number}
                             </strong>
                             <span className="text-slate-600 capitalize dark:text-slate-300">
-                                {previousOrder.status.replaceAll('_', ' ')}
+                                {statusLabels[previousOrder.status] ??
+                                    'Status belum tersedia'}
                             </span>
                         </span>
                         <span className="font-semibold">

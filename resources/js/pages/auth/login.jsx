@@ -1,5 +1,7 @@
 import { Form, Head } from '@inertiajs/react';
+import { useEffect, useRef, useState } from 'react';
 import InputError from '@/components/input-error';
+import PasskeyVerify from '@/components/passkey-verify';
 import PasswordInput from '@/components/password-input';
 import TextLink from '@/components/text-link';
 import { Button } from '@/components/ui/button';
@@ -9,29 +11,33 @@ import { Label } from '@/components/ui/label';
 import { Spinner } from '@/components/ui/spinner';
 import { store } from '@/routes/login';
 import { request } from '@/routes/password';
-import PasskeyVerify from '@/components/passkey-verify';
-import { useEffect, useRef, useState } from 'react';
 
 export default function Login({
     status = null,
     canResetPassword = false,
     turnstileSiteKey = null,
 }) {
-    const [notice, setNotice] = useState('');
+    const [notice] = useState(() =>
+        typeof window !== 'undefined' &&
+        new URLSearchParams(window.location.search).get('login_notice') ===
+            'domain'
+            ? 'Silakan login terlebih dahulu untuk memesan domain.'
+            : '',
+    );
     const turnstileContainer = useRef(null);
 
     useEffect(() => {
-        const params = new URLSearchParams(window.location.search);
-        if (params.get('login_notice') === 'domain') {
-            setNotice('Silakan login terlebih dahulu untuk memesan domain.');
-        }
+        const container = turnstileContainer.current;
 
         if (!turnstileSiteKey || !turnstileContainer.current) {
             return;
         }
 
         const render = () => {
-            if (!window.turnstile || !turnstileContainer.current) return;
+            if (!window.turnstile || !turnstileContainer.current) {
+                return;
+            }
+
             const widgetId = window.turnstile.render(
                 turnstileContainer.current,
                 { sitekey: turnstileSiteKey },
@@ -56,8 +62,11 @@ export default function Login({
         }
 
         return () => {
-            const widgetId = turnstileContainer.current?.dataset.widgetId;
-            if (widgetId && window.turnstile) window.turnstile.remove(widgetId);
+            const widgetId = container?.dataset.widgetId;
+
+            if (widgetId && window.turnstile) {
+                window.turnstile.remove(widgetId);
+            }
         };
     }, [turnstileSiteKey]);
 

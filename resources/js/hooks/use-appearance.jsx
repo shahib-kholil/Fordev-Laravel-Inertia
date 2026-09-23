@@ -1,14 +1,5 @@
 import { useSyncExternalStore } from 'react';
 
-const ResolvedAppearance = 'light' | 'dark';
-const Appearance = ResolvedAppearance | 'system';
-
-const UseAppearanceReturn = {
-    appearance: Appearance,
-    resolvedAppearance: ResolvedAppearance,
-    updateAppearance: (mode) => {},
-};
-
 const listeners = new Set();
 let currentAppearance = 'system';
 

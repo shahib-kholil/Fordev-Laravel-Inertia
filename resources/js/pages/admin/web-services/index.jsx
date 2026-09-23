@@ -5,9 +5,9 @@ import {
     AdminTable,
     AdminTableCard,
 } from '@/components/admin/table-card';
-import { Button } from '@/components/ui/button';
-import Pagination from '@/components/pagination';
 import AdminSearch from '@/components/admin-search';
+import Pagination from '@/components/pagination';
+import { Button } from '@/components/ui/button';
 
 export default function WebServicesIndex({ webServices, filters }) {
     return (

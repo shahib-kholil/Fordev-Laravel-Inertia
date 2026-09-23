@@ -33,6 +33,15 @@ class GoogleController extends Controller
             ]);
         }
 
+        if ($user->two_factor_secret && $user->two_factor_confirmed_at) {
+            session([
+                'login.id' => $user->getKey(),
+                'login.remember' => true,
+            ]);
+
+            return redirect()->route('two-factor.login');
+        }
+
         Auth::login($user, true);
 
         return redirect()->intended('/dashboard');

@@ -26,6 +26,7 @@ export default function PortfolioForm({ portfolio }) {
             { forceFormData: true },
         );
     }
+
     return (
         <>
             <Head title={editing ? 'Edit Portofolio' : 'Tambah Portofolio'} />

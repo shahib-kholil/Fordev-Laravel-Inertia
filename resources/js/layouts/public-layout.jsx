@@ -2,7 +2,6 @@ import { Head, Link, router, usePage } from '@inertiajs/react';
 import { ArrowRight, Copy, LogOut, Menu } from 'lucide-react';
 import { useState } from 'react';
 
-import ShaderBackdrop from '@/components/public/shader-backdrop';
 import ThemeToggle from '@/components/public/theme-toggle';
 import { Button } from '@/components/ui/button';
 import {

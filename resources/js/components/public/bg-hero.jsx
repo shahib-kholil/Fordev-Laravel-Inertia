@@ -1,10 +1,11 @@
-import { useRef, useEffect, useState } from 'react';
 import { Renderer, Program, Triangle, Mesh } from 'ogl';
+import { useRef, useEffect, useState } from 'react';
 
 const DEFAULT_COLOR = '#ffffff';
 
 const hexToRgb = (hex) => {
     const m = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+
     return m
         ? [
               parseInt(m[1], 16) / 255,
@@ -16,6 +17,7 @@ const hexToRgb = (hex) => {
 
 const getAnchorAndDir = (origin, w, h) => {
     const outside = 0.2;
+
     switch (origin) {
         case 'top-left':
             return { anchor: [0, -outside * h], dir: [0, 1] };
@@ -63,7 +65,9 @@ const LightRays = ({
     const observerRef = useRef(null);
 
     useEffect(() => {
-        if (!containerRef.current) return;
+        if (!containerRef.current) {
+            return;
+        }
 
         observerRef.current = new IntersectionObserver(
             (entries) => {
@@ -84,7 +88,9 @@ const LightRays = ({
     }, []);
 
     useEffect(() => {
-        if (!isVisible || !containerRef.current) return;
+        if (!isVisible || !containerRef.current) {
+            return;
+        }
 
         if (cleanupFunctionRef.current) {
             cleanupFunctionRef.current();
@@ -92,11 +98,15 @@ const LightRays = ({
         }
 
         const initializeWebGL = async () => {
-            if (!containerRef.current) return;
+            if (!containerRef.current) {
+                return;
+            }
 
             await new Promise((resolve) => setTimeout(resolve, 10));
 
-            if (!containerRef.current) return;
+            if (!containerRef.current) {
+                return;
+            }
 
             const renderer = new Renderer({
                 dpr: Math.min(window.devicePixelRatio, 2),
@@ -113,6 +123,7 @@ const LightRays = ({
                     containerRef.current.firstChild,
                 );
             }
+
             containerRef.current.appendChild(gl.canvas);
 
             const vert = `
@@ -248,7 +259,9 @@ void main() {
             meshRef.current = mesh;
 
             const updatePlacement = () => {
-                if (!containerRef.current || !renderer) return;
+                if (!containerRef.current || !renderer) {
+                    return;
+                }
 
                 renderer.dpr = Math.min(window.devicePixelRatio, 2);
 
@@ -299,6 +312,7 @@ void main() {
                     animationIdRef.current = requestAnimationFrame(loop);
                 } catch (error) {
                     console.warn('WebGL rendering error:', error);
+
                     return;
                 }
             };
@@ -320,6 +334,7 @@ void main() {
                         const canvas = renderer.gl.canvas;
                         const loseContextExt =
                             renderer.gl.getExtension('WEBGL_lose_context');
+
                         if (loseContextExt) {
                             loseContextExt.loseContext();
                         }
@@ -367,8 +382,9 @@ void main() {
             !uniformsRef.current ||
             !containerRef.current ||
             !rendererRef.current
-        )
+        ) {
             return;
+        }
 
         const u = uniformsRef.current;
         const renderer = rendererRef.current;
@@ -409,7 +425,10 @@ void main() {
 
     useEffect(() => {
         const handleMouseMove = (e) => {
-            if (!containerRef.current || !rendererRef.current) return;
+            if (!containerRef.current || !rendererRef.current) {
+                return;
+            }
+
             const rect = containerRef.current.getBoundingClientRect();
             const x = (e.clientX - rect.left) / rect.width;
             const y = (e.clientY - rect.top) / rect.height;
@@ -418,6 +437,7 @@ void main() {
 
         if (followMouse) {
             window.addEventListener('mousemove', handleMouseMove);
+
             return () =>
                 window.removeEventListener('mousemove', handleMouseMove);
         }

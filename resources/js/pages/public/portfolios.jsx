@@ -1,8 +1,8 @@
 import { Link } from '@inertiajs/react';
 import { ArrowUpRight } from 'lucide-react';
+import Pagination from '@/components/pagination';
 import { Badge } from '@/components/ui/badge';
 import PublicLayout from '@/layouts/public-layout';
-import Pagination from '@/components/pagination';
 
 export default function Portfolios({ portfolios }) {
     return (

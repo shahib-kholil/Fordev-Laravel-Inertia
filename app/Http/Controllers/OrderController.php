@@ -11,13 +11,16 @@ use App\Models\WebService;
 use App\Notifications\NewOrderNotification;
 use App\Services\IndonesianLocationService;
 use App\Services\LiquidDomainClient;
+use App\Services\PaymentService;
 use App\Services\TelegramNotifier;
-use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Http\Client\RequestException;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Str;
+use Illuminate\Validation\Rule;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -99,6 +102,7 @@ class OrderController extends Controller
                 'confirm_new_order' => old('confirm_new_order', false),
                 'order_number' => old('order_number', $editOrder?->order_number ?? ''),
                 'coupon_code' => old('coupon_code', $editOrder?->coupon_code_snapshot ?? ''),
+                'payment_method' => old('payment_method', $editOrder?->payment_method ?? 'borderpay'),
                 'coupon_discount' => old('coupon_discount', $editOrder?->domain_discount_snapshot ?? 0),
                 'edit_error' => $bundleEditRequested
                     ? 'Pesanan bundling tidak dapat diedit. Buat pesanan baru jika ingin mengubah pilihannya.'
@@ -114,7 +118,7 @@ class OrderController extends Controller
                 ->when(request('domain_id'), fn ($query, $domainId) => $query->where('domain_id', $domainId))
                 ->latest()
                 ->first(['order_number', 'domain_id']),
-            'paymentMethods' => json_decode(Setting::query()->where('key', 'payment_methods')->value('value') ?? '["qris","dana","bank_transfer"]', true),
+            'paymentMethods' => $this->paymentMethods(),
             'paymentDetails' => json_decode(Setting::query()->where('key', 'payment_details')->value('value') ?? '{}', true),
             'bundle' => $bundle,
 
@@ -170,7 +174,7 @@ class OrderController extends Controller
         }
         $data['domain_id'] = $domain?->id;
         $bundleId = $data['bundle_id'] ?? null;
-        unset($data['bundle_id'], $data['order_number'], $data['payment_method'], $data['coupon_code']);
+        unset($data['bundle_id'], $data['order_number'], $data['coupon_code']);
 
         if ($domain) {
             $existing = Order::query()
@@ -295,12 +299,96 @@ class OrderController extends Controller
         return to_route('orders.status', ['order' => $order->order_number]);
     }
 
+    public function startPayment(Request $request, string $order_number, PaymentService $payments): RedirectResponse
+    {
+        $order = Order::query()
+            ->where('order_number', $order_number)
+            ->where('client_email', $request->user()->email)
+            ->whereNotIn('status', ['paid', 'active', 'cancelled'])
+            ->firstOrFail();
+
+        $data = $request->validate([
+            'payment_method' => ['nullable', Rule::in(['borderpay', 'manual'])],
+            'method' => ['nullable', Rule::in(['qris', 'va', 'ewallet'])],
+            'bank_code' => ['nullable', 'string', 'max:16'],
+        ]);
+        $method = $data['payment_method'] ?? 'borderpay';
+
+        if ($method === 'borderpay' && in_array($data['method'] ?? null, ['va', 'ewallet'], true)) {
+            abort_unless(filled($data['bank_code'] ?? null), 422, 'Channel pembayaran belum lengkap.');
+        }
+
+        $order->payments()
+            ->where('status', 'pending')
+            ->where('provider', '!=', $method === 'manual' ? 'manual' : 'borderpay')
+            ->update(['status' => 'expired']);
+
+        if ($method === 'manual') {
+            $payments->createManualPayment($order);
+
+            return back()->with('payment_manual', 'Silakan lakukan transfer sesuai instruksi pembayaran.');
+        }
+
+        try {
+            $payment = $payments->createGatewayCheckout($order, $data['method'] ?? null, $data['bank_code'] ?? null);
+        } catch (ConnectionException|RequestException $exception) {
+            report($exception);
+
+            return back()->withErrors([
+                'payment' => 'Gateway pembayaran sedang tidak dapat dihubungi. Silakan coba lagi beberapa saat lagi.',
+            ]);
+        } catch (\RuntimeException $exception) {
+            report($exception);
+
+            return back()->withErrors([
+                'payment' => 'Pembayaran otomatis belum dapat diproses. Silakan hubungi admin.',
+            ]);
+        }
+
+        if ($payment->checkout_url) {
+            return redirect()->away($payment->checkout_url);
+        }
+
+        return back()->with('payment_started', 'Instruksi pembayaran otomatis sudah tersedia.');
+    }
+
+    public function syncPayment(Request $request, string $order_number, PaymentService $payments): RedirectResponse
+    {
+        $order = Order::query()
+            ->where('order_number', $order_number)
+            ->where('client_email', $request->user()->email)
+            ->firstOrFail();
+        $payment = $order->payments()
+            ->where('provider', 'borderpay')
+            ->latest()
+            ->firstOrFail();
+
+        try {
+            $payments->syncStatus($payment);
+        } catch (ConnectionException|RequestException $exception) {
+            report($exception);
+
+            return back()->withErrors([
+                'payment' => 'Status pembayaran sedang tidak dapat diperbarui. Silakan coba lagi beberapa saat lagi.',
+            ]);
+        } catch (\RuntimeException $exception) {
+            report($exception);
+
+            return back()->withErrors([
+                'payment' => 'Status pembayaran tidak dapat diverifikasi. Silakan hubungi admin.',
+            ]);
+        }
+
+        return back()->with('payment_sync', 'Status pembayaran berhasil diperbarui.');
+    }
+
     public function status(Request $request): Response
     {
         $orders = $request->user()
             ? Order::query()
                 ->where('client_email', $request->user()->email)
-                ->with(['domain:id,extension', 'items.domain:id,extension'])
+                ->select(['id', 'order_number', 'status', 'domain_id', 'domain_name', 'domain_price_snapshot', 'domain_discount_snapshot', 'tax_snapshot', 'total_snapshot', 'created_at'])
+                ->with(['domain:id,extension', 'items:id,order_id,domain_name,extension,status', 'payments:id,order_id,provider,status,method,checkout_url,qr_string,va_number,va_bank,customer_pays,expires_at'])
                 ->latest()
                 ->get()
             : collect();
@@ -324,7 +412,8 @@ class OrderController extends Controller
         $order = Order::query()
             ->where('order_number', $data['order_number'])
             ->where('client_email', $data['client_email'])
-            ->with(['domain:id,extension', 'items.domain:id,extension'])
+            ->select(['id', 'order_number', 'status', 'domain_id', 'domain_name', 'domain_price_snapshot', 'domain_discount_snapshot', 'tax_snapshot', 'total_snapshot', 'created_at'])
+            ->with(['domain:id,extension', 'items:id,order_id,domain_name,extension,status', 'payments:id,order_id,provider,status,method,checkout_url,qr_string,va_number,va_bank,customer_pays,expires_at'])
             ->first();
 
         if (! $order) {

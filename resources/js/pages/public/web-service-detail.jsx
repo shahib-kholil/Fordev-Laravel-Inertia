@@ -13,6 +13,7 @@ export default function WebServiceDetail({ webService }) {
         ? `62${whatsapp.slice(1)}`
         : whatsapp;
     const whatsappUrl = `https://wa.me/${number}?text=${encodeURIComponent(message)}`;
+
     return (
         <PublicLayout
             title={webService.name}

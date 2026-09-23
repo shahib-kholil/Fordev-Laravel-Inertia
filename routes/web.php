@@ -9,6 +9,7 @@ use App\Http\Controllers\Admin\TestimonialsController;
 use App\Http\Controllers\Admin\UsersController;
 use App\Http\Controllers\Admin\WebServicesController;
 use App\Http\Controllers\Auth\GoogleController;
+use App\Http\Controllers\BorderPayWebhookController;
 use App\Http\Controllers\OrderController;
 use App\Http\Controllers\PublicPageController;
 use Illuminate\Http\Request;
@@ -33,11 +34,14 @@ Route::middleware('auth')->group(function () {
     Route::get('order', [OrderController::class, 'create'])->name('orders.create')->middleware('throttle:20,1');
     Route::post('order', [OrderController::class, 'store'])->name('orders.store')->middleware('throttle:5,1');
     Route::put('order/{order_number}', [OrderController::class, 'store'])->name('orders.update')->middleware('throttle:10,1');
+    Route::post('order/{order_number}/payment', [OrderController::class, 'startPayment'])->name('orders.payment')->middleware('throttle:10,1');
+    Route::post('order/{order_number}/payment/sync', [OrderController::class, 'syncPayment'])->name('orders.payment.sync')->middleware('throttle:10,1');
     Route::post('order/coupon', [OrderController::class, 'checkCoupon'])->name('orders.coupon')->middleware('throttle:10,1');
 
 });
 Route::get('cek-status-pesanan', [OrderController::class, 'status'])->name('orders.status');
 Route::post('cek-status-pesanan', [OrderController::class, 'lookup'])->name('orders.lookup')->middleware('throttle:10,1');
+Route::post('webhooks/borderpay', BorderPayWebhookController::class)->name('webhooks.borderpay')->middleware('throttle:120,1');
 Route::get('auth/google/redirect', [GoogleController::class, 'redirect'])->name('auth.google.redirect');
 Route::get('auth/google/callback', [GoogleController::class, 'callback'])->name('auth.google.callback');
 
@@ -58,8 +62,10 @@ Route::middleware(['auth', 'verified', 'admin'])->group(function () {
         Route::put('admin/users/{user}', [UsersController::class, 'update'])->name('admin.users.update');
     });
     Route::resource('admin/orders', OrdersController::class)->names('admin.orders')->only(['index', 'show', 'update']);
-    Route::get('admin/users', [UsersController::class, 'index'])->name('admin.users.index');
-    Route::put('admin/users/{user}', [UsersController::class, 'update'])->name('admin.users.update');
+    Route::post('admin/orders/{order}/cancel-payment', [OrdersController::class, 'cancelPayment'])->name('admin.orders.cancel-payment')->middleware('throttle:10,1');
+    Route::post('admin/orders/{order}/verify-manual-payment', [OrdersController::class, 'verifyManualPayment'])->name('admin.orders.verify-manual-payment')->middleware('throttle:10,1');
+    Route::post('admin/orders/{order}/sync-payment', [OrdersController::class, 'syncPayment'])->name('admin.orders.sync-payment')->middleware('throttle:10,1');
+    Route::post('admin/orders/{order}/simulate-payment', [OrdersController::class, 'simulatePayment'])->name('admin.orders.simulate-payment')->middleware('throttle:10,1');
 });
 
 require __DIR__.'/settings.php';

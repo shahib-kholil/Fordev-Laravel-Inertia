@@ -54,6 +54,13 @@ return [
         'panel_url' => env('LIQUID_PANEL_URL'),
     ],
 
+    'borderpay' => [
+        'base_url' => env('BORDERPAY_API_BASE_URL', 'https://borderpay.id/api/v1'),
+        'api_key' => env('BORDERPAY_API_KEY'),
+        'webhook_token' => env('BORDERPAY_WEBHOOK_TOKEN'),
+        'return_url' => env('BORDERPAY_RETURN_URL'),
+    ],
+
     'telegram' => [
         'bot_token' => env('TELEGRAM_BOT_TOKEN'),
         'chat_id' => env('TELEGRAM_CHAT_ID'),

@@ -1,10 +1,10 @@
 import { Link } from '@inertiajs/react';
 import { ArrowRight, Mail } from 'lucide-react';
+import LightRays from '@/components/public/bg-hero';
+import ShinyText from '@/components/public/Font-Hero';
 import { IconCloud } from '@/components/public/icon-cloud';
 import { Button } from '@/components/ui/button';
 import { siteConfig } from '@/config/public-site';
-import LightRays from '@/components/public/bg-hero';
-import ShinyText from '@/components/public/Font-Hero';
 
 const techIcons = [
     'https://cdn.jsdelivr.net/gh/devicons/devicon/icons/react/react-original.svg',

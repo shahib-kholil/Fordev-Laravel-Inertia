@@ -6,6 +6,9 @@ use App\Http\Controllers\Controller;
 use App\Models\Order;
 use App\Notifications\OrderPendingPaymentNotification;
 use App\Services\LiquidDomainRegistrar;
+use App\Services\PaymentService;
+use Illuminate\Http\Client\ConnectionException;
+use Illuminate\Http\Client\RequestException;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -38,9 +41,76 @@ class OrdersController extends Controller
     public function show(Order $order): Response
     {
         return Inertia::render('admin/orders/show', [
-            'order' => $order->load(['webService:id,name', 'domain:id,extension', 'items:id,order_id,domain_name,extension,status', 'items.domain:id,extension']),
+            'order' => $order->load(['webService:id,name', 'domain:id,extension', 'items:id,order_id,domain_name,extension,status', 'items.domain:id,extension', 'payments:id,order_id,provider,reference_id,status,amount,checkout_url']),
             'statuses' => self::STATUSES,
         ]);
+    }
+
+    public function cancelPayment(Order $order, PaymentService $payments): RedirectResponse
+    {
+        $payment = $order->payments()->where('provider', 'borderpay')->latest()->firstOrFail();
+
+        try {
+            $payments->cancelPending($payment);
+        } catch (ConnectionException|RequestException $exception) {
+            report($exception);
+
+            return back()->withErrors(['payment' => 'Gateway pembayaran sedang tidak dapat dihubungi.']);
+        } catch (\RuntimeException $exception) {
+            report($exception);
+
+            return back()->withErrors(['payment' => 'Pembayaran tidak dapat dibatalkan.']);
+        }
+
+        return back()->with('payment_cancelled', 'Pembayaran berhasil dibatalkan.');
+    }
+
+    public function verifyManualPayment(Order $order): RedirectResponse
+    {
+        $payment = $order->payments()->where('provider', 'manual')->latest()->firstOrFail();
+        abort_unless($payment->status === 'pending' && (int) $payment->amount === (int) $order->total_snapshot, 422, 'Pembayaran manual tidak valid.');
+        $payment->update(['status' => 'paid', 'paid_at' => now(), 'provider_payload' => ['type' => 'manual', 'verified_by' => auth()->id(), 'verified_at' => now()->toIso8601String()]]);
+        $order->update(['status' => 'paid', 'paid_at' => now()]);
+
+        return back()->with('payment_verified', 'Pembayaran manual berhasil diverifikasi.');
+    }
+
+    public function syncPayment(Order $order, PaymentService $payments): RedirectResponse
+    {
+        $payment = $order->payments()->where('provider', 'borderpay')->latest()->firstOrFail();
+
+        try {
+            $payments->syncStatus($payment);
+        } catch (ConnectionException|RequestException $exception) {
+            report($exception);
+
+            return back()->withErrors(['payment' => 'Gateway pembayaran sedang tidak dapat dihubungi.']);
+        } catch (\RuntimeException $exception) {
+            report($exception);
+
+            return back()->withErrors(['payment' => 'Status pembayaran tidak dapat disinkronkan.']);
+        }
+
+        return back()->with('payment_synced', 'Status pembayaran berhasil disinkronkan.');
+    }
+
+    public function simulatePayment(Order $order, PaymentService $payments): RedirectResponse
+    {
+        $payment = $order->payments()->where('provider', 'borderpay')->latest()->firstOrFail();
+
+        try {
+            $payments->simulatePending($payment);
+        } catch (ConnectionException|RequestException $exception) {
+            report($exception);
+
+            return back()->withErrors(['payment' => 'Gateway pembayaran sedang tidak dapat dihubungi.']);
+        } catch (\RuntimeException $exception) {
+            report($exception);
+
+            return back()->withErrors(['payment' => 'Simulasi pembayaran tidak dapat diproses.']);
+        }
+
+        return back()->with('payment_simulated', 'Pembayaran test berhasil disimulasikan.');
     }
 
     public function update(Request $request, Order $order, LiquidDomainRegistrar $registrar): RedirectResponse
@@ -52,6 +122,7 @@ class OrdersController extends Controller
         ]);
 
         if (($data['action'] ?? null) === 'approve_register') {
+            abort_unless($order->payments()->whereIn('provider', ['borderpay', 'manual'])->where('status', 'paid')->exists(), 422, 'Pembayaran belum terverifikasi.');
             $order->update(['status' => 'paid', 'paid_at' => $order->paid_at ?? now(), 'admin_notes' => $data['admin_notes'] ?? $order->admin_notes]);
             $registrar->register($order->refresh());
 
@@ -59,6 +130,9 @@ class OrdersController extends Controller
         }
 
         $oldStatus = $order->status;
+        if ($data['status'] === 'paid') {
+            abort_unless($order->payments()->where('provider', 'borderpay')->where('status', 'paid')->exists(), 422, 'Pembayaran BorderPay belum terverifikasi.');
+        }
         $order->update([
             'status' => $data['status'],
             'admin_notes' => $data['admin_notes'] ?? null,

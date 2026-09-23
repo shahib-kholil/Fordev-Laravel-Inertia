@@ -5,9 +5,13 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 
 function toLocalDateTime(value) {
-    if (!value) return '';
+    if (!value) {
+        return '';
+    }
+
     const date = new Date(value);
     const offset = date.getTimezoneOffset();
+
     return new Date(date.getTime() - offset).toISOString().slice(0, 16);
 }
 

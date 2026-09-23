@@ -11,7 +11,9 @@ export default function ImageUploadPreview({
     );
     const src = previewUrl || (currentPath ? `/storage/${currentPath}` : null);
 
-    if (!src) return null;
+    if (!src) {
+        return null;
+    }
 
     return (
         <img

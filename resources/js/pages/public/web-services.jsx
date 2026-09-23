@@ -1,6 +1,6 @@
-import PublicLayout from '@/layouts/public-layout';
 import Pagination from '@/components/pagination';
 import { WebServiceCard } from '@/components/public/web-service-card';
+import PublicLayout from '@/layouts/public-layout';
 
 export default function WebServices({ webServices }) {
     return (

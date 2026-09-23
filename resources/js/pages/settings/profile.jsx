@@ -23,7 +23,7 @@ export default function Profile({ mustVerifyEmail, status }) {
                 <Heading
                     variant="small"
                     title="Profile"
-                    description="Update your name and email address"
+                    description="Perbarui nama profil. Email terikat pada kepemilikan pesanan."
                 />
 
                 <Form

@@ -1,4 +1,3 @@
-import * as React from 'react';
 import { SidebarInset } from '@/components/ui/sidebar';
 
 export function AppContent({ variant = 'sidebar', children, ...props }) {

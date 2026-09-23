@@ -1,15 +1,15 @@
 import { Head, Link, router, useForm } from '@inertiajs/react';
 import { GripVertical } from 'lucide-react';
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { AdminPageShell } from '@/components/admin/page-shell';
 import {
     AdminActions,
     AdminTable,
     AdminTableCard,
 } from '@/components/admin/table-card';
-import { Button } from '@/components/ui/button';
-import Pagination from '@/components/pagination';
 import AdminSearch from '@/components/admin-search';
+import Pagination from '@/components/pagination';
+import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 
 export default function DomainsIndex({
@@ -18,15 +18,14 @@ export default function DomainsIndex({
     bundles = [],
     domainOptions = [],
 }) {
-    const [rows, setRows] = useState(domains.data);
+    const [rows, setRows] = useState(() => domains.data);
     const [dragId, setDragId] = useState(null);
 
-    useEffect(() => {
-        setRows(domains.data);
-    }, [domains.data]);
-
     function move(targetId) {
-        if (!dragId || dragId === targetId) return;
+        if (!dragId || dragId === targetId) {
+            return;
+        }
+
         const from = rows.findIndex((item) => item.id === dragId);
         const to = rows.findIndex((item) => item.id === targetId);
         const next = [...rows];

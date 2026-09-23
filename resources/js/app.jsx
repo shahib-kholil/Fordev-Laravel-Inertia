@@ -1,15 +1,16 @@
 import { createInertiaApp } from '@inertiajs/react';
+import { TooltipProvider } from './components/ui/tooltip';
+import AdminLayout from './layouts/admin-layout';
+import AppLayout from './layouts/app-layout';
+import AuthLayout from './layouts/auth-layout';
+import SettingsLayout from './layouts/settings/layout';
 import { Toaster } from '@/components/ui/sonner';
 import { initializeTheme } from '@/hooks/use-appearance';
 import { useFlashToast } from '@/hooks/use-flash-toast';
-import AuthLayout from './layouts/auth-layout';
-import AppLayout from './layouts/app-layout';
-import AdminLayout from './layouts/admin-layout';
-import SettingsLayout from './layouts/settings/layout';
-import { TooltipProvider } from './components/ui/tooltip';
 
 function FlashToastApp({ app }) {
     useFlashToast();
+
     return app;
 }
 

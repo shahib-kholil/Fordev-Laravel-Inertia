@@ -31,14 +31,14 @@ class StoreOrderRequest extends FormRequest
     {
         $enabledPaymentMethods = json_decode(
             Setting::query()->where('key', 'payment_methods')->value('value')
-                ?? '["qris","dana","bank_transfer"]',
+                ?? '["borderpay","manual"]',
             true,
         );
 
         $enabledPaymentMethods = is_array($enabledPaymentMethods)
             ? array_values(array_intersect(
                 $enabledPaymentMethods,
-                ['qris', 'dana', 'bank_transfer'],
+                ['borderpay', 'qris', 'dana', 'bank_transfer', 'manual'],
             ))
             : [];
 

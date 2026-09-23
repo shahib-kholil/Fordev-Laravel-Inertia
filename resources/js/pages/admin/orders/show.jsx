@@ -27,9 +27,7 @@ export default function OrderShow({ order, statuses }) {
             pending_confirmation:
                 'border-blue-500/30 bg-blue-500/10 text-blue-400',
         }[order.status] ?? 'border-border bg-muted text-muted-foreground';
-    const domain = order.domain_name
-        ? `${order.domain_name}${order.domain?.extension ?? ''}`
-        : '-';
+
     return (
         <>
             <Head title={order.order_number} />
@@ -104,6 +102,54 @@ export default function OrderShow({ order, statuses }) {
                     </p>
                     <p>Catatan klien: {order.notes ?? '-'}</p>
                 </div>
+                {order.payments?.length > 0 && (
+                    <div className="space-y-3 rounded-xl border p-5 text-sm">
+                        <p className="font-semibold">Payment BorderPay</p>
+                        {order.payments.map((payment) => (
+                            <div
+                                key={payment.id}
+                                className="space-y-2 rounded-lg border p-3"
+                            >
+                                <p>Reference: {payment.reference_id}</p>
+                                <p>Status: {payment.status}</p>
+                                <p>
+                                    Nominal: Rp{' '}
+                                    {Number(payment.amount).toLocaleString(
+                                        'id-ID',
+                                    )}
+                                </p>
+                                {payment.status === 'pending' && (
+                                    <div className="flex flex-wrap gap-2">
+                                        {payment.provider === 'borderpay' && (
+                                            <NativeAction
+                                                action={`/admin/orders/${order.id}/sync-payment`}
+                                                label="Sync status"
+                                            />
+                                        )}
+                                        {payment.provider === 'manual' && (
+                                            <NativeAction
+                                                action={`/admin/orders/${order.id}/verify-manual-payment`}
+                                                label="Verifikasi manual"
+                                            />
+                                        )}
+                                        {payment.provider === 'borderpay' && (
+                                            <>
+                                                <NativeAction
+                                                    action={`/admin/orders/${order.id}/simulate-payment`}
+                                                    label="Simulate test"
+                                                />
+                                                <NativeAction
+                                                    action={`/admin/orders/${order.id}/cancel-payment`}
+                                                    label="Cancel payment"
+                                                />
+                                            </>
+                                        )}
+                                    </div>
+                                )}
+                            </div>
+                        ))}
+                    </div>
+                )}
                 <form
                     onSubmit={submit}
                     className="space-y-3 rounded-xl border p-5"
@@ -170,6 +216,28 @@ export default function OrderShow({ order, statuses }) {
         </>
     );
 }
+
+function NativeAction({ action, label }) {
+    return (
+        <form method="post" action={action}>
+            <input
+                type="hidden"
+                name="_token"
+                value={
+                    document.querySelector('meta[name="csrf-token"]')
+                        ?.content ?? ''
+                }
+            />
+            <button
+                type="submit"
+                className="rounded-lg border px-3 py-2 text-xs font-semibold transition hover:bg-muted"
+            >
+                {label}
+            </button>
+        </form>
+    );
+}
+
 OrderShow.layout = {
     breadcrumbs: [{ title: 'Orders', href: '/admin/orders' }],
 };

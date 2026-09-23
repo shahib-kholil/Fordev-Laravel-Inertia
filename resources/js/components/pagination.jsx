@@ -1,7 +1,9 @@
 import { Link } from '@inertiajs/react';
 
 export default function Pagination({ links }) {
-    if (!links || links.length <= 3) return null;
+    if (!links || links.length <= 3) {
+        return null;
+    }
 
     return (
         <nav className="flex flex-wrap gap-2" aria-label="Pagination">

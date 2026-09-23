@@ -1,10 +1,10 @@
-import { useState, useCallback, useEffect, useRef } from 'react';
 import {
     motion,
     useMotionValue,
     useAnimationFrame,
     useTransform,
 } from 'motion/react';
+import { useState, useCallback, useEffect, useRef } from 'react';
 
 const ShinyText = ({
     text,
@@ -36,7 +36,9 @@ const ShinyText = ({
     const directionRef = useRef(direction === 'left' ? 1 : -1);
 
     useEffect(() => {
-        if (typeof document === 'undefined') return undefined;
+        if (typeof document === 'undefined') {
+            return undefined;
+        }
 
         const syncTheme = () => {
             setResolvedAppearance(
@@ -71,11 +73,13 @@ const ShinyText = ({
     useAnimationFrame((time) => {
         if (disabled || isPaused) {
             lastTimeRef.current = null;
+
             return;
         }
 
         if (lastTimeRef.current === null) {
             lastTimeRef.current = time;
+
             return;
         }
 
@@ -135,11 +139,15 @@ const ShinyText = ({
     );
 
     const handleMouseEnter = useCallback(() => {
-        if (pauseOnHover) setIsPaused(true);
+        if (pauseOnHover) {
+            setIsPaused(true);
+        }
     }, [pauseOnHover]);
 
     const handleMouseLeave = useCallback(() => {
-        if (pauseOnHover) setIsPaused(false);
+        if (pauseOnHover) {
+            setIsPaused(false);
+        }
     }, [pauseOnHover]);
 
     const gradientStyle = {

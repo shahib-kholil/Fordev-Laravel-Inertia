@@ -40,7 +40,7 @@ class SettingsController extends Controller
             'contact_whatsapp' => ['nullable', 'string', 'max:30'],
             'contact_address' => ['nullable', 'string', 'max:500'],
             'payment_methods' => ['nullable', 'array'],
-            'payment_methods.*' => ['string', 'in:qris,dana,bank_transfer'],
+            'payment_methods.*' => ['string', 'in:qris,dana,bank_transfer,manual'],
             'payment_details' => ['required', 'array'],
             'payment_details.qris' => ['nullable', 'string', 'max:1000'],
             'payment_qris' => ['nullable', 'image', 'max:2048'],

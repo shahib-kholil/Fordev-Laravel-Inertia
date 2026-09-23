@@ -1,5 +1,5 @@
-import { Children, useState } from 'react';
 import { motion } from 'motion/react';
+import { Children, useState } from 'react';
 
 const labels = ['Login / Register', 'Isi Form', 'Pembayaran & Status'];
 
@@ -25,7 +25,10 @@ export default function Stepper({
     const total = steps.length;
     const completed = currentStep > total;
     const update = (step) => {
-        if (controlledStep === undefined) setLocalStep(step);
+        if (controlledStep === undefined) {
+            setLocalStep(step);
+        }
+
         step > total ? onFinalStepCompleted() : onStepChange(step);
     };
 
@@ -40,6 +43,7 @@ export default function Stepper({
                     const step = index + 1;
                     const active = currentStep === step;
                     const done = currentStep > step;
+
                     return (
                         <div
                             key={label}

@@ -3,11 +3,11 @@ import { ArrowLeft, ArrowRight, ArrowUpRight } from 'lucide-react';
 import { useState } from 'react';
 import HeroSection from '@/components/public/hero-section';
 import LogoLoop from '@/components/public/Logo-Loop';
-import { Badge } from '@/components/ui/badge';
+import MagicBento from '@/components/public/magic-bento';
 import { WebServiceCard } from '@/components/public/web-service-card';
+import { Badge } from '@/components/ui/badge';
 
 import PublicLayout from '@/layouts/public-layout';
-import MagicBento from '@/components/public/magic-bento';
 
 const techLogos = [
     {

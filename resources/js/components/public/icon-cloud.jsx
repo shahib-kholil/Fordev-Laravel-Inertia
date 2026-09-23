@@ -1,5 +1,5 @@
 import { Pause, Play } from 'lucide-react';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { Button } from '@/components/ui/button';
 
 function easeOutCubic(t) {
@@ -13,9 +13,30 @@ export function IconCloud({
     canvasClassName = '',
 }) {
     const canvasRef = useRef(null);
-    const [iconPositions, setIconPositions] = useState([]);
+    const iconPositions = useMemo(() => {
+        const numIcons = images.length || 20;
+        const offset = 2 / numIcons;
+        const increment = Math.PI * (3 - Math.sqrt(5));
+
+        return Array.from({ length: numIcons }, (_, i) => {
+            const y = i * offset - 1 + offset / 2;
+            const r = Math.sqrt(1 - y * y);
+            const phi = i * increment;
+
+            return {
+                x: Math.cos(phi) * r * 100,
+                y: y * 100,
+                z: Math.sin(phi) * r * 100,
+                id: i,
+            };
+        });
+    }, [images.length]);
     const [isDragging, setIsDragging] = useState(false);
-    const [isPaused, setIsPaused] = useState(false);
+    const [isPaused, setIsPaused] = useState(
+        () =>
+            typeof window !== 'undefined' &&
+            window.matchMedia('(prefers-reduced-motion: reduce)').matches,
+    );
     const [lastMousePos, setLastMousePos] = useState({ x: 0, y: 0 });
     const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
     const [targetRotation, setTargetRotation] = useState(null);
@@ -28,9 +49,9 @@ export function IconCloud({
         const mediaQuery = window.matchMedia(
             '(prefers-reduced-motion: reduce)',
         );
-        setIsPaused(mediaQuery.matches);
         const handleChange = (event) => setIsPaused(event.matches);
         mediaQuery.addEventListener('change', handleChange);
+
         return () => mediaQuery.removeEventListener('change', handleChange);
     }, []);
 
@@ -41,7 +62,10 @@ export function IconCloud({
             offscreen.width = 40;
             offscreen.height = 40;
             const offCtx = offscreen.getContext('2d');
-            if (!offCtx) return offscreen;
+
+            if (!offCtx) {
+                return offscreen;
+            }
 
             const img = new Image();
             img.crossOrigin = 'anonymous';
@@ -55,32 +79,18 @@ export function IconCloud({
                 imagesLoadedRef.current[index] = true;
             };
             img.src = src;
+
             return offscreen;
         });
     }, [images]);
 
-    useEffect(() => {
-        const numIcons = images.length || 20;
-        const offset = 2 / numIcons;
-        const increment = Math.PI * (3 - Math.sqrt(5));
-        setIconPositions(
-            Array.from({ length: numIcons }, (_, i) => {
-                const y = i * offset - 1 + offset / 2;
-                const r = Math.sqrt(1 - y * y);
-                const phi = i * increment;
-                return {
-                    x: Math.cos(phi) * r * 100,
-                    y: y * 100,
-                    z: Math.sin(phi) * r * 100,
-                    id: i,
-                };
-            }),
-        );
-    }, [images.length]);
-
     function handleMouseDown(event) {
         const rect = canvasRef.current?.getBoundingClientRect();
-        if (!rect || !canvasRef.current) return;
+
+        if (!rect || !canvasRef.current) {
+            return;
+        }
+
         const x = event.clientX - rect.left;
         const y = event.clientY - rect.top;
 
@@ -124,12 +134,17 @@ export function IconCloud({
 
     function handleMouseMove(event) {
         const rect = canvasRef.current?.getBoundingClientRect();
-        if (rect)
+
+        if (rect) {
             setMousePos({
                 x: event.clientX - rect.left,
                 y: event.clientY - rect.top,
             });
-        if (!isDragging) return;
+        }
+
+        if (!isDragging) {
+            return;
+        }
 
         rotationRef.current = {
             x: rotationRef.current.x + (event.clientY - lastMousePos.y) * 0.002,
@@ -141,7 +156,10 @@ export function IconCloud({
     useEffect(() => {
         const canvas = canvasRef.current;
         const ctx = canvas?.getContext('2d');
-        if (!canvas || !ctx) return;
+
+        if (!canvas || !ctx) {
+            return;
+        }
 
         const animate = () => {
             ctx.clearRect(0, 0, canvas.width, canvas.height);
@@ -170,7 +188,10 @@ export function IconCloud({
                         targetRotation.startY +
                         (targetRotation.y - targetRotation.startY) * eased,
                 };
-                if (progress >= 1) setTargetRotation(null);
+
+                if (progress >= 1) {
+                    setTargetRotation(null);
+                }
             } else if (!isDragging && !isPaused) {
                 rotationRef.current = {
                     x: rotationRef.current.x + (dy / canvas.height) * speed,
@@ -199,6 +220,7 @@ export function IconCloud({
                 );
                 ctx.scale(scale, scale);
                 ctx.globalAlpha = opacity;
+
                 if (
                     iconCanvasesRef.current[index] &&
                     imagesLoadedRef.current[index]
@@ -211,17 +233,20 @@ export function IconCloud({
                         40,
                     );
                 }
+
                 ctx.restore();
             });
 
             const hasPendingAssets =
                 images.length > 0 && !imagesLoadedRef.current.every(Boolean);
+
             if (!isPaused || isDragging || targetRotation || hasPendingAssets) {
                 animationFrameRef.current = requestAnimationFrame(animate);
             }
         };
 
         animate();
+
         return () => cancelAnimationFrame(animationFrameRef.current);
     }, [
         images.length,

@@ -26,8 +26,15 @@ const paddingAroundControl = [
 /** @type {import('eslint').Linter.Config[]} */
 export default [
     js.configs.recommended,
-    reactHooks.configs.flat['recommended-latest'],
     {
+        files: ['**/*.{js,jsx}'],
+    },
+    {
+        ...reactHooks.configs.flat['recommended-latest'],
+        files: ['**/*.{js,jsx}'],
+    },
+    {
+        files: ['**/*.{js,jsx}'],
         ...react.configs.flat.recommended,
         ...react.configs.flat['jsx-runtime'],
         languageOptions: {
@@ -42,6 +49,8 @@ export default [
         },
         rules: {
             'react/react-in-jsx-scope': 'off',
+            'react/jsx-uses-vars': 'error',
+            'react/jsx-uses-react': 'off',
             'react/prop-types': 'off',
             'react/no-unescaped-entities': 'off',
         },
@@ -52,6 +61,7 @@ export default [
         },
     },
     {
+        files: ['**/*.{js,jsx}'],
         plugins: {
             import: importPlugin,
         },
@@ -102,6 +112,14 @@ export default [
             'resources/js/routes/**',
             'resources/js/wayfinder/**',
         ],
+    },
+    {
+        files: ['tests/**/*.mjs'],
+        languageOptions: {
+            globals: {
+                ...globals.node,
+            },
+        },
     },
     prettier,
     {

@@ -1,7 +1,7 @@
 import { Head, router } from '@inertiajs/react';
-import AdminSearch from '@/components/admin-search';
 import { AdminPageShell } from '@/components/admin/page-shell';
 import { AdminTable, AdminTableCard } from '@/components/admin/table-card';
+import AdminSearch from '@/components/admin-search';
 import Pagination from '@/components/pagination';
 
 export default function UsersIndex({ users, filters, roles }) {
