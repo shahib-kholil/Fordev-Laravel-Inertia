@@ -57,4 +57,4 @@ jobs:
           username: ${{ secrets.STAGING_SSH_USER }}
           key: ${{ secrets.STAGING_SSH_KEY }}
           port: ${{ secrets.STAGING_SSH_PORT || 22 }}
-          script: /var/www/stagging-fordev/deploy-staging.sh
+          script: bash /var/www/stagging-fordev/deploy-staging.sh
