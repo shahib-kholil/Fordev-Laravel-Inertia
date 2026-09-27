@@ -45,6 +45,11 @@ jobs:
           npm run build
           php artisan test
 
+      - name: Connect to Tailscale
+        uses: tailscale/github-action@v2
+        with:
+          authkey: ${{ secrets.TAILSCALE_AUTHKEY }}
+
       - name: Deploy on staging VPS
         uses: appleboy/ssh-action@v1.2.2
         with:
