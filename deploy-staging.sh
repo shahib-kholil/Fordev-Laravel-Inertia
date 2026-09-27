@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 set -Eeuo pipefail
 
-PROJECT="/var/www/fordev-staging"
-STAGING_URL="https://staging.fordev11.tech"
+PROJECT="/var/www/stagging-fordev"
+STAGING_URL="https://staging.fordev.tech"
 PHP_FPM_SERVICE="php8.4-fpm"
 
 cd "$PROJECT"
