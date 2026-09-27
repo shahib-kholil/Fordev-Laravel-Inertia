@@ -140,3 +140,4 @@ https://github.com/ghostcompiler/laravel-react-jsx-starter-kit
 MIT License
 
 ---
+php artisan laravolt:indonesia:seed
