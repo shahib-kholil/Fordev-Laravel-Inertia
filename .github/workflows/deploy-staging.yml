@@ -38,6 +38,8 @@ jobs:
         run: |
           composer install --no-interaction --prefer-dist --no-progress
           npm ci
+          cp .env.example .env
+          php artisan key:generate --force
           npm run lint:check
           npm run format:check
           npm run build
