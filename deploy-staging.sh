@@ -33,10 +33,8 @@ php artisan route:cache
 php artisan view:cache
 php artisan event:cache
 
-sudo chown -R "$USER":www-data storage bootstrap/cache
 chmod -R ug+rwX storage bootstrap/cache
 php artisan queue:restart || true
-sudo systemctl reload "$PHP_FPM_SERVICE"
 
 php artisan up
 maintenance_enabled=0
