@@ -51,7 +51,7 @@ class LiquidDomainRegistrar
                     'registered_at' => now(),
                 ]);
             } catch (Throwable $e) {
-                $item->update(['status' => 'api_error', 'liquid_error' => $e->getMessage()]);
+                $item->update(['status' => 'api_error', 'liquid_error' => $this->safeProviderError($e)]);
             }
         }
 
@@ -135,11 +135,20 @@ class LiquidDomainRegistrar
         } catch (Throwable $e) {
             $order->update([
                 'status' => 'api_error',
-                'liquid_error' => $e->getMessage(),
+                'liquid_error' => $this->safeProviderError($e),
                 'admin_notes' => 'Registrasi gagal. Tim ForDev perlu memeriksa pesanan ini.',
             ]);
             Notification::route('mail', $order->client_email)
                 ->notify(new DomainRegistrationFailedNotification($order->refresh()));
         }
+    }
+
+    private function safeProviderError(Throwable $exception): string
+    {
+        $message = $exception->getMessage();
+        $message = preg_replace('/(ApiKey|api[_-]?key|Authorization|Bearer)\s*[:=]\s*[^,\s}]+/i', '$1: [REDACTED]', $message) ?? $message;
+        $message = preg_replace('/("(?:api[_-]?key|authorization|token)"\s*:\s*")[^"]+/i', '$1[REDACTED]', $message) ?? $message;
+
+        return mb_substr($message, 0, 1000);
     }
 }
