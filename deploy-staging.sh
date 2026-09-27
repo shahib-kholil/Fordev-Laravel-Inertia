@@ -39,4 +39,5 @@ php artisan queue:restart || true
 php artisan up
 maintenance_enabled=0
 curl --fail --silent --show-error --max-time 15 "$STAGING_URL/up"
+curl --fail --silent --show-error --max-time 15 "$STAGING_URL/login" >/dev/null
 echo "=== STAGING DEPLOYMENT SUCCESSFUL ==="
