@@ -215,7 +215,7 @@ class FordevFlowTest extends TestCase
 
         $this->put("/admin/orders/{$order->id}", ['status' => 'paid', 'admin_notes' => null, 'action' => 'approve_register'])->assertRedirect();
 
-        $this->assertDatabaseHas(Order::class, ['id' => $order->id, 'status' => 'active', 'liquid_customer_id' => 'CUST-1', 'liquid_domain_id' => 'DOM-1']);
+        $this->assertDatabaseHas(Order::class, ['id' => $order->id, 'status' => 'registering', 'liquid_customer_id' => 'CUST-1', 'liquid_domain_id' => 'DOM-1']);
         Http::assertSent(fn ($request) => str_ends_with($request->url(), '/domains')
             && $request['invoice_option'] === 'no_invoice'
             && $request['registrant_contact_id'] === 'CONT-1');
@@ -238,8 +238,8 @@ class FordevFlowTest extends TestCase
 
         $this->put("/admin/orders/{$order->id}", ['status' => 'paid', 'admin_notes' => null, 'action' => 'approve_register'])->assertRedirect();
 
-        $this->assertDatabaseHas(Order::class, ['id' => $order->id, 'status' => 'active', 'liquid_customer_id' => 'CUST-OLD']);
-        Notification::assertSentOnDemand(OrderActiveNotification::class);
+        $this->assertDatabaseHas(Order::class, ['id' => $order->id, 'status' => 'registering', 'liquid_customer_id' => 'CUST-OLD']);
+        Notification::assertNothingSent();
     }
 
     public function test_pending_payment_status_queues_customer_notification(): void

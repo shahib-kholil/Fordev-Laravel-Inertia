@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Jobs\RegisterPaidOrder;
 use App\Models\Payment;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -38,7 +39,7 @@ class BorderPayWebhookController extends Controller
                 ->lockForUpdate()
                 ->firstOrFail();
 
-            abort_unless((int) $payment->amount === (int) $data['data']['amount'], 422);
+            abort_unless((int) $data['data']['amount'] >= (int) $payment->amount, 422);
 
             $status = match ($data['event']) {
                 'payment.paid' => 'paid',
@@ -55,18 +56,26 @@ class BorderPayWebhookController extends Controller
             };
             abort_unless(in_array($status, $allowed, true), 409);
 
+            $wasPending = $payment->status === 'pending';
             $payment->update([
                 'status' => $status,
+                'customer_pays' => max((int) $payment->customer_pays, (int) $data['data']['amount']),
+                'fee' => max(0, (int) $data['data']['amount'] - (int) $payment->amount),
                 'paid_at' => $status === 'paid' ? ($payment->paid_at ?? now()) : $payment->paid_at,
                 'provider_payload' => $request->all(),
             ]);
 
-            if ($status === 'paid' && in_array($payment->order->status, ['pending_payment', 'pending_confirmation'], true)) {
+            if ($status === 'paid' && $wasPending && in_array($payment->order->status, ['pending_payment', 'pending_confirmation'], true)) {
                 $payment->order->update(['status' => 'paid', 'paid_at' => now()]);
             }
 
-            return $payment;
+            return [$payment->refresh(), $wasPending];
         });
+
+        [$payment, $wasPending] = $payment;
+        if ($payment->status === 'paid' && $wasPending && $payment->order->status === 'paid') {
+            RegisterPaidOrder::dispatch($payment->order_id);
+        }
 
         return response()->json(['ok' => true, 'payment_id' => $payment->id]);
     }

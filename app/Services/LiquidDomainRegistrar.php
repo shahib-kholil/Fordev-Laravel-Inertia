@@ -6,6 +6,7 @@ use App\Models\Order;
 use App\Models\User;
 use App\Notifications\DomainRegistrationFailedNotification;
 use App\Notifications\OrderActiveNotification;
+use Illuminate\Http\Client\RequestException;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Notification;
 use Throwable;
@@ -99,20 +100,37 @@ class LiquidDomainRegistrar
                 $user = User::query()->where('email', $order->client_email)->first();
                 $customerId = $order->liquid_customer_id ?: $user?->liquid_customer_id ?: $this->liquid->signupCustomer($order);
                 $contactId = $this->liquid->createContact($order, $customerId);
-                $registered = $this->liquid->registerDomain($order, $customerId, $contactId);
-                $details = $this->liquid->domainDetailsByName(strtolower($order->domain_name).$domain->extension);
+                $domainName = strtolower($order->domain_name).$domain->extension;
+                try {
+                    $registered = $this->liquid->registerDomain($order, $customerId, $contactId);
+                    try {
+                        $details = $this->liquid->domainDetailsByName($domainName);
+                    } catch (RequestException) {
+                        $details = $registered;
+                    }
+                } catch (RequestException $e) {
+                    if ($e->response?->status() !== 400) {
+                        throw $e;
+                    }
+                    $details = $this->liquid->domainDetailsByName($domainName);
+                    $registered = $details;
+                }
 
                 $user?->update(['liquid_customer_id' => $customerId]);
 
+                $providerStatus = strtolower((string) ($details['order_status'] ?? $details['status'] ?? 'pending'));
+                $providerActive = in_array($providerStatus, ['active', 'completed', 'live'], true);
                 $order->update([
-                    'status' => 'active',
+                    'status' => $providerActive ? 'active' : 'registering',
                     'liquid_customer_id' => $customerId,
                     'liquid_domain_id' => $details['domain_id'] ?? $registered['domain_id'] ?? $registered['id'] ?? null,
-                    'registered_at' => now(),
-                    'admin_notes' => 'Registrasi Liqu.id berhasil dikirim. Status provider: '.($details['order_status'] ?? 'menunggu proses').'. Domain menunggu proses/verifikasi provider.',
+                    'registered_at' => $providerActive ? now() : null,
+                    'admin_notes' => 'Registrasi Liqu.id berhasil dikirim. Status provider: '.($details['order_status'] ?? $details['status'] ?? 'menunggu proses').'.',
                 ]);
 
-                Notification::route('mail', $order->client_email)->notify(new OrderActiveNotification($order->refresh()));
+                if ($providerActive) {
+                    Notification::route('mail', $order->client_email)->notify(new OrderActiveNotification($order->refresh()));
+                }
             });
         } catch (Throwable $e) {
             $order->update([

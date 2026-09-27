@@ -6,12 +6,19 @@ use App\Models\Order;
 use App\Models\Payment;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Bus;
 use Illuminate\Support\Facades\Http;
 use Tests\TestCase;
 
 class AdminOrderPaymentTest extends TestCase
 {
     use RefreshDatabase;
+
+    protected function setUp(): void
+    {
+        parent::setUp();
+        Bus::fake();
+    }
 
     public function test_admin_can_cancel_pending_payment(): void
     {
@@ -65,6 +72,7 @@ class AdminOrderPaymentTest extends TestCase
             ->post(route('admin.orders.simulate-payment', $order))
             ->assertSessionHas('payment_simulated');
         $this->assertDatabaseHas('payments', ['order_id' => $order->id, 'status' => 'paid']);
+        $this->assertDatabaseHas('orders', ['id' => $order->id, 'status' => 'paid']);
     }
 
     public function test_admin_cannot_cancel_paid_payment(): void
@@ -87,6 +95,19 @@ class AdminOrderPaymentTest extends TestCase
         $this->actingAs($admin)
             ->put(route('admin.orders.update', $order), ['status' => 'paid'])
             ->assertStatus(422);
+    }
+
+    public function test_admin_can_mark_order_paid_after_manual_verification(): void
+    {
+        $admin = User::factory()->create(['role' => 'admin']);
+        $order = Order::factory()->create(['status' => 'pending_confirmation', 'total_snapshot' => 100000]);
+        Payment::query()->create(['order_id' => $order->id, 'provider' => 'manual', 'reference_id' => $order->order_number, 'status' => 'paid', 'amount' => 100000, 'fee' => 0, 'customer_pays' => 100000, 'merchant_receives' => 100000]);
+
+        $this->actingAs($admin)
+            ->put(route('admin.orders.update', $order), ['status' => 'paid'])
+            ->assertRedirect();
+
+        $this->assertDatabaseHas('orders', ['id' => $order->id, 'status' => 'paid']);
     }
 }
 

@@ -29,3 +29,4 @@ yarn-error.log
 /.zed
 .npmrc
 .vscode
+api-pg.json

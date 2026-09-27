@@ -9,6 +9,7 @@ use App\Models\Order;
 use App\Models\Setting;
 use App\Models\WebService;
 use App\Notifications\NewOrderNotification;
+use App\Notifications\OrderPendingPaymentNotification;
 use App\Services\IndonesianLocationService;
 use App\Services\LiquidDomainClient;
 use App\Services\PaymentService;
@@ -152,6 +153,15 @@ class OrderController extends Controller
             ->first();
         abort_unless($domain, 422, 'Domain tidak tersedia.');
         abort_unless(! $editing || (int) $editing->domain_id === (int) $domain->id, 422, 'Ekstensi domain tidak dapat diubah saat mengedit pesanan.');
+
+        $alreadyRegistered = Order::query()
+            ->where('domain_id', $domain->id)
+            ->where('domain_name', $data['domain_name'])
+            ->whereIn('status', ['paid', 'registering', 'active', 'api_error', 'refund_needed'])
+            ->when($editing, fn ($query) => $query->where('id', '!=', $editing->id))
+            ->exists();
+        abort_unless(! $alreadyRegistered, 422, 'Domain ini sudah memiliki pesanan yang diproses.');
+
         $data['order_type'] = 'domain';
         $domainPrice = $editing
             ? (int) $editing->domain_price_snapshot
@@ -325,6 +335,7 @@ class OrderController extends Controller
 
         if ($method === 'manual') {
             $payments->createManualPayment($order);
+            Notification::route('mail', $order->client_email)->notify(new OrderPendingPaymentNotification($order->refresh()));
 
             return back()->with('payment_manual', 'Silakan lakukan transfer sesuai instruksi pembayaran.');
         }
@@ -346,6 +357,8 @@ class OrderController extends Controller
         }
 
         if ($payment->checkout_url) {
+            Notification::route('mail', $order->client_email)->notify(new OrderPendingPaymentNotification($order->refresh()));
+
             return redirect()->away($payment->checkout_url);
         }
 

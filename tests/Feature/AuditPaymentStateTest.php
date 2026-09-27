@@ -3,10 +3,12 @@
 namespace Tests\Feature;
 
 use App\Models\Order;
+use App\Jobs\RegisterPaidOrder;
 use App\Models\Payment;
 use App\Models\User;
 use App\Services\PaymentService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Bus;
 use Illuminate\Support\Facades\Http;
 use Tests\TestCase;
 
@@ -19,6 +21,7 @@ class AuditPaymentStateTest extends TestCase
     {
         parent::setUp();
         Http::preventStrayRequests();
+        Bus::fake();
         config(['services.borderpay.api_key' => 'bp_test_audit', 'services.borderpay.webhook_token' => 'audit-only']);
     }
 
@@ -31,6 +34,18 @@ class AuditPaymentStateTest extends TestCase
             'data' => ['reference_id' => $order->order_number, 'mode' => 'test', 'amount' => 100000, 'customer_pays' => 100000, 'merchant_receives' => 100000, 'fee' => 0, 'status' => 'paid'],
         ], ['x-borderpay-token' => 'audit-only', 'x-borderpay-mode' => 'test'])->assertOk();
         $this->assertSame('active', $order->fresh()->status);
+    }
+
+    public function test_paid_webhook_registers_domain_automatically(): void
+    {
+        $order = Order::factory()->create(['status' => 'pending_confirmation', 'total_snapshot' => 100000]);
+        Payment::create(['order_id' => $order->id, 'provider' => 'borderpay', 'reference_id' => $order->order_number, 'amount' => 100000, 'customer_pays' => 100000, 'merchant_receives' => 100000, 'fee' => 0, 'status' => 'pending']);
+
+        $this->postJson('/webhooks/borderpay', [
+            'event' => 'payment.paid', 'mode' => 'test',
+            'data' => ['reference_id' => $order->order_number, 'mode' => 'test', 'amount' => 100000, 'status' => 'paid'],
+        ], ['x-borderpay-token' => 'audit-only', 'x-borderpay-mode' => 'test'])->assertOk();
+        Bus::assertDispatched(RegisterPaidOrder::class, fn ($job) => $job->orderId === $order->id);
     }
 
     public function test_verified_manual_payment_cannot_be_registered(): void

@@ -25,8 +25,10 @@ class OrderActiveNotification extends Notification implements ShouldQueue
             ->subject('Domain aktif '.$this->order->order_number)
             ->line('Pesanan domain Anda sudah aktif.')
             ->line('Domain: '.$this->order->domain_name.($this->order->domain?->extension ?? ''))
-            ->line('Akun Resellercamp menggunakan email pembelian Anda. Gunakan fitur Forgot Password di panel provider untuk membuat password.')
-            ->action('Kelola Domain', config('services.liquid.panel_url', url('/cek-status-pesanan')))
+            ->line('Akses pengelola domain menggunakan email pembelian Anda sebagai nama pengguna.')
+            ->line('Nama pengguna: '.$this->order->client_email)
+            ->line('Jika belum memiliki password, pilih Forgot Password di halaman login provider untuk membuat password baru.')
+            ->action('Login Pengelola Domain', config('services.liquid.panel_url', url('/cek-status-pesanan')))
             ->line('Order: '.$this->order->order_number);
     }
 }

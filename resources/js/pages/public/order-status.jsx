@@ -5,6 +5,7 @@ import PublicLayout from '@/layouts/public-layout';
 const statusLabels = {
     pending_confirmation: 'Menunggu pembayaran / verifikasi',
     paid: 'Pembayaran terverifikasi',
+    registering: 'Sedang diproses',
     processing: 'Sedang diproses',
     active: 'Aktif',
     failed: 'Gagal diproses',
@@ -196,7 +197,7 @@ function OrderProgress({ status }) {
     const active =
         status === 'active'
             ? 3
-            : ['paid', 'processing'].includes(status)
+            : ['paid', 'processing', 'registering'].includes(status)
               ? 2
               : status === 'pending_confirmation'
                 ? 1

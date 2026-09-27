@@ -131,7 +131,7 @@ class OrdersController extends Controller
 
         $oldStatus = $order->status;
         if ($data['status'] === 'paid') {
-            abort_unless($order->payments()->where('provider', 'borderpay')->where('status', 'paid')->exists(), 422, 'Pembayaran BorderPay belum terverifikasi.');
+            abort_unless($order->payments()->whereIn('provider', ['borderpay', 'manual'])->where('status', 'paid')->exists(), 422, 'Pembayaran belum terverifikasi.');
         }
         $order->update([
             'status' => $data['status'],

@@ -5,6 +5,7 @@ namespace Tests\Feature;
 use App\Models\Order;
 use App\Models\Payment;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Bus;
 use Tests\TestCase;
 
 class BorderPayWebhookTest extends TestCase
@@ -16,6 +17,7 @@ class BorderPayWebhookTest extends TestCase
         parent::setUp();
         config(['services.borderpay.webhook_token' => 'webhook-secret']);
         config(['services.borderpay.api_key' => 'bp_test_example']);
+        Bus::fake();
     }
 
     public function test_paid_webhook_marks_payment_and_order_paid(): void

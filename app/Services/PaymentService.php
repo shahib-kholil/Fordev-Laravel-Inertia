@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Jobs\RegisterPaidOrder;
 use App\Models\Order;
 use App\Models\Payment;
 use Illuminate\Database\QueryException;
@@ -167,7 +168,7 @@ class PaymentService
             throw new RuntimeException('Gateway tidak mengonfirmasi simulasi pembayaran.');
         }
 
-        return DB::transaction(function () use ($payment, $response) {
+        $payment = DB::transaction(function () use ($payment, $response) {
             $payment = Payment::query()->lockForUpdate()->findOrFail($payment->id);
             if ($payment->status !== 'pending') {
                 throw new RuntimeException('Pembayaran sudah berubah status.');
@@ -178,6 +179,10 @@ class PaymentService
 
             return $payment->refresh();
         });
+
+        RegisterPaidOrder::dispatch($payment->order_id);
+
+        return $payment;
     }
 
     public function syncStatus(Payment $payment): Payment
@@ -190,14 +195,16 @@ class PaymentService
             throw new RuntimeException('Status pembayaran dari gateway tidak valid.');
         }
 
-        if ($amount !== (int) $payment->amount) {
+        if ($amount < (int) $payment->amount) {
             throw new RuntimeException('Nominal pembayaran dari gateway tidak sesuai.');
         }
 
-        return DB::transaction(function () use ($payment, $status, $response) {
+        $payment = DB::transaction(function () use ($payment, $status, $amount, $response) {
             $payment = Payment::query()->lockForUpdate()->findOrFail($payment->id);
             $payment->update([
                 'status' => $status,
+                'customer_pays' => max((int) $payment->customer_pays, $amount),
+                'fee' => max(0, $amount - (int) $payment->amount),
                 'paid_at' => $status === 'paid' ? ($payment->paid_at ?? now()) : $payment->paid_at,
                 'provider_payload' => $response,
             ]);
@@ -208,6 +215,12 @@ class PaymentService
 
             return $payment->refresh();
         });
+
+        if ($status === 'paid' && $payment->order->status === 'paid') {
+            RegisterPaidOrder::dispatch($payment->order_id);
+        }
+
+        return $payment;
     }
 }
 

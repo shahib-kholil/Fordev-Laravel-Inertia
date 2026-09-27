@@ -7,6 +7,7 @@ use App\Models\Payment;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\Client\ConnectionException;
+use Illuminate\Support\Facades\Bus;
 use Illuminate\Support\Facades\Http;
 use Tests\TestCase;
 
@@ -17,6 +18,7 @@ class OrderPaymentTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
+        Bus::fake();
         config(['services.borderpay.return_url' => 'https://fordev.test/cek-status-pesanan']);
     }
 
