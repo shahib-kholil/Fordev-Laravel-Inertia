@@ -2,7 +2,7 @@
 set -Eeuo pipefail
 
 PROJECT="/var/www/fordev-staging"
-STAGING_URL="https://staging.fordev.tech"
+STAGING_URL="https://staging.fordev11.tech"
 PHP_FPM_SERVICE="php8.4-fpm"
 
 cd "$PROJECT"
