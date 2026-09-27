@@ -6,6 +6,7 @@ use App\Actions\Fortify\CreateNewUser;
 use App\Actions\Fortify\ResetUserPassword;
 use App\Models\User;
 use Illuminate\Cache\RateLimiting\Limit;
+use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Http;
@@ -54,12 +55,21 @@ class FortifyServiceProvider extends ServiceProvider
             $secret = config('services.turnstile.secret_key');
             $token = $request->input('cf-turnstile-response');
 
-            $turnstileResponse = filled($secret) && filled($token)
-                ? Http::asForm()->timeout(5)->post(
-                    'https://challenges.cloudflare.com/turnstile/v0/siteverify',
-                    ['secret' => $secret, 'response' => $token],
-                )
-                : null;
+            try {
+                $turnstileResponse = filled($secret) && filled($token)
+                    ? Http::asForm()->timeout(5)->connectTimeout(3)->retry(2, 200)->post(
+                        'https://challenges.cloudflare.com/turnstile/v0/siteverify',
+                        ['secret' => $secret, 'response' => $token],
+                    )
+                    : null;
+            } catch (ConnectionException $exception) {
+                logger()->warning('Turnstile verification unavailable', [
+                    'error' => $exception->getMessage(),
+                    'has_token' => filled($token),
+                ]);
+
+                throw ValidationException::withMessages(['cf-turnstile-response' => 'Layanan verifikasi sedang tidak tersedia. Silakan coba lagi.']);
+            }
 
             if (filled($secret) && ($turnstileResponse?->json('success') !== true)) {
                 logger()->warning('Turnstile verification failed', [

@@ -4,12 +4,14 @@ use App\Http\Middleware\EnsureAdmin;
 use App\Http\Middleware\EnsureSuperAdmin;
 use App\Http\Middleware\HandleAppearance;
 use App\Http\Middleware\HandleInertiaRequests;
+use App\Http\Middleware\SecurityHeaders;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
 use Illuminate\Http\Exceptions\ThrottleRequestsException;
 use Illuminate\Http\Middleware\AddLinkHeadersForPreloadedAssets;
 use Illuminate\Http\Request;
+use Symfony\Component\HttpKernel\Exception\MethodNotAllowedHttpException;
 
 return Application::configure(basePath: dirname(__DIR__))
     ->withRouting(
@@ -31,9 +33,13 @@ return Application::configure(basePath: dirname(__DIR__))
             HandleInertiaRequests::class,
             AddLinkHeadersForPreloadedAssets::class,
         ]);
+        $middleware->append(SecurityHeaders::class);
         $middleware->alias(['admin' => EnsureAdmin::class, 'super_admin' => EnsureSuperAdmin::class]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
+        $exceptions->render(function (MethodNotAllowedHttpException $exception, Request $request) {
+            return response('Method Not Allowed', 405, ['Allow' => (string) ($exception->getHeaders()['Allow'] ?? '')]);
+        });
         $exceptions->render(function (ThrottleRequestsException $exception, Request $request) {
             if ($request->header('X-Inertia')) {
                 return back()->withErrors([

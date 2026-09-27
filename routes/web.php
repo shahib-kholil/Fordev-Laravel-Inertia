@@ -41,7 +41,7 @@ Route::middleware('auth')->group(function () {
 });
 Route::get('cek-status-pesanan', [OrderController::class, 'status'])->name('orders.status');
 Route::post('cek-status-pesanan', [OrderController::class, 'lookup'])->name('orders.lookup')->middleware('throttle:10,1');
-Route::post('webhooks/borderpay', BorderPayWebhookController::class)->name('webhooks.borderpay')->middleware('throttle:120,1');
+Route::post('webhooks/borderpay', BorderPayWebhookController::class)->name('webhooks.borderpay')->middleware(['throttle:120,1', 'api']);
 Route::get('auth/google/redirect', [GoogleController::class, 'redirect'])->name('auth.google.redirect');
 Route::get('auth/google/callback', [GoogleController::class, 'callback'])->name('auth.google.callback');
 
