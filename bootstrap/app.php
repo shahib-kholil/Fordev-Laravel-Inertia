@@ -47,6 +47,19 @@ return Application::configure(basePath: dirname(__DIR__))
 
             return back()->with('error', 'Terlalu banyak percobaan. Silakan tunggu sebentar lalu coba lagi.');
         });
+        $exceptions->render(function (Throwable $exception, Request $request) {
+            if (! $request->is('api/*')) {
+                return null;
+            }
+
+            $status = method_exists($exception, 'getStatusCode')
+                ? $exception->getStatusCode()
+                : 500;
+
+            return response()->json([
+                'message' => $status === 404 ? 'Not Found.' : 'Server Error.',
+            ], $status);
+        });
         $exceptions->shouldRenderJsonWhen(
             fn (Request $request) => $request->is('api/*'),
         );
