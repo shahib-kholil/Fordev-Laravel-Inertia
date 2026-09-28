@@ -1,42 +1,58 @@
-name: CI/CD Deployment to VPS
+name: CI/CD Production
 
 on:
   push:
-    branches: [ main ]
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: production-deploy
+  cancel-in-progress: false
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
+    environment: production
 
     steps:
-      - name: Checkout Code
+      - name: Checkout
         uses: actions/checkout@v4
+        with:
+          persist-credentials: false
 
-      - name: Setup PHP Environment
+      - name: Setup PHP
         uses: shivammathur/setup-php@v2
         with:
           php-version: '8.4'
+          tools: composer:v2
           extensions: mbstring, xml, ctype, iconv, mysql
 
-      - name: Install Composer Dependencies
-        run: composer install --no-dev --no-interaction --prefer-dist --optimize-autoloader
-
-      - name: Setup Node.js Environment
+      - name: Setup Node
         uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          node-version: '22'
+          cache: npm
 
-      - name: Install NPM and Build Inertia Assets
+      - name: Verify application
         run: |
+          composer install --no-interaction --prefer-dist --no-progress
           npm ci
+          cp .env.example .env
+          php artisan key:generate --force
+          npm run lint:check
+          npm run format:check
           npm run build
+          php artisan test
 
       - name: Connect to Tailscale
         uses: tailscale/github-action@v2
         with:
           authkey: ${{ secrets.TAILSCALE_AUTHKEY }}
 
-      - name: Sync Built Assets to VPS
+      - name: Upload frontend build
         uses: easingthemes/ssh-deploy@main
         env:
           SSH_PRIVATE_KEY: ${{ secrets.VPS_SSH_KEY }}
@@ -46,10 +62,10 @@ jobs:
           TARGET: "/var/www/my-app/public/build"
           SOURCE: "public/build/"
 
-      - name: Execute Deployment Script on VPS
-        uses: appleboy/ssh-action@v1.0.0
+      - name: Deploy on production VPS
+        uses: appleboy/ssh-action@v1.2.2
         with:
           host: ${{ secrets.VPS_HOST }}
           username: ${{ secrets.VPS_USERNAME }}
           key: ${{ secrets.VPS_SSH_KEY }}
-          script: /var/www/my-app/deploy.sh
+          script: bash /var/www/my-app/deploy.sh
