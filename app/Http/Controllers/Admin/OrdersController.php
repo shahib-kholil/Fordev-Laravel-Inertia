@@ -122,7 +122,12 @@ class OrdersController extends Controller
         ]);
 
         if (($data['action'] ?? null) === 'approve_register') {
-            abort_unless($order->payments()->whereIn('provider', ['borderpay', 'manual'])->where('status', 'paid')->exists(), 422, 'Pembayaran belum terverifikasi.');
+            abort_unless(
+                (int) $order->total_snapshot === 0
+                    || $order->payments()->whereIn('provider', ['borderpay', 'manual'])->where('status', 'paid')->exists(),
+                422,
+                'Pembayaran belum terverifikasi.',
+            );
             $order->update(['status' => 'paid', 'paid_at' => $order->paid_at ?? now(), 'admin_notes' => $data['admin_notes'] ?? $order->admin_notes]);
             $registrar->register($order->refresh());
 

@@ -3,7 +3,6 @@
 namespace App\Http\Controllers;
 
 use App\Http\Requests\StoreOrderRequest;
-use App\Jobs\RegisterPaidOrder;
 use App\Models\Domain;
 use App\Models\DomainCoupon;
 use App\Models\Order;
@@ -309,7 +308,6 @@ class OrderController extends Controller
 
         if ((int) $order->total_snapshot === 0) {
             $order->update(['status' => 'paid', 'paid_at' => now()]);
-            RegisterPaidOrder::dispatch($order->id);
         }
 
         return to_route('orders.status', ['order' => $order->order_number]);
