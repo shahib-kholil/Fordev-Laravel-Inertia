@@ -23,8 +23,9 @@ git checkout staging
 git reset --hard origin/staging
 
 composer install --no-dev --no-interaction --prefer-dist --optimize-autoloader
-npm ci
-npm run build
+rm -rf public/build
+tar -xzf /tmp/fordev-public-build.tar.gz -C public
+rm -f /tmp/fordev-public-build.tar.gz
 
 php artisan migrate --force
 php artisan optimize:clear

@@ -45,10 +45,23 @@ jobs:
           npm run build
           php artisan test
 
+      - name: Package frontend build
+        run: tar -czf /tmp/fordev-public-build.tar.gz -C public build
+
       - name: Connect to Tailscale
         uses: tailscale/github-action@v2
         with:
           authkey: ${{ secrets.TAILSCALE_AUTHKEY }}
+
+      - name: Upload frontend build
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.STAGING_SSH_HOST }}
+          username: ${{ secrets.STAGING_SSH_USER }}
+          key: ${{ secrets.STAGING_SSH_KEY }}
+          port: ${{ secrets.STAGING_SSH_PORT || 22 }}
+          source: /tmp/fordev-public-build.tar.gz
+          target: /tmp
 
       - name: Deploy on staging VPS
         uses: appleboy/ssh-action@v1.2.2
