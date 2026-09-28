@@ -10,6 +10,7 @@ use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
 use Illuminate\Http\Exceptions\ThrottleRequestsException;
 use Illuminate\Http\Request;
+use Symfony\Component\HttpKernel\Exception\HttpExceptionInterface;
 use Symfony\Component\HttpKernel\Exception\MethodNotAllowedHttpException;
 
 return Application::configure(basePath: dirname(__DIR__))
@@ -46,6 +47,15 @@ return Application::configure(basePath: dirname(__DIR__))
             }
 
             return back()->with('error', 'Terlalu banyak percobaan. Silakan tunggu sebentar lalu coba lagi.');
+        });
+        $exceptions->render(function (HttpExceptionInterface $exception, Request $request) {
+            if ($exception->getStatusCode() !== 422 || $request->is('api/*') || $request->expectsJson() || (! $request->is('order') && ! $request->is('order/*'))) {
+                return null;
+            }
+
+            return back()
+                ->withErrors(['form' => $exception->getMessage() ?: 'Data pesanan belum valid. Periksa kembali isian Anda.'])
+                ->withInput();
         });
         $exceptions->render(function (Throwable $exception, Request $request) {
             if (! $request->is('api/*')) {
