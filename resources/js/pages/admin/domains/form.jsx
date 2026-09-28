@@ -154,7 +154,7 @@ export default function DomainForm({ domain }) {
                             <Label className="text-xs">Nilai Diskon</Label>
                             <Input
                                 type="number"
-                                min="1"
+                                min="0"
                                 max={
                                     coupon.type === 'percent' ? 100 : 100000000
                                 }
