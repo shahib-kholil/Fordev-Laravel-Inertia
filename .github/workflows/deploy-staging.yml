@@ -46,7 +46,7 @@ jobs:
           php artisan test
 
       - name: Package frontend build
-        run: tar -czf /tmp/fordev-public-build.tar.gz -C public build
+        run: tar -czf fordev-public-build.tar.gz -C public build
 
       - name: Connect to Tailscale
         uses: tailscale/github-action@v2
@@ -60,7 +60,7 @@ jobs:
           username: ${{ secrets.STAGING_SSH_USER }}
           key: ${{ secrets.STAGING_SSH_KEY }}
           port: ${{ secrets.STAGING_SSH_PORT || 22 }}
-          source: /tmp/fordev-public-build.tar.gz
+          source: fordev-public-build.tar.gz
           target: /tmp
 
       - name: Deploy on staging VPS
