@@ -33,7 +33,8 @@ export default function OrderForm({
     const [couponDiscount, setCouponDiscount] = useState(
         Number(defaults.coupon_discount ?? 0),
     );
-    const [invalidField] = useState('');
+    const [invalidField, setInvalidField] = useState('');
+    const [submitNotice, setSubmitNotice] = useState('');
     const isEditing = Boolean(defaults.order_number);
 
     const [countrySearch, setCountrySearch] = useState('');
@@ -105,9 +106,41 @@ export default function OrderForm({
         e.preventDefault();
 
         if (!formComplete) {
+            const invalid = !data.client_phone.trim()
+                ? ['Nomor WhatsApp', phoneRef]
+                : !phoneValid
+                  ? ['Nomor WhatsApp', phoneRef]
+                  : !data.domain_name.trim()
+                    ? ['Nama domain', domainNameRef]
+                    : !data.domain_id
+                      ? ['Nama domain', domainIdRef]
+                      : !data.address_line_1.trim() ||
+                          data.address_line_1.length > 62
+                        ? ['Alamat', addressRef]
+                        : !data.state.trim()
+                          ? ['Provinsi', stateRef]
+                          : !data.city.trim()
+                            ? ['Kota', cityRef]
+                            : !zipcodeValid
+                              ? ['Kode pos', zipcodeRef]
+                              : null;
+
+            if (invalid) {
+                setInvalidField(invalid[0]);
+                setSubmitNotice(
+                    `Mohon lengkapi ${invalid[0]} terlebih dahulu.`,
+                );
+                invalid[1].current?.focus();
+                invalid[1].current?.scrollIntoView({
+                    behavior: 'smooth',
+                    block: 'center',
+                });
+            }
+
             return;
         }
 
+        setSubmitNotice('');
         const submit = isEditing ? put : post;
         const url = isEditing
             ? `/order/${encodeURIComponent(data.order_number)}`
@@ -195,6 +228,11 @@ export default function OrderForm({
                                 {errors.form}
                             </p>
                         )}
+                        {submitNotice && (
+                            <p className="rounded-xl border border-amber-500/40 bg-amber-500/10 px-4 py-3 text-sm text-amber-700 dark:text-amber-300">
+                                {submitNotice}
+                            </p>
+                        )}
                         <div className={'space-y-4'}>
                             <Field
                                 label="Nomor WhatsApp"
@@ -264,7 +302,9 @@ export default function OrderForm({
                                                     maxLength={63}
                                                     pattern="[a-z0-9](?:[a-z0-9-]*[a-z0-9])?"
                                                     value={data.domain_name}
-                                                    onChange={(e) =>
+                                                    onChange={(e) => {
+                                                        setInvalidField('');
+                                                        setSubmitNotice('');
                                                         setData(
                                                             'domain_name',
                                                             e.target.value
@@ -273,8 +313,8 @@ export default function OrderForm({
                                                                     /[^a-z0-9-]/g,
                                                                     '',
                                                                 ),
-                                                        )
-                                                    }
+                                                        );
+                                                    }}
                                                 />
                                                 {invalidField ===
                                                     'Nama domain' && (
@@ -670,10 +710,7 @@ export default function OrderForm({
                                 couponDiscount={couponDiscount}
                             />
                             <div className="flex justify-end gap-3">
-                                <Button
-                                    type="submit"
-                                    disabled={processing || !formComplete}
-                                >
+                                <Button type="submit" disabled={processing}>
                                     {processing
                                         ? 'Memproses...'
                                         : defaults.order_number
@@ -683,10 +720,7 @@ export default function OrderForm({
                             </div>
                         </div>
                     ) : (
-                        <Button
-                            type="submit"
-                            disabled={processing || !formComplete}
-                        >
+                        <Button type="submit" disabled={processing}>
                             {processing
                                 ? 'Memproses...'
                                 : defaults.order_number

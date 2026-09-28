@@ -160,7 +160,11 @@ class OrderController extends Controller
             ->whereIn('status', ['paid', 'registering', 'active', 'api_error', 'refund_needed'])
             ->when($editing, fn ($query) => $query->where('id', '!=', $editing->id))
             ->exists();
-        abort_unless(! $alreadyRegistered, 422, 'Domain ini sudah memiliki pesanan yang diproses.');
+        if ($alreadyRegistered) {
+            return back()
+                ->withErrors(['domain_name' => 'Domain ini telah digunakan dan sedang diproses. Silakan pilih domain lain.'])
+                ->withInput();
+        }
 
         $data['order_type'] = 'domain';
         $domainPrice = $editing
