@@ -8,13 +8,13 @@ use App\Models\Order;
 use App\Models\Payment;
 use App\Models\Setting;
 use App\Models\User;
-use App\Notifications\OrderActiveNotification;
 use App\Notifications\OrderPendingPaymentNotification;
 use App\Services\LiquidDomainClient;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Notification;
+use Illuminate\Support\Facades\Queue;
 use Tests\TestCase;
 
 class FordevFlowTest extends TestCase
@@ -439,6 +439,27 @@ class FordevFlowTest extends TestCase
             'bundle_id' => 'bundle-off',
             'coupon_code' => 'OFF',
         ])->assertUnprocessable();
+    }
+
+    public function test_free_event_coupon_marks_order_paid_without_payment_gateway(): void
+    {
+        Http::fake(['*' => Http::response(['available' => true])]);
+        Notification::fake();
+        Queue::fake();
+        $domain = Domain::factory()->create(['price' => 185000]);
+        DomainCoupon::create(['domain_id' => $domain->id, 'code' => 'EVENTGRATIS', 'type' => 'fixed', 'value' => 0, 'is_active' => true]);
+        $user = User::factory()->create();
+
+        $this->actingAs($user)->post('/order', [
+            'client_phone' => '08123456789', 'order_type' => 'domain', 'domain_id' => $domain->id,
+            'domain_name' => 'eventgratis', 'address_line_1' => 'Jl. Merdeka No. 1', 'city' => 'Jakarta',
+            'state' => 'DKI Jakarta', 'zipcode' => '10110', 'country_code' => 'ID', 'coupon_code' => 'EVENTGRATIS',
+        ])->assertRedirect();
+
+        $order = Order::query()->where('client_email', $user->email)->sole();
+        $this->assertSame('paid', $order->status);
+        $this->assertSame(0, $order->total_snapshot);
+        $this->assertDatabaseMissing('payments', ['order_id' => $order->id]);
     }
 
     public function test_registration_route_is_disabled(): void

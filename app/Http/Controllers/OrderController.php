@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Http\Requests\StoreOrderRequest;
+use App\Jobs\RegisterPaidOrder;
 use App\Models\Domain;
 use App\Models\DomainCoupon;
 use App\Models\Order;
@@ -253,7 +254,7 @@ class OrderController extends Controller
                 'icann_fee_snapshot' => 0,
                 'whois_privacy_snapshot' => 0,
                 'tax_snapshot' => $domainPrice ? (int) round($domainPrice * 0.11) : 0,
-                'total_snapshot' => $domainPrice ? (int) round($domainPrice * 1.11) : null,
+                'total_snapshot' => (int) round($domainPrice * 1.11),
                 'status' => 'pending_confirmation',
             ]);
 
@@ -306,6 +307,11 @@ class OrderController extends Controller
         }
         $telegram->orderCreated($order);
 
+        if ((int) $order->total_snapshot === 0) {
+            $order->update(['status' => 'paid', 'paid_at' => now()]);
+            RegisterPaidOrder::dispatch($order->id);
+        }
+
         return to_route('orders.status', ['order' => $order->order_number]);
     }
 
@@ -323,6 +329,10 @@ class OrderController extends Controller
             'bank_code' => ['nullable', 'string', 'max:16'],
         ]);
         $method = $data['payment_method'] ?? 'borderpay';
+
+        if ((int) $order->total_snapshot === 0) {
+            abort(422, 'Pesanan event gratis tidak memerlukan pembayaran.');
+        }
 
         if ($method === 'borderpay' && in_array($data['method'] ?? null, ['va', 'ewallet'], true)) {
             abort_unless(filled($data['bank_code'] ?? null), 422, 'Channel pembayaran belum lengkap.');
