@@ -18,8 +18,7 @@ maintenance_enabled=1
 
 git fetch origin main
 git checkout main
-git reset --hard HEAD
-git pull --ff-only origin main
+git reset --hard origin/main
 
 composer install --no-dev --no-interaction --prefer-dist --optimize-autoloader
 php artisan migrate --force
