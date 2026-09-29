@@ -23,8 +23,14 @@ class DomainAvailabilityChecker
 
     private function dnsAvailable(string $domain): bool
     {
-        $records = dns_get_record($domain, DNS_A + DNS_AAAA + DNS_CNAME + DNS_NS);
+        set_error_handler(static fn () => true);
 
-        return $records === [];
+        try {
+            $records = dns_get_record($domain, DNS_A + DNS_AAAA + DNS_CNAME + DNS_NS);
+        } finally {
+            restore_error_handler();
+        }
+
+        return is_array($records) && $records === [];
     }
 }
