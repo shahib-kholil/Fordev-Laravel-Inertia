@@ -89,6 +89,8 @@ class LiquidDomainClient
     public function signupCustomer(Order $order): string
     {
         $company = filled($order->company) ? $order->company : $order->client_name;
+        $this->validateProviderName($order->client_name, 'Nama');
+        $this->validateProviderName($company, 'Perusahaan');
         $existing = $this->http()->get('/customers', ['email' => $order->client_email])->throw()->json();
         $customerId = $existing[0]['customer_id'] ?? $existing[0]['id'] ?? null;
         if ($customerId) {
@@ -116,6 +118,8 @@ class LiquidDomainClient
     public function createContact(Order $order, string $customerId): string
     {
         $company = filled($order->company) ? $order->company : $order->client_name;
+        $this->validateProviderName($order->client_name, 'Nama');
+        $this->validateProviderName($company, 'Perusahaan');
         $response = $this->http()->asForm()->post("/customers/{$customerId}/contacts", [
             'name' => $order->client_name,
             'company' => $company,
@@ -177,6 +181,13 @@ class LiquidDomainClient
         }
 
         return $number;
+    }
+
+    private function validateProviderName(string $value, string $label): void
+    {
+        if ($value === '' || ! preg_match("/^[\\p{L}\\p{N} .,'&()\\/-]+$/u", $value)) {
+            throw new InvalidArgumentException("{$label} hanya boleh berisi huruf, angka, spasi, dan tanda baca umum.");
+        }
     }
 
     private function configured(): bool

@@ -56,6 +56,18 @@ class FordevFlowTest extends TestCase
         Http::assertSent(fn ($request) => $request->url() === config('services.liquid.base_url').'/customers' && $request['tel_cc_no'] === '62' && $request['tel_no'] === '081234567890');
     }
 
+    public function test_liquid_rejects_invalid_customer_name_before_external_request(): void
+    {
+        config(['services.liquid.reseller_id' => 'demo', 'services.liquid.api_key' => 'secret']);
+        Http::fake();
+        $order = Order::factory()->make(['client_name' => 'Sri <script>']);
+
+        $this->expectException(\InvalidArgumentException::class);
+        app(LiquidDomainClient::class)->signupCustomer($order);
+
+        Http::assertNothingSent();
+    }
+
     public function test_domain_details_by_name_are_returned_as_array(): void
     {
         config([
