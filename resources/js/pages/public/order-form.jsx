@@ -83,7 +83,9 @@ export default function OrderForm({
         selectedBundleDomain;
     const isDomainCheckout = Boolean(selectedDomain);
     const needsDomain = true;
-    const phoneValid = /^[0-9+()\s-]{8,30}$/.test(data.client_phone.trim());
+    const phoneValid = /^(?:62\d{11}|0\d{11})$/.test(
+        data.client_phone.replace(/\D/g, ''),
+    );
     const zipcodeValid = /^\d{5}$/.test(data.zipcode.trim());
     const cartComplete = Boolean(
         phoneValid &&
@@ -128,7 +130,9 @@ export default function OrderForm({
             if (invalid) {
                 setInvalidField(invalid[0]);
                 setSubmitNotice(
-                    `Mohon lengkapi ${invalid[0]} terlebih dahulu.`,
+                    invalid[0] === 'Nomor WhatsApp' && data.client_phone.trim()
+                        ? 'Format WhatsApp tidak diterima. Gunakan 08xxxxxxxxxx atau 6208xxxxxxxxxx.'
+                        : `Mohon lengkapi ${invalid[0]} terlebih dahulu.`,
                 );
                 invalid[1].current?.focus();
                 invalid[1].current?.scrollIntoView({

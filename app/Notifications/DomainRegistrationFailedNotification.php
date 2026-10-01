@@ -26,7 +26,8 @@ class DomainRegistrationFailedNotification extends Notification implements Shoul
             ->line('Pendaftaran domain belum berhasil diselesaikan.')
             ->line('Domain: '.$this->order->domain_name.($this->order->domain?->extension ?? ''))
             ->line('Status: '.$this->order->status)
-            ->line('Tim ForDev akan memeriksa pesanan Anda dan menghubungi Anda jika diperlukan.')
+            ->line('Terjadi kendala saat mengirim data pendaftaran ke registrar.')
+            ->line('Tim ForDev akan memeriksa pesanan Anda dan menghubungi Anda jika diperlukan. Anda tidak perlu membuat pesanan baru.')
             ->action('Cek Status Pesanan', url('/cek-status-pesanan'));
     }
 }

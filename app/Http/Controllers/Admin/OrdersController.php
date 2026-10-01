@@ -117,6 +117,15 @@ class OrdersController extends Controller
     {
         $data = $request->validate([
             'status' => ['required', Rule::in(self::STATUSES)],
+            'client_name' => ['sometimes', 'required', 'string', 'min:2', 'max:255'],
+            'client_email' => ['sometimes', 'required', 'email', 'max:255'],
+            'client_phone' => ['sometimes', 'nullable', 'string', 'regex:/^(?:62\d{11}|0\d{11})$/'],
+            'company' => ['sometimes', 'nullable', 'string', 'min:2', 'max:255'],
+            'address_line_1' => ['sometimes', 'required', 'string', 'max:62'],
+            'city' => ['sometimes', 'required', 'string', 'max:100'],
+            'state' => ['sometimes', 'required', 'string', 'max:100'],
+            'zipcode' => ['sometimes', 'required', 'string', 'regex:/^\d{5}$/'],
+            'country_code' => ['sometimes', 'required', 'string', 'size:2'],
             'admin_notes' => ['nullable', 'string'],
             'action' => ['nullable', Rule::in(['approve_register'])],
         ]);
@@ -128,7 +137,10 @@ class OrdersController extends Controller
                 422,
                 'Pembayaran belum terverifikasi.',
             );
-            $order->update(['status' => 'paid', 'paid_at' => $order->paid_at ?? now(), 'admin_notes' => $data['admin_notes'] ?? $order->admin_notes]);
+            $order->update(array_merge(
+                array_intersect_key($data, array_flip(['client_name', 'client_email', 'client_phone', 'company', 'address_line_1', 'city', 'state', 'zipcode', 'country_code'])),
+                ['status' => 'paid', 'paid_at' => $order->paid_at ?? now(), 'admin_notes' => $data['admin_notes'] ?? $order->admin_notes],
+            ));
             $registrar->register($order->refresh());
 
             return back();
@@ -140,6 +152,7 @@ class OrdersController extends Controller
         }
         $order->update([
             'status' => $data['status'],
+            ...array_intersect_key($data, array_flip(['client_name', 'client_email', 'client_phone', 'company', 'address_line_1', 'city', 'state', 'zipcode', 'country_code'])),
             'admin_notes' => $data['admin_notes'] ?? null,
             'paid_at' => $data['status'] === 'paid' ? ($order->paid_at ?? now()) : $order->paid_at,
         ]);

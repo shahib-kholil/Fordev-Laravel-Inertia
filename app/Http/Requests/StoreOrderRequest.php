@@ -21,6 +21,9 @@ class StoreOrderRequest extends FormRequest
             $value = $this->input($field);
             $clean[$field] = is_string($value) ? trim(strip_tags($value)) : $value;
         }
+        if (is_string($clean['client_phone'] ?? null)) {
+            $clean['client_phone'] = preg_replace('/\D+/', '', $clean['client_phone']);
+        }
         $clean['domain_name'] = strtolower($clean['domain_name'] ?? '');
         $clean['country_code'] = strtoupper($clean['country_code'] ?? '');
         $clean['coupon_code'] = strtoupper(trim((string) $this->input('coupon_code', '')));
@@ -43,12 +46,12 @@ class StoreOrderRequest extends FormRequest
             : [];
 
         return [
-            'client_phone' => ['required', 'string', 'regex:/^[0-9+()\s-]{8,30}$/'],
+            'client_phone' => ['required', 'string', 'regex:/^(?:62\d{11}|0\d{11})$/'],
             'order_type' => ['nullable', Rule::in(['domain'])],
             'domain_id' => ['nullable', 'exists:domains,id'],
             'bundle_id' => ['nullable', 'string', 'max:80'],
             'domain_name' => ['required', 'string', 'max:63', 'regex:/^[a-z0-9](?:[a-z0-9-]*[a-z0-9])?$/'],
-            'company' => ['nullable', 'string', 'max:255'],
+            'company' => ['nullable', 'string', 'min:2', 'max:255'],
             'address_line_1' => ['required', 'string', 'max:62'],
             'city' => ['required', 'string', 'max:100'],
             'state' => ['required', 'string', 'max:100'],

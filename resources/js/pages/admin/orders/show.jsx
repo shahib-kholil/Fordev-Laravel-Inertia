@@ -4,6 +4,15 @@ import { Button } from '@/components/ui/button';
 export default function OrderShow({ order, statuses }) {
     const { data, setData, put, processing } = useForm({
         status: order.status,
+        client_name: order.client_name ?? '',
+        client_email: order.client_email ?? '',
+        client_phone: order.client_phone ?? '',
+        company: order.company ?? '',
+        address_line_1: order.address_line_1 ?? '',
+        city: order.city ?? '',
+        state: order.state ?? '',
+        zipcode: order.zipcode ?? '',
+        country_code: order.country_code ?? 'ID',
         admin_notes: order.admin_notes ?? '',
         action: '',
     });
@@ -16,8 +25,9 @@ export default function OrderShow({ order, statuses }) {
         setTimeout(() => put(`/admin/orders/${order.id}`), 0);
     }
     const canRegister =
-        ['paid', 'api_error', 'refund_needed'].includes(order.status) &&
-        ['domain', 'both'].includes(order.order_type);
+        ['paid', 'registering', 'api_error', 'refund_needed'].includes(
+            order.status,
+        ) && ['domain', 'both'].includes(order.order_type);
     const statusClass =
         {
             active: 'border-emerald-500/30 bg-emerald-500/10 text-emerald-400',
@@ -118,7 +128,11 @@ export default function OrderShow({ order, statuses }) {
                                         'id-ID',
                                     )}
                                 </p>
-                                {payment.status === 'pending' && (
+                                {(payment.status === 'pending' ||
+                                    (payment.provider === 'borderpay' &&
+                                        ['expired', 'failed'].includes(
+                                            payment.status,
+                                        ))) && (
                                     <div className="flex flex-wrap gap-2">
                                         {payment.provider === 'borderpay' && (
                                             <NativeAction
@@ -154,6 +168,45 @@ export default function OrderShow({ order, statuses }) {
                     onSubmit={submit}
                     className="space-y-3 rounded-xl border p-5"
                 >
+                    <div className="grid gap-3 sm:grid-cols-2">
+                        {[
+                            ['client_name', 'Nama'],
+                            ['client_email', 'Email'],
+                            ['company', 'Perusahaan'],
+                            ['address_line_1', 'Alamat'],
+                            ['city', 'Kota'],
+                            ['state', 'Provinsi'],
+                            ['zipcode', 'Kode pos'],
+                            ['country_code', 'Kode negara'],
+                        ].map(([field, label]) => (
+                            <label
+                                key={field}
+                                className="block space-y-1 text-sm"
+                            >
+                                <span>{label}</span>
+                                <input
+                                    className="h-9 w-full rounded-lg border bg-background px-2"
+                                    value={data[field]}
+                                    onChange={(e) =>
+                                        setData(field, e.target.value)
+                                    }
+                                    required={field !== 'company'}
+                                />
+                            </label>
+                        ))}
+                    </div>
+                    <label className="block space-y-1 text-sm">
+                        <span>WhatsApp klien</span>
+                        <input
+                            className="h-9 w-full rounded-lg border bg-background px-2"
+                            value={data.client_phone}
+                            onChange={(e) =>
+                                setData('client_phone', e.target.value)
+                            }
+                            placeholder="628xxxxxxxxxx atau 08xxxxxxxxxx"
+                            required
+                        />
+                    </label>
                     <select
                         className="h-9 w-full rounded-lg border bg-background px-2 text-sm"
                         value={data.status}

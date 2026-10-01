@@ -172,4 +172,15 @@ class PaymentServiceTest extends TestCase
         app(PaymentService::class)->createGatewayCheckout($order);
         Http::assertNothingSent();
     }
+
+    public function test_gateway_checkout_rejects_amount_below_borderpay_minimum(): void
+    {
+        $order = Order::factory()->create(['total_snapshot' => 999]);
+
+        $this->expectException(\RuntimeException::class);
+        $this->expectExceptionMessage('Minimal pembayaran otomatis adalah Rp1.000.');
+        app(PaymentService::class)->createGatewayCheckout($order);
+
+        Http::assertNothingSent();
+    }
 }

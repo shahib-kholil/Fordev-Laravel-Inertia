@@ -73,8 +73,10 @@ class PaymentService
         }
 
         $amount = (int) ($order->total_snapshot ?? 0);
-        if ($amount < 1) {
-            throw new RuntimeException('Order belum memiliki total pembayaran yang valid.');
+        if ($amount < 1000) {
+            throw new RuntimeException($amount > 0
+                ? 'Minimal pembayaran otomatis adalah Rp1.000.'
+                : 'Order belum memiliki total pembayaran yang valid.');
         }
 
         $returnUrl = config('services.borderpay.return_url');

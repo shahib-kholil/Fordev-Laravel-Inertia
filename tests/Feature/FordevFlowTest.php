@@ -117,7 +117,7 @@ class FordevFlowTest extends TestCase
         $this->actingAs(User::factory()->create(['name' => 'Budi', 'email' => 'budi@example.com']));
 
         $this->post('/order', [
-            'client_phone' => '08123456789',
+            'client_phone' => '081234567890',
             'order_type' => 'domain',
             'domain_id' => $domain->id,
             'domain_name' => 'tokoku',
@@ -149,7 +149,7 @@ class FordevFlowTest extends TestCase
         $domain = Domain::factory()->create(['extension' => '.com']);
 
         $this->from('/order')->actingAs(User::factory()->create(['email' => 'budi@example.com']))->post('/order', [
-            'client_phone' => '08123456789',
+            'client_phone' => '081234567890',
             'order_type' => 'domain',
             'domain_id' => $domain->id,
             'domain_name' => 'tokoku',
@@ -178,7 +178,7 @@ class FordevFlowTest extends TestCase
         $domain = Domain::factory()->create(['extension' => '.id', 'price' => 250000]);
 
         $this->actingAs(User::factory()->create(['name' => 'Siti', 'email' => 'siti@example.com']))->post('/order', [
-            'client_phone' => '08123456789',
+            'client_phone' => '081234567890',
             'order_type' => 'domain',
             'domain_id' => $domain->id,
             'domain_name' => 'tokoku',
@@ -341,12 +341,12 @@ class FordevFlowTest extends TestCase
         $domain = Domain::factory()->create(['price' => 185000]);
         $coupon = DomainCoupon::create(['domain_id' => $domain->id, 'code' => 'HEMAT', 'type' => 'fixed', 'value' => 50000, 'is_active' => true]);
         $user = User::factory()->create(['email' => 'edit@example.com']);
-        $payload = ['client_phone' => '08123456789', 'order_type' => 'domain', 'domain_id' => $domain->id, 'domain_name' => 'tokoku', 'address_line_1' => 'Jl. Merdeka No. 1', 'city' => 'Jakarta', 'state' => 'DKI Jakarta', 'zipcode' => '10110', 'country_code' => 'ID', 'coupon_code' => 'HEMAT'];
+        $payload = ['client_phone' => '081234567890', 'order_type' => 'domain', 'domain_id' => $domain->id, 'domain_name' => 'tokoku', 'address_line_1' => 'Jl. Merdeka No. 1', 'city' => 'Jakarta', 'state' => 'DKI Jakarta', 'zipcode' => '10110', 'country_code' => 'ID', 'coupon_code' => 'HEMAT'];
         $this->actingAs($user)->post('/order', $payload)->assertRedirect();
         $order = Order::query()->where('client_email', $user->email)->sole();
-        $this->actingAs($user)->post('/order', [...$payload, 'client_phone' => '08123456780', 'coupon_code' => '', 'order_number' => $order->order_number])->assertRedirectContains($order->order_number);
+        $this->actingAs($user)->post('/order', [...$payload, 'client_phone' => '081234567801', 'coupon_code' => '', 'order_number' => $order->order_number])->assertRedirectContains($order->order_number);
         $this->assertDatabaseCount('orders', 1);
-        $this->assertDatabaseHas('orders', ['id' => $order->id, 'client_phone' => '08123456780', 'domain_price_snapshot' => 50000, 'domain_discount_snapshot' => 135000, 'coupon_code_snapshot' => $coupon->code]);
+        $this->assertDatabaseHas('orders', ['id' => $order->id, 'client_phone' => '081234567801', 'domain_price_snapshot' => 50000, 'domain_discount_snapshot' => 135000, 'coupon_code_snapshot' => $coupon->code]);
     }
 
     public function test_bundle_coupon_creates_primary_order_and_bundle_items(): void
@@ -360,7 +360,7 @@ class FordevFlowTest extends TestCase
         $user = User::factory()->create(['email' => 'bundle@example.com']);
 
         $this->actingAs($user)->post('/order', [
-            'client_phone' => '08123456789', 'order_type' => 'domain', 'domain_id' => $domains[0]->id,
+            'client_phone' => '081234567890', 'order_type' => 'domain', 'domain_id' => $domains[0]->id,
             'bundle_id' => $bundleId, 'domain_name' => 'tokoku', 'coupon_code' => $coupon->code,
             'address_line_1' => 'Jl. Merdeka No. 1', 'city' => 'Jakarta', 'state' => 'DKI Jakarta', 'zipcode' => '10110', 'country_code' => 'ID',
         ])->assertRedirectContains('/cek-status-pesanan?order=');
@@ -463,7 +463,7 @@ class FordevFlowTest extends TestCase
         $user = User::factory()->create();
 
         $this->actingAs($user)->post('/order', [
-            'client_phone' => '08123456789', 'order_type' => 'domain', 'domain_id' => $domain->id,
+            'client_phone' => '081234567890', 'order_type' => 'domain', 'domain_id' => $domain->id,
             'domain_name' => 'eventgratis', 'address_line_1' => 'Jl. Merdeka No. 1', 'city' => 'Jakarta',
             'state' => 'DKI Jakarta', 'zipcode' => '10110', 'country_code' => 'ID', 'coupon_code' => 'EVENTGRATIS',
         ])->assertRedirect();

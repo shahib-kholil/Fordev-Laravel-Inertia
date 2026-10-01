@@ -51,7 +51,8 @@ class BorderPayWebhookController extends Controller
             $allowed = match ($payment->status) {
                 'pending' => ['paid', 'expired', 'failed'],
                 'paid' => ['paid', 'refunded'],
-                'refunded', 'expired', 'failed' => [$payment->status],
+                'expired', 'failed' => [$payment->status, 'paid'],
+                'refunded' => [$payment->status],
                 default => [],
             };
             abort_unless(in_array($status, $allowed, true), 409);
@@ -65,7 +66,7 @@ class BorderPayWebhookController extends Controller
                 'provider_payload' => $request->all(),
             ]);
 
-            if ($status === 'paid' && $wasPending && in_array($payment->order->status, ['pending_payment', 'pending_confirmation'], true)) {
+            if ($status === 'paid' && in_array($payment->order->status, ['pending_payment', 'pending_confirmation', 'registering', 'api_error', 'refund_needed'], true)) {
                 $payment->order->update(['status' => 'paid', 'paid_at' => now()]);
             }
 
@@ -73,7 +74,7 @@ class BorderPayWebhookController extends Controller
         });
 
         [$payment, $wasPending] = $payment;
-        if ($payment->status === 'paid' && $wasPending && $payment->order->status === 'paid') {
+        if ($payment->status === 'paid' && $payment->order->status === 'paid') {
             RegisterPaidOrder::dispatch($payment->order_id);
         }
 

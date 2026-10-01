@@ -174,18 +174,29 @@ class LiquidDomainClient
     private function telephoneNumber(string $phone): string
     {
         $number = preg_replace('/\D+/', '', $phone);
-        $number = preg_replace('/^62/', '0', $number);
 
-        if ($number === '' || ! preg_match('/^0\d{11}$/', $number)) {
-            throw new InvalidArgumentException('Nomor WhatsApp harus berisi tepat 12 digit, diawali 0.');
+        if (preg_match('/^62(0\d{11})$/', $number, $matches)) {
+            return $matches[1];
         }
 
-        return $number;
+        if (preg_match('/^62([1-9]\d{10})$/', $number, $matches)) {
+            return '0'.$matches[1];
+        }
+
+        if (preg_match('/^0\d{11}$/', $number)) {
+            return $number;
+        }
+
+        throw new InvalidArgumentException('Nomor WhatsApp harus berupa 62 diikuti nomor seluler, atau 0 diikuti 11 digit. Contoh: 6281234567890 atau 081234567890.');
     }
 
     private function validateProviderName(string $value, string $label): void
     {
-        if ($value === '' || ! preg_match("/^[\\p{L}\\p{N} .,'&()\\/-]+$/u", $value)) {
+        if (mb_strlen($value) < 2) {
+            throw new InvalidArgumentException("{$label} harus berisi minimal 2 karakter.");
+        }
+
+        if (! preg_match("/^[\\p{L}\\p{N} .,'&()\\/-]+$/u", $value)) {
             throw new InvalidArgumentException("{$label} hanya boleh berisi huruf, angka, spasi, dan tanda baca umum.");
         }
     }

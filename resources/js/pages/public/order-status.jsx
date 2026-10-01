@@ -176,9 +176,11 @@ export default function OrderStatus({
                             order.status,
                         ) && (
                             <div className="rounded-xl border border-amber-500/40 bg-amber-500/10 p-4 text-sm text-amber-700 dark:text-amber-300">
-                                Pendaftaran domain belum berhasil. Tim ForDev
-                                akan memeriksa pesanan ini dan menghubungi kamu
-                                jika diperlukan.
+                                Pendaftaran domain mengalami kendala saat data
+                                dikirim ke registrar. Tim ForDev sudah menerima
+                                informasinya dan akan memeriksa pesanan ini.
+                                Kamu tidak perlu membuat pesanan baru; kami akan
+                                menghubungi kamu jika diperlukan.
                             </div>
                         )}
                         {order.admin_notes && (

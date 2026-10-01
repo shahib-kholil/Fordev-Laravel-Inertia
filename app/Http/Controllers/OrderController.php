@@ -332,6 +332,10 @@ class OrderController extends Controller
         ]);
         $method = $data['payment_method'] ?? 'borderpay';
 
+        if ($method === 'borderpay' && (int) $order->total_snapshot < 1000) {
+            $method = 'manual';
+        }
+
         if ((int) $order->total_snapshot === 0) {
             abort(422, 'Pesanan event gratis tidak memerlukan pembayaran.');
         }
@@ -349,7 +353,9 @@ class OrderController extends Controller
             $payments->createManualPayment($order);
             Notification::route('mail', $order->client_email)->notify(new OrderPendingPaymentNotification($order->refresh()));
 
-            return back()->with('payment_manual', 'Silakan lakukan transfer sesuai instruksi pembayaran.');
+            return back()->with('payment_manual', (int) $order->total_snapshot < 1000
+                ? 'Nominal di bawah Rp1.000 diproses melalui pembayaran manual. Silakan lakukan transfer sesuai instruksi.'
+                : 'Silakan lakukan transfer sesuai instruksi pembayaran.');
         }
 
         try {
@@ -364,7 +370,9 @@ class OrderController extends Controller
             report($exception);
 
             return back()->withErrors([
-                'payment' => 'Pembayaran otomatis belum dapat diproses. Silakan hubungi admin.',
+                'payment' => $exception->getMessage() === 'Minimal pembayaran otomatis adalah Rp1.000.'
+                    ? $exception->getMessage()
+                    : 'Pembayaran otomatis belum dapat diproses. Silakan hubungi admin.',
             ]);
         }
 
