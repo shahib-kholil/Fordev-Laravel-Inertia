@@ -92,24 +92,41 @@ class LiquidDomainClient
         $this->validateProviderName($order->client_name, 'Nama');
         $this->validateProviderName($company, 'Perusahaan');
         $existing = $this->http()->get('/customers', ['email' => $order->client_email])->throw()->json();
-        $customerId = $existing[0]['customer_id'] ?? $existing[0]['id'] ?? null;
+        $customerId = $this->customerIdFromPayload($existing, $order->client_email);
         if ($customerId) {
-            return (string) $customerId;
+            return $customerId;
         }
 
-        $response = $this->http()->asForm()->post('/customers', [
-            'email' => $order->client_email,
-            'name' => $order->client_name,
-            'password' => str()->password(15),
-            'company' => $company,
-            'address_line_1' => $order->address_line_1,
-            'city' => $order->city,
-            'state' => $order->state,
-            'country_code' => $order->country_code,
-            'zipcode' => $order->zipcode,
-            'tel_cc_no' => '62',
-            'tel_no' => $this->telephoneNumber($order->client_phone),
-        ])->throw();
+
+        try {
+            $response = $this->http()->asForm()->post('/customers', [
+                'email' => $order->client_email,
+                'name' => $order->client_name,
+                'password' => str()->password(15),
+                'company' => $company,
+                'address_line_1' => $order->address_line_1,
+                'city' => $order->city,
+                'state' => $order->state,
+                'country_code' => $order->country_code,
+                'zipcode' => $order->zipcode,
+                'tel_cc_no' => '62',
+                'tel_no' => $this->telephoneNumber($order->client_phone),
+            ])->throw();
+        } catch (RequestException $exception) {
+            $message = strtolower((string) ($exception->response?->json('message') ?? ''));
+            if ($exception->response?->status() !== 400 || ! str_contains($message, 'already a custo')) {
+                throw $exception;
+            }
+
+            $customerId = $this->customerIdFromPayload(
+                $this->http()->get('/customers')->throw()->json(),
+                $order->client_email,
+            );
+            if ($customerId) {
+                return $customerId;
+            }
+            throw $exception;
+        }
 
         return (string) ($response->json('customer_id') ?? $response->json('id') ?? throw new RequestException($response));
     }
@@ -169,6 +186,31 @@ class LiquidDomainClient
         return $this->http()->get('/domains/details-by-name', [
             'domain_name' => strtolower($domain),
         ])->throw()->json() ?? [];
+    }
+
+    private function customerIdFromPayload(mixed $payload, string $email): ?string
+    {
+        $items = is_array($payload) && array_is_list($payload)
+            ? $payload
+            : (is_array($payload) ? ($payload['data'] ?? $payload['results'] ?? [$payload]) : []);
+
+        foreach ($items as $item) {
+            if (! is_array($item)) {
+                continue;
+            }
+            $id = $item['customer_id'] ?? $item['id'] ?? null;
+            if ($id !== null && ! isset($item['email'])) {
+                return (string) $id;
+            }
+            if (strcasecmp((string) ($item['email'] ?? ''), $email) !== 0) {
+                continue;
+            }
+            if ($id !== null) {
+                return (string) $id;
+            }
+        }
+
+        return null;
     }
 
     private function telephoneNumber(string $phone): string
