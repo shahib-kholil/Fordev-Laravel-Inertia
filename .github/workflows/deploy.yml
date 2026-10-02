@@ -19,7 +19,7 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
         with:
           persist-credentials: false
 
@@ -31,7 +31,7 @@ jobs:
           extensions: mbstring, xml, ctype, iconv, mysql
 
       - name: Setup Node
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v7
         with:
           node-version: '22'
           cache: npm
@@ -48,7 +48,7 @@ jobs:
           php artisan test
 
       - name: Connect to Tailscale
-        uses: tailscale/github-action@v2
+        uses: tailscale/github-action@v4
         with:
           authkey: ${{ secrets.TAILSCALE_AUTHKEY }}
 
@@ -63,7 +63,7 @@ jobs:
           SOURCE: "public/build/"
 
       - name: Deploy on production VPS
-        uses: appleboy/ssh-action@v1.2.2
+        uses: appleboy/ssh-action@v1.2.5
         with:
           host: ${{ secrets.VPS_HOST }}
           username: ${{ secrets.VPS_USERNAME }}
