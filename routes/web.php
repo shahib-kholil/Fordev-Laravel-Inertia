@@ -12,6 +12,7 @@ use App\Http\Controllers\Auth\GoogleController;
 use App\Http\Controllers\BorderPayWebhookController;
 use App\Http\Controllers\OrderController;
 use App\Http\Controllers\PublicPageController;
+use App\Http\Controllers\SitemapController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
@@ -42,6 +43,7 @@ Route::middleware('auth')->group(function () {
 Route::get('cek-status-pesanan', [OrderController::class, 'status'])->name('orders.status');
 Route::post('cek-status-pesanan', [OrderController::class, 'lookup'])->name('orders.lookup')->middleware('throttle:10,1');
 Route::post('webhooks/borderpay', BorderPayWebhookController::class)->name('webhooks.borderpay')->middleware(['throttle:120,1', 'api']);
+Route::get('sitemap.xml', [SitemapController::class, 'index'])->name('sitemap');
 Route::get('auth/google/redirect', [GoogleController::class, 'redirect'])->name('auth.google.redirect');
 Route::get('auth/google/callback', [GoogleController::class, 'callback'])->name('auth.google.callback');
 
